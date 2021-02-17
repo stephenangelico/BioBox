@@ -1,7 +1,29 @@
-import gi
+import sys
+import socket
+import threading
 
+import gi
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk
+
+def vlc_connection():
+	sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+	sock.connect(('localhost',4221))
+	buffer = b""
+	with sock:
+		while True:
+			data = sock.recv(1024)
+			if not data:
+				break
+			buffer += data
+			if b"\n" in buffer:
+				line, buffer = buffer.split(b"\n")
+				line = line.rstrip().decode("utf-8")
+				attr, value = line.split(":")
+				value = int(value)
+				if attr == "volume":
+					print(value)
+
 
 class MainUI(Gtk.Window):
 	def __init__(self):
@@ -28,6 +50,7 @@ class Channel(Gtk.Box):
 		self.pack_start(mute, False, False, 0)
 
 if __name__ == "__main__":
+	vlc_connection()
 	win = MainUI()
 	win.connect("destroy", Gtk.main_quit)
 	win.show_all()
