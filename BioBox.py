@@ -18,10 +18,10 @@ class MainUI(Gtk.Window):
 		modules.pack_start(module, True, True, 0)
 
 class Channel(Gtk.Box):
-	def __init__(self):
+	def __init__(self, name):
 		super().__init__(orientation=Gtk.Orientation.VERTICAL, spacing=5)
 		self.set_size_request(50, 300)
-		channelname = Gtk.Label(label="Channel")
+		channelname = Gtk.Label(label=name)
 		self.pack_start(channelname, False, False, 0)
 		self.slider = Gtk.Adjustment(value=100, lower=0, upper=150, step_increment=1, page_increment=10, page_size=0)
 		level = Gtk.Scale(orientation=Gtk.Orientation.VERTICAL, adjustment=self.slider, inverted=True)
