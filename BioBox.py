@@ -28,6 +28,8 @@ class Channel(Gtk.Box):
 		level.add_mark(value=100, position=Gtk.PositionType.LEFT, markup=None)
 		level.add_mark(value=100, position=Gtk.PositionType.RIGHT, markup=None)
 		self.pack_start(level, True, True, 0)
+		spinvalue = Gtk.SpinButton(adjustment=self.slider)
+		self.pack_start(spinvalue, False, False, 0)
 		mute = Gtk.ToggleButton(label="Mute")
 		self.pack_start(mute, False, False, 0)
 
