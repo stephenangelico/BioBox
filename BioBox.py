@@ -32,6 +32,11 @@ class Channel(Gtk.Box):
 		self.pack_start(spinvalue, False, False, 0)
 		mute = Gtk.ToggleButton(label="Mute")
 		self.pack_start(mute, False, False, 0)
+		self.slider.connect("value-changed", self.write_value)
+	
+	def write_value(self, widget):
+		value = round(widget.get_value())
+		print(value)
 
 class VLC(Channel):
 	def __init__(self):
