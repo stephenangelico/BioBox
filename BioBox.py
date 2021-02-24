@@ -49,12 +49,12 @@ class VLC(Channel):
 				if not data:
 					break
 				buffer += data
-				if b"\n" in buffer:
-					line, buffer = buffer.split(b"\n")
+				while b"\n" in buffer:
+					line, buffer = buffer.split(b"\n", 1)
 					line = line.rstrip().decode("utf-8")
-					attr, value = line.split(":")
-					value = int(value)
+					attr, value = line.split(":", 1)
 					if attr == "volume":
+						value = int(value)
 						print(value)
 						GLib.idle_add(self.update_position, value)
 
