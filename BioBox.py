@@ -1,4 +1,5 @@
 import sys
+import time
 import socket
 import threading
 
@@ -42,9 +43,10 @@ class VLC(Channel):
 	def __init__(self):
 		super().__init__(name="VLC")
 		threading.Thread(target=self.conn, daemon=True).start()
+		self.last_wrote = time.time()
 
 	def conn(self):
-		sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+		self.sock = sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 		sock.connect(('localhost',4221))
 		sock.send(b"volume\r\n")
 		buffer = b""
@@ -63,8 +65,16 @@ class VLC(Channel):
 						print(value)
 						GLib.idle_add(self.update_position, value)
 
+	def write_value(self, widget):
+		if time.time() > self.last_wrote + 0.01: # TODO: drop only writes that would result in bounce loop
+			value = round(widget.get_value())
+			self.sock.send(b"volume %d \r\n" %value)
+			print("VLC: ", value)
+
 	def update_position(self, value):
 		self.slider.set_value(value)
+		self.last_wrote = time.time()
+
 
 if __name__ == "__main__":
 	win = MainUI()
