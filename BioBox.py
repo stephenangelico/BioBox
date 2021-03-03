@@ -43,7 +43,7 @@ class VLC(Channel):
 	def __init__(self):
 		super().__init__(name="VLC")
 		threading.Thread(target=self.conn, daemon=True).start()
-		self.last_wrote = time.time()
+		self.last_wrote = time.time() # TODO: use time.monotonic()
 
 	def conn(self):
 		self.sock = sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
