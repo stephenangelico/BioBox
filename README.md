@@ -27,8 +27,8 @@ TODO:
 		- L2 NC
 		- L3 unused
 		- L4 unused
-		- R1 -> CH0 (MCP pin 1)
-		- R2 -> 3.3V (MCP pin 16)
+		- R1 -> 3.3V (MCP pin 16)
+		- R2 -> CH0 (MCP pin 1)
 		- R3 -> L1 (range)
 		- R4 -> GND (MCP pin 9)
 
