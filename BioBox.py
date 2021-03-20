@@ -1,5 +1,6 @@
 import sys
 import time
+import subprocess
 import socket
 import threading
 
@@ -17,6 +18,8 @@ class MainUI(Gtk.Window):
 		self.add(modules)
 		vlcmodule = VLC()
 		modules.pack_start(vlcmodule, True, True, 0)
+		c922module = WebcamFocus()
+		modules.pack_start(c922module, True, True, 0)
 
 class Channel(Gtk.Box):
 	def __init__(self, name):
@@ -85,6 +88,22 @@ class VLC(Channel):
 		mute_state = widget.get_active()
 		print("VLC Mute status:", mute_state)
 
+class WebcamFocus(Channel):
+	def __init__(self):
+		super().__init__(name="C922 Focus")
+
+	def write_value(self, widget):
+		value = round(widget.get_value() / 5) * 5
+		if not self.mute_state:
+			subprocess.run(["v4l2-ctl", "-d", "/dev/webcam_c922", "-c", "focus_absolute=%d" %value])
+
+	def update_position(self, value):
+		self.slider.set_value(value)
+
+	def muted(self, widget):
+		self.mute_state = widget.get_active()
+		subprocess.run(["v4l2-ctl", "-d", "/dev/webcam_c922", "-c", "focus_auto=%d" %self.mute_state])
+		# TODO: When autofocus is unset, set focus_absolute to slider position
 
 if __name__ == "__main__":
 	win = MainUI()
