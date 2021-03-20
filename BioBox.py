@@ -15,8 +15,8 @@ class MainUI(Gtk.Window):
 		
 		modules = Gtk.Box()
 		self.add(modules)
-		module = VLC()
-		modules.pack_start(module, True, True, 0)
+		vlcmodule = VLC()
+		modules.pack_start(vlcmodule, True, True, 0)
 
 class Channel(Gtk.Box):
 	def __init__(self, name):
