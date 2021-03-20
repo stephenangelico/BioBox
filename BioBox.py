@@ -31,13 +31,19 @@ class Channel(Gtk.Box):
 		self.pack_start(level, True, True, 0)
 		spinvalue = Gtk.SpinButton(adjustment=self.slider)
 		self.pack_start(spinvalue, False, False, 0)
-		mute = Gtk.ToggleButton(label="Mute")
-		self.pack_start(mute, False, False, 0)
+		self.mute = Gtk.ToggleButton(label="Mute")
+		self.pack_start(self.mute, False, False, 0)
 		self.slider.connect("value-changed", self.write_value)
+		self.mute.connect("toggled", self.muted)
 	
+	# Fallback functions if subclasses don't provide write_value() or muted()
 	def write_value(self, widget):
 		value = round(widget.get_value())
 		print(value)
+
+	def muted(self, widget):
+		mute_state = widget.get_active()
+		print("Channel " + "un" * (not mute_state) + "muted")
 
 class VLC(Channel):
 	def __init__(self):
@@ -74,6 +80,10 @@ class VLC(Channel):
 	def update_position(self, value):
 		self.slider.set_value(value)
 		self.last_wrote = time.time()
+
+	def muted(self, widget): # TODO: send to VLC (depends on support in TellMeVLC)
+		mute_state = widget.get_active()
+		print("VLC Mute status:", mute_state)
 
 
 if __name__ == "__main__":
