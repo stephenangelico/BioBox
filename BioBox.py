@@ -13,16 +13,24 @@ class MainUI(Gtk.Window):
 	def __init__(self):
 		super().__init__(title="Bio Box")
 		self.set_border_width(10)
-		
 		modules = Gtk.Box()
 		self.add(modules)
-		vlcmodule = VLC()
+		global chan_select
+		chan_select = Gtk.RadioButton()
+		threading.Thread(target=self.read_analog, daemon=True).start()
+		vlcmodule = VLC(chan_select)
 		modules.pack_start(vlcmodule, True, True, 0)
-		c922module = WebcamFocus()
+		c922module = WebcamFocus(chan_select)
 		modules.pack_start(c922module, True, True, 0)
 
+	def read_analog(self):
+		# Get analog value from Analog.py and write to selected channel's slider
+		#import Analog
+		#get data
+		#selected_channel.write_value(data)
+
 class Channel(Gtk.Box):
-	def __init__(self, name):
+	def __init__(self, name, chan_select):
 		super().__init__(orientation=Gtk.Orientation.VERTICAL, spacing=5)
 		self.set_size_request(50, 300)
 		channelname = Gtk.Label(label=name)
@@ -38,7 +46,17 @@ class Channel(Gtk.Box):
 		self.pack_start(self.mute, False, False, 0)
 		self.slider.connect("value-changed", self.write_value)
 		self.mute.connect("toggled", self.muted)
+		# TODO: investigate event box to select channel by any interaction
+		self.selector = Gtk.RadioButton.new_from_widget(chan_select)
+		self.selector.set_label("Selected")
+		self.pack_start(self.selector, False, False, 0)
+		self.selector.connect("toggled", self.check_selected)
 	
+	def check_selected(self, widget):
+		global selected_channel
+		if widget.get_active():
+			selected_channel = self
+
 	# Fallback functions if subclasses don't provide write_value() or muted()
 	def write_value(self, widget):
 		value = round(widget.get_value())
@@ -49,8 +67,8 @@ class Channel(Gtk.Box):
 		print("Channel " + "un" * (not mute_state) + "muted")
 
 class VLC(Channel):
-	def __init__(self):
-		super().__init__(name="VLC")
+	def __init__(self, chan_select):
+		super().__init__(name="VLC", chan_select=chan_select)
 		threading.Thread(target=self.conn, daemon=True).start()
 		self.last_wrote = time.time() # TODO: use time.monotonic()
 
