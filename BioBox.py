@@ -44,6 +44,8 @@ class Channel(Gtk.Box):
 		self.pack_start(level, True, True, 0)
 		spinvalue = Gtk.SpinButton(adjustment=self.slider)
 		self.pack_start(spinvalue, False, False, 0)
+		# TODO: Make label change on toggle
+		# TODO: Change label in subclass
 		self.mute = Gtk.ToggleButton(label="Mute")
 		self.pack_start(self.mute, False, False, 0)
 		self.slider.connect("value-changed", self.write_value)
@@ -125,8 +127,10 @@ class WebcamFocus(Channel):
 		self.slider.set_value(value)
 
 	def muted(self, widget):
-		self.mute_state = widget.get_active()
-		subprocess.run(["v4l2-ctl", "-d", "/dev/webcam_c922", "-c", "focus_auto=%d" %self.mute_state])
+		mute_state = widget.get_active()
+		# TODO: Network this
+		subprocess.run(["v4l2-ctl", "-d", "/dev/webcam_c922", "-c", "focus_auto=%d" %mute_state])
+		print("C922 Autofocus " + ("Dis", "En")[mute_state] + "abled")
 		# TODO: When autofocus is unset, set focus_absolute to slider position
 
 if __name__ == "__main__":
