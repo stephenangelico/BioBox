@@ -28,13 +28,15 @@ class MainUI(Gtk.Window):
 		#import Analog
 		#get data
 		#selected_channel.write_value(data)
+		pass
 
 class Channel(Gtk.Box):
 	def __init__(self, name, chan_select):
 		super().__init__(orientation=Gtk.Orientation.VERTICAL, spacing=5)
 		self.set_size_request(50, 300)
-		channelname = Gtk.Label(label=name)
-		self.pack_start(channelname, False, False, 0)
+		self.channel_name = name
+		channel_label = Gtk.Label(label=self.channel_name)
+		self.pack_start(channel_label, False, False, 0)
 		self.slider = Gtk.Adjustment(value=100, lower=0, upper=150, step_increment=1, page_increment=10, page_size=0)
 		level = Gtk.Scale(orientation=Gtk.Orientation.VERTICAL, adjustment=self.slider, inverted=True)
 		level.add_mark(value=100, position=Gtk.PositionType.LEFT, markup=None)
@@ -56,6 +58,7 @@ class Channel(Gtk.Box):
 		global selected_channel
 		if widget.get_active():
 			selected_channel = self
+			print(selected_channel.channel_name)
 
 	# Fallback functions if subclasses don't provide write_value() or muted()
 	def write_value(self, widget):
@@ -110,8 +113,8 @@ class VLC(Channel):
 		print("VLC Mute status:", mute_state)
 
 class WebcamFocus(Channel):
-	def __init__(self):
-		super().__init__(name="C922 Focus")
+	def __init__(self, chan_select):
+		super().__init__(name="C922 Focus", chan_select=chan_select)
 
 	def write_value(self, widget):
 		value = round(widget.get_value() / 5) * 5
