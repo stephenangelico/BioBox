@@ -21,8 +21,7 @@ chan0 = AnalogIn(mcp, MCP.P0)
 print('Raw ADC Value: ', chan0.value)
 print('ADC Voltage: ' + str(chan0.voltage) + 'V')
 
-last_read = 0	# this keeps track of the last potentiometer value
-tolerance = 250	# to keep from being jittery we'll only change
+TOLERANCE = 250	# to keep from being jittery we'll only change
 		# volume when the pot has moved a significant amount
 		# on a 16-bit ADC
 
@@ -37,6 +36,7 @@ def remap_range(value, left_min, left_max, right_min, right_max):
 	return int(right_min + (max(valueScaled, 0) * right_span))
 
 def read_value():
+	last_read = 0	# this keeps track of the last potentiometer value
 	while True:
 		# we'll assume that the pot didn't move
 		pot_changed = False
@@ -44,7 +44,7 @@ def read_value():
 		pot = chan0.value
 		# how much has it changed since the last read?
 		pot_adjust = abs(pot - last_read)
-		if pot_adjust > tolerance:
+		if pot_adjust > TOLERANCE:
 		# convert 16bit adc0 (0-65535) trim pot read into 0-100 volume level
 			set_volume = remap_range(pot, 32700, 65472, 0, 100)
 			print('Volume = {volume}%' .format(volume = set_volume), "Value:", pot)
