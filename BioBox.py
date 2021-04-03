@@ -32,7 +32,7 @@ class MainUI(Gtk.Window):
 			if selected_channel:
 				print("From slider:", volume)
 				# TODO: Scale 0-100% to 0-150%
-				selected_channel.write_value(volume)
+				GLib.idle_add(selected_channel.update_position, volume)
 
 class Channel(Gtk.Box):
 	def __init__(self, name, chan_select):
@@ -52,7 +52,7 @@ class Channel(Gtk.Box):
 		# TODO: Change label in subclass
 		self.mute = Gtk.ToggleButton(label="Mute")
 		self.pack_start(self.mute, False, False, 0)
-		self.slider.connect("value-changed", self.write_value)
+		self.slider.connect("value-changed", self.refract_value)
 		self.mute.connect("toggled", self.muted)
 		# TODO: investigate event box to select channel by any interaction
 		self.selector = Gtk.RadioButton.new_from_widget(chan_select)
@@ -66,9 +66,19 @@ class Channel(Gtk.Box):
 			selected_channel = self
 			print(selected_channel.channel_name)
 
-	# Fallback functions if subclasses don't provide write_value() or muted()
-	def write_value(self, widget):
+	def refract_value(self, widget):
+		# Send adjustment value to multiple places - one will echo back
+		# to the source of the change, any others are echoing forward,
+		# hence 'refraction'.
 		value = round(widget.get_value())
+		write_external(value)
+		write_analog(value)
+
+	def write_analog(self, value):
+		pass
+
+	# Fallback functions if subclasses don't provide write_value() or muted()
+	def write_external(self, value):
 		print(value)
 
 	def muted(self, widget):
@@ -104,7 +114,7 @@ class VLC(Channel):
 						print(attr, value)
 					# TODO: Respond to "muted" signals
 
-	def write_value(self, widget):
+	def write_external(self, widget):
 		if time.time() > self.last_wrote + 0.01: # TODO: drop only writes that would result in bounce loop
 			value = round(widget.get_value())
 			self.sock.send(b"volume %d \r\n" %value)
@@ -122,7 +132,7 @@ class WebcamFocus(Channel):
 	def __init__(self, chan_select):
 		super().__init__(name="C922 Focus", chan_select=chan_select)
 
-	def write_value(self, widget):
+	def write_external(self, widget):
 		value = round(widget.get_value() / 5) * 5
 		if not self.mute_state:
 			subprocess.run(["v4l2-ctl", "-d", "/dev/webcam_c922", "-c", "focus_absolute=%d" %value])
