@@ -71,8 +71,8 @@ class Channel(Gtk.Box):
 		# to the source of the change, any others are echoing forward,
 		# hence 'refraction'.
 		value = round(widget.get_value())
-		write_external(value)
-		write_analog(value)
+		self.write_external(value)
+		self.write_analog(value)
 
 	def write_analog(self, value):
 		pass
