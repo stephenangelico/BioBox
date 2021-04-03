@@ -97,7 +97,7 @@ class VLC(Channel):
 					attr, value = line.split(":", 1)
 					if attr == "volume":
 						value = int(value)
-						print(value)
+						print("From VLC:", value)
 						GLib.idle_add(self.update_position, value)
 					else:
 						print(attr, value)
@@ -107,7 +107,7 @@ class VLC(Channel):
 		if time.time() > self.last_wrote + 0.01: # TODO: drop only writes that would result in bounce loop
 			value = round(widget.get_value())
 			self.sock.send(b"volume %d \r\n" %value)
-			print("VLC: ", value)
+			print("To VLC: ", value)
 
 	def update_position(self, value):
 		self.slider.set_value(value)
