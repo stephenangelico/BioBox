@@ -10,6 +10,8 @@ from gi.repository import Gtk, GLib
 
 import Analog
 
+selected_channel = None
+
 class MainUI(Gtk.Window):
 	def __init__(self):
 		super().__init__(title="Bio Box")
@@ -27,8 +29,9 @@ class MainUI(Gtk.Window):
 	def read_analog(self):
 		# Get analog value from Analog.py and write to selected channel's slider
 		for volume in Analog.read_value():
-			# TODO: Scale 0-100% to 0-150%
-			selected_channel.write_value(volume)
+			if selected_channel:
+				# TODO: Scale 0-100% to 0-150%
+				selected_channel.write_value(volume)
 
 class Channel(Gtk.Box):
 	def __init__(self, name, chan_select):
