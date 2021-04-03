@@ -30,6 +30,7 @@ class MainUI(Gtk.Window):
 		# Get analog value from Analog.py and write to selected channel's slider
 		for volume in Analog.read_value():
 			if selected_channel:
+				print("From slider:", volume)
 				# TODO: Scale 0-100% to 0-150%
 				selected_channel.write_value(volume)
 
