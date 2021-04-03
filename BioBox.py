@@ -114,9 +114,8 @@ class VLC(Channel):
 						print(attr, value)
 					# TODO: Respond to "muted" signals
 
-	def write_external(self, widget):
+	def write_external(self, value):
 		if time.time() > self.last_wrote + 0.01: # TODO: drop only writes that would result in bounce loop
-			value = round(widget.get_value())
 			self.sock.send(b"volume %d \r\n" %value)
 			print("To VLC: ", value)
 
