@@ -8,6 +8,7 @@ import gi
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, GLib
 
+import Analog
 
 class MainUI(Gtk.Window):
 	def __init__(self):
@@ -25,10 +26,9 @@ class MainUI(Gtk.Window):
 
 	def read_analog(self):
 		# Get analog value from Analog.py and write to selected channel's slider
-		#import Analog
-		#get data
-		#selected_channel.write_value(data)
-		pass
+		for volume in Analog.read_value():
+			# TODO: Scale 0-100% to 0-150%
+			selected_channel.write_value(volume)
 
 class Channel(Gtk.Box):
 	def __init__(self, name, chan_select):
