@@ -46,7 +46,7 @@ def read_value():
 		pot_adjust = abs(pot - last_read)
 		if pot_adjust > TOLERANCE:
 		# convert 16bit adc0 (0-65535) trim pot read into 0-100 volume level
-			set_volume = remap_range(pot, 32700, 65472, 0, 100)
+			volume = remap_range(pot, 32700, 65472, 0, 100)
 			# save the potentiometer reading for the next loop
 			last_read = pot
 			yield(volume)
@@ -54,5 +54,5 @@ def read_value():
 
 if __name__ == "__main__":
 	for volume in read_value():
-		print('Volume = {volume}%' .format(volume = set_volume), "Value:", pot)
+		print("Volume = %d%%" % volume)
 		print(volume)
