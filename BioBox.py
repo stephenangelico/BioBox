@@ -128,8 +128,9 @@ class VLC(Channel):
 		self.slider.set_value(value)
 		self.last_wrote = time.time()
 
-	def muted(self, widget): # TODO: send to VLC (depends on support in TellMeVLC)
+	def muted(self, widget):
 		mute_state = widget.get_active()
+		self.sock.send(b"muted %d \r\n" %mute_state)
 		print("VLC Mute status:", mute_state)
 
 class WebcamFocus(Channel):
