@@ -98,7 +98,7 @@ class VLC(Channel):
 	def conn(self):
 		self.sock = sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 		sock.connect(('localhost',4221))
-		sock.send(b"volume\r\n")
+		sock.send(b"volume\r\nmuted\r\n") # Ask volume and mute state
 		buffer = b""
 		with sock:
 			while True:
@@ -114,9 +114,10 @@ class VLC(Channel):
 						value = int(value)
 						print("From VLC:", value)
 						GLib.idle_add(self.update_position, value)
+					elif attr == "muted":
+						self.mute.set_active(int(value))
 					else:
 						print(attr, value)
-					# TODO: Respond to "muted" signals
 
 	def write_external(self, value):
 		if time.time() > self.last_wrote + 0.01: # TODO: drop only writes that would result in bounce loop
