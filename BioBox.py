@@ -143,6 +143,7 @@ class WebcamFocus(Channel):
 		self.slider.set_value(value)
 
 	def muted(self, widget):
+		# TODO: Check autofocus state on startup
 		mute_state = widget.get_active()
 		# TODO: Network this
 		subprocess.run(["v4l2-ctl", "-d", "/dev/webcam_c922", "-c", "focus_auto=%d" %mute_state])
