@@ -52,7 +52,6 @@ class Channel(Gtk.Box):
 		self.pack_start(level, True, True, 0)
 		spinvalue = Gtk.SpinButton(adjustment=self.slider)
 		self.pack_start(spinvalue, False, False, 0)
-		# TODO: Make label change on toggle
 		# TODO: Change label in subclass
 		self.mute = Gtk.ToggleButton(label="Mute")
 		self.pack_start(self.mute, False, False, 0)
@@ -87,6 +86,7 @@ class Channel(Gtk.Box):
 
 	def muted(self, widget):
 		mute_state = widget.get_active()
+		self.mute.set_label("Mute" + "d" * mute_state)
 		print("Channel " + "un" * (not mute_state) + "muted")
 
 class VLC(Channel):
@@ -131,6 +131,7 @@ class VLC(Channel):
 	def muted(self, widget):
 		mute_state = widget.get_active()
 		self.sock.send(b"muted %d \r\n" %mute_state)
+		self.mute.set_label("Mute" + "d" * mute_state)
 		print("VLC Mute status:", mute_state)
 
 class WebcamFocus(Channel):
@@ -147,6 +148,7 @@ class WebcamFocus(Channel):
 	def muted(self, widget):
 		# TODO: Check autofocus state on startup
 		mute_state = widget.get_active()
+		self.mute.set_label("AF O" + ("ff", "n")[mute_state])
 		# TODO: Network this
 		subprocess.run(["v4l2-ctl", "-d", "/dev/webcam_c922", "-c", "focus_auto=%d" %mute_state])
 		print("C922 Autofocus " + ("Dis", "En")[mute_state] + "abled")
