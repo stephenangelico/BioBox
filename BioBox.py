@@ -152,7 +152,7 @@ class WebcamFocus(Channel):
 		# TODO: Network this
 		subprocess.run(["v4l2-ctl", "-d", "/dev/webcam_c922", "-c", "focus_auto=%d" %mute_state])
 		print("C922 Autofocus " + ("Dis", "En")[mute_state] + "abled")
-		# TODO: When autofocus is unset, set focus_absolute to slider position
+		self.write_external(round(self.slider.get_value()))
 
 if __name__ == "__main__":
 	win = MainUI()
