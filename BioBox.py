@@ -135,8 +135,7 @@ class WebcamFocus(Channel):
 	def __init__(self, chan_select):
 		super().__init__(name="C922 Focus", chan_select=chan_select)
 
-	def write_external(self, widget):
-		value = round(widget.get_value() / 5) * 5
+	def write_external(self, value):
 		if not self.mute_state:
 			subprocess.run(["v4l2-ctl", "-d", "/dev/webcam_c922", "-c", "focus_absolute=%d" %value])
 
