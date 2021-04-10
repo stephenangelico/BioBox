@@ -137,6 +137,13 @@ class VLC(Channel):
 class WebcamFocus(Channel):
 	def __init__(self, chan_select):
 		super().__init__(name="C922 Focus", chan_select=chan_select)
+		# Check camera state (auto-focus, focal distance)
+		cam_check = subprocess.run(["v4l2-ctl", "-d", "/dev/webcam_c922", "-C", "focus_auto,focus_absolute"], capture_output=True)
+		cam_opts = {n.strip():v.strip() for l in cam_check.stdout.decode("UTF-8").split("\n") if l for n,v in [l.split(":")]}
+		if int(cam_opts["focus_auto"]):
+			self.mute.set_active(True)
+			self.muted(self.mute)
+		self.update_position(int(cam_opts["focus_absolute"]))
 
 	def write_external(self, value):
 		if not self.mute.get_active():
@@ -146,7 +153,6 @@ class WebcamFocus(Channel):
 		self.slider.set_value(value)
 
 	def muted(self, widget):
-		# TODO: Check autofocus state on startup
 		mute_state = widget.get_active()
 		self.mute.set_label("AF O" + ("ff", "n")[mute_state])
 		# TODO: Network this
