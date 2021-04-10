@@ -8,7 +8,11 @@ import gi
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, GLib
 
-import Analog
+try:
+	from Analog import read_value
+except (ImportError, NotImplementedError): # Provide a dummy for testing
+	def read_value():
+		yield 0
 
 selected_channel = None
 
@@ -28,7 +32,7 @@ class MainUI(Gtk.Window):
 
 	def read_analog(self):
 		# Get analog value from Analog.py and write to selected channel's slider
-		for volume in Analog.read_value():
+		for volume in read_value():
 			if selected_channel:
 				print("From slider:", volume)
 				# TODO: Scale 0-100% to 0-150%
@@ -59,7 +63,7 @@ class Channel(Gtk.Box):
 		self.selector.set_label("Selected")
 		self.pack_start(self.selector, False, False, 0)
 		self.selector.connect("toggled", self.check_selected)
-	
+
 	def check_selected(self, widget):
 		global selected_channel
 		if widget.get_active():
