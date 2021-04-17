@@ -139,6 +139,7 @@ class WebcamFocus(Channel):
 		super().__init__(name="C922 Focus", chan_select=chan_select)
 		# TODO: create SSH session:
 		# ssh = subprocess.Popen(["ssh", "biobox@F-22Raptor", "python3", "/home/stephen/BioBox/camera.py"], stdin=subprocess.PIPE, encoding="utf-8")
+		# TODO: use 'quit' command in camera.py
 		# Check camera state (auto-focus, focal distance)
 		cam_check = subprocess.run(["v4l2-ctl", "-d", "/dev/webcam_c922", "-C", "focus_auto,focus_absolute"], capture_output=True)
 		cam_opts = {n.strip():v.strip() for l in cam_check.stdout.decode("UTF-8").split("\n") if l for n,v in [l.split(":")]}
