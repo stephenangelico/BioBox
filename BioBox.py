@@ -93,7 +93,7 @@ class VLC(Channel):
 	def __init__(self, chan_select):
 		super().__init__(name="VLC", chan_select=chan_select)
 		threading.Thread(target=self.conn, daemon=True).start()
-		self.last_wrote = time.time() # TODO: use time.monotonic()
+		self.last_wrote = time.monotonic()
 
 	def conn(self):
 		self.sock = sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -120,13 +120,13 @@ class VLC(Channel):
 						print(attr, value)
 
 	def write_external(self, value):
-		if time.time() > self.last_wrote + 0.01: # TODO: drop only writes that would result in bounce loop
+		if time.monotonic() > self.last_wrote + 0.01: # TODO: drop only writes that would result in bounce loop
 			self.sock.send(b"volume %d \r\n" %value)
 			print("To VLC: ", value)
 
 	def update_position(self, value):
 		self.slider.set_value(value)
-		self.last_wrote = time.time()
+		self.last_wrote = time.monotonic()
 
 	def muted(self, widget):
 		mute_state = widget.get_active()
