@@ -39,24 +39,30 @@ class MainUI(Gtk.Window):
 				GLib.idle_add(selected_channel.update_position, volume)
 
 class Channel(Gtk.Box):
+	mute_labels = ("Mute", "Muted")
+
 	def __init__(self, name, chan_select):
+		# Box stuff
 		super().__init__(orientation=Gtk.Orientation.VERTICAL, spacing=5)
 		self.set_size_request(50, 300)
 		self.channel_name = name
 		channel_label = Gtk.Label(label=self.channel_name)
 		self.pack_start(channel_label, False, False, 0)
+		# Slider stuff
 		self.slider = Gtk.Adjustment(value=100, lower=0, upper=150, step_increment=1, page_increment=10, page_size=0)
 		level = Gtk.Scale(orientation=Gtk.Orientation.VERTICAL, adjustment=self.slider, inverted=True)
 		level.add_mark(value=100, position=Gtk.PositionType.LEFT, markup=None)
 		level.add_mark(value=100, position=Gtk.PositionType.RIGHT, markup=None)
 		self.pack_start(level, True, True, 0)
+		self.slider.connect("value-changed", self.refract_value)
+		# Spinner
 		spinvalue = Gtk.SpinButton(adjustment=self.slider)
 		self.pack_start(spinvalue, False, False, 0)
-		# TODO: Change label in subclass
-		self.mute = Gtk.ToggleButton(label="Mute")
+		# Mute button
+		self.mute = Gtk.ToggleButton(label=self.mute_labels[0])
 		self.pack_start(self.mute, False, False, 0)
-		self.slider.connect("value-changed", self.refract_value)
 		self.mute.connect("toggled", self.muted)
+		# Channel selector
 		# TODO: investigate event box to select channel by any interaction
 		self.selector = Gtk.RadioButton.new_from_widget(chan_select)
 		self.selector.set_label("Selected")
@@ -80,14 +86,16 @@ class Channel(Gtk.Box):
 	def write_analog(self, value):
 		pass
 
-	# Fallback functions if subclasses don't provide write_value() or muted()
+	# Fallback function if subclasses don't provide write_external()
 	def write_external(self, value):
 		print(value)
 
+	# Fallback/superclass function
 	def muted(self, widget):
 		mute_state = widget.get_active()
-		self.mute.set_label("Mute" + "d" * mute_state)
+		self.mute.set_label(self.mute_labels[mute_state])
 		print("Channel " + "un" * (not mute_state) + "muted")
+		return mute_state
 
 class VLC(Channel):
 	def __init__(self, chan_select):
@@ -129,12 +137,13 @@ class VLC(Channel):
 		self.last_wrote = time.monotonic()
 
 	def muted(self, widget):
-		mute_state = widget.get_active()
+		mute_state = super().muted(widget)
 		self.sock.send(b"muted %d \r\n" %mute_state)
-		self.mute.set_label("Mute" + "d" * mute_state)
 		print("VLC Mute status:", mute_state)
 
 class WebcamFocus(Channel):
+	mute_labels = ("AF Off", "AF On")
+
 	def __init__(self, chan_select):
 		super().__init__(name="C922 Focus", chan_select=chan_select)
 		# TODO: create SSH session:
@@ -159,8 +168,7 @@ class WebcamFocus(Channel):
 		self.slider.set_value(value)
 
 	def muted(self, widget):
-		mute_state = widget.get_active()
-		self.mute.set_label("AF O" + ("ff", "n")[mute_state])
+		mute_state = super().muted(widget)
 		# TODO: Network this
 		subprocess.run(["v4l2-ctl", "-d", "/dev/webcam_c922", "-c", "focus_auto=%d" %mute_state])
 		print("C922 Autofocus " + ("Dis", "En")[mute_state] + "abled")
