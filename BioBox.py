@@ -156,28 +156,31 @@ class WebcamFocus(Channel):
 
 	def __init__(self, chan_select):
 		super().__init__(name="C922 Focus", chan_select=chan_select)
-		self.ssh = subprocess.Popen(["ssh", "biobox@F-22Raptor", "python3", "/home/stephen/BioBox/camera.py"], stdin=subprocess.PIPE, stdout=subprocess.PIPE, encoding="utf-8")
+		threading.Thread(target=self.conn, daemon=True).start()
 		# TODO: use 'quit' command in camera.py
+
+	def conn(self):
+		self.ssh = subprocess.Popen(["ssh", "biobox@F-22Raptor", "python3", "/home/stephen/BioBox/camera.py"], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
 		# Check camera state (auto-focus, focal distance)
-		# TODO: Make this work over SSH
-		#cam_check = print("cam_check", file=ssh.stdin, flush=True)
-		cam_check = subprocess.run(["v4l2-ctl", "-d", "/dev/webcam_c922", "-C", "focus_auto,focus_absolute"], capture_output=True)
-		cam_opts = {n.strip():v.strip() for l in cam_check.stdout.decode("UTF-8").split("\n") if l for n,v in [l.split(":")]}
-		if int(cam_opts["focus_auto"]):
-			self.mute.set_active(True)
-			self.muted(self.mute)
-		self.update_position(int(cam_opts["focus_absolute"]))
+		self.ssh.stdin.write(("cam_check\n").encode("utf-8"))
+		self.ssh.stdin.flush()
+		self.read_external("focus_absolute", "focus_auto")
+
+	def data_source(self):
+		return self.ssh.stdout.read1(1024)
 
 	def write_external(self, value):
 		if not self.mute.get_active():
-			print("focus_absolute %d" %value, file=self.ssh.stdin, flush=True)
+			self.ssh.stdin.write(("focus_absolute %d\n" %value).encode("utf-8"))
+			self.ssh.stdin.flush()
 
 	def update_position(self, value):
 		self.slider.set_value(value)
 
 	def muted(self, widget):
 		mute_state = super().muted(widget)
-		print("focus_auto %d" %mute_state, file=self.ssh.stdin, flush=True)
+		self.ssh.stdin.write(("focus_auto %d\n" %mute_state).encode("utf-8"))
+		self.ssh.stdin.flush()
 		print("C922 Autofocus " + ("Dis", "En")[mute_state] + "abled")
 		self.write_external(round(self.slider.get_value()))
 
