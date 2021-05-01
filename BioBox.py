@@ -89,7 +89,7 @@ class Channel(Gtk.Box):
 	def read_external(self, level_cmd, mute_cmd):
 		buffer = b""
 		while True:
-			data = self.sock.recv(1024)
+			data = self.data_source()
 			if not data:
 				break
 			buffer += data
@@ -133,6 +133,9 @@ class VLC(Channel):
 		with self.sock:
 			self.read_external("volume", "muted")
 		self.sock = None # TODO: Disable channel in GUI if no connection
+
+	def data_source(self):
+		return self.sock.recv(1024)
 
 	def write_external(self, value):
 		if time.monotonic() > self.last_wrote + 0.01: # TODO: drop only writes that would result in bounce loop
