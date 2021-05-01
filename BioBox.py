@@ -105,10 +105,10 @@ class VLC(Channel):
 		# TODO: use non-blocking socket for quick startup and enable module
 		# when connection becomes readable/writable.
 		sock.send(b"volume\r\nmuted\r\n") # Ask volume and mute state
-		threading.Thread(target=self.conn, daemon=True).start()
+		threading.Thread(target=self.read_external, daemon=True).start()
 		self.last_wrote = time.monotonic()
 
-	def conn(self):
+	def read_external(self):
 		buffer = b""
 		with self.sock:
 			while True:
