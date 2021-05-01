@@ -110,9 +110,9 @@ class VLC(Channel):
 
 	def conn(self):
 		buffer = b""
-		with sock:
+		with self.sock:
 			while True:
-				data = sock.recv(1024)
+				data = self.sock.recv(1024)
 				if not data:
 					break
 				buffer += data
