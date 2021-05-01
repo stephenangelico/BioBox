@@ -125,7 +125,7 @@ class VLC(Channel):
 						print("From VLC:", value)
 						GLib.idle_add(self.update_position, value)
 					elif attr == "muted":
-						self.mute.set_active(int(value)) # TODO: use GLib.idle_add
+						GLib.idle_add(self.mute.set_active, int(value))
 					else:
 						print(attr, value)
 
