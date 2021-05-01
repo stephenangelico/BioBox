@@ -101,7 +101,7 @@ class VLC(Channel):
 	def __init__(self, chan_select):
 		super().__init__(name="VLC", chan_select=chan_select)
 		self.sock = sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-		sock.connect(('localhost',4221))
+		sock.connect(('localhost',4221)) # TODO: don't show module on ConnectionRefusedError
 		# TODO: use non-blocking socket for quick startup and enable module
 		# when connection becomes readable/writable.
 		sock.send(b"volume\r\nmuted\r\n") # Ask volume and mute state
