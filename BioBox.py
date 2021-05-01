@@ -100,13 +100,15 @@ class Channel(Gtk.Box):
 class VLC(Channel):
 	def __init__(self, chan_select):
 		super().__init__(name="VLC", chan_select=chan_select)
+		self.sock = sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+		sock.connect(('localhost',4221))
+		# TODO: use non-blocking socket for quick startup and enable module
+		# when connection becomes readable/writable.
+		sock.send(b"volume\r\nmuted\r\n") # Ask volume and mute state
 		threading.Thread(target=self.conn, daemon=True).start()
 		self.last_wrote = time.monotonic()
 
 	def conn(self):
-		self.sock = sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-		sock.connect(('localhost',4221))
-		sock.send(b"volume\r\nmuted\r\n") # Ask volume and mute state
 		buffer = b""
 		with sock:
 			while True:
