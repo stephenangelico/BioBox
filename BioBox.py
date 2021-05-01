@@ -86,6 +86,26 @@ class Channel(Gtk.Box):
 	def write_analog(self, value):
 		pass
 
+	def read_external(self, level_cmd, mute_cmd):
+		buffer = b""
+		while True:
+			data = self.sock.recv(1024)
+			if not data:
+				break
+			buffer += data
+			while b"\n" in buffer:
+				line, buffer = buffer.split(b"\n", 1)
+				line = line.rstrip().decode("utf-8")
+				attr, value = line.split(":", 1)
+				if attr == level_cmd:
+					value = int(value)
+					GLib.idle_add(self.update_position, value)
+				elif attr == mute_cmd:
+					GLib.idle_add(self.mute.set_active, int(value))
+				else:
+					print(attr, value)
+
+
 	# Fallback function if subclasses don't provide write_external()
 	def write_external(self, value):
 		print(value)
@@ -100,34 +120,19 @@ class Channel(Gtk.Box):
 class VLC(Channel):
 	def __init__(self, chan_select):
 		super().__init__(name="VLC", chan_select=chan_select)
-		self.sock = sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-		sock.connect(('localhost',4221)) # TODO: don't show module on ConnectionRefusedError
-		# TODO: use non-blocking socket for quick startup and enable module
-		# when connection becomes readable/writable.
-		sock.send(b"volume\r\nmuted\r\n") # Ask volume and mute state
-		threading.Thread(target=self.read_external, daemon=True).start()
+		self.sock = None
+		threading.Thread(target=self.conn, daemon=True).start()
 		self.last_wrote = time.monotonic()
 
-	def read_external(self):
-		buffer = b""
+	def conn(self):
+		self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+		self.sock.connect(('localhost',4221)) # TODO: don't show module on ConnectionRefusedError
+		# TODO: use non-blocking socket for quick startup and enable module
+		# when connection becomes readable/writable.
+		self.sock.send(b"volume\r\nmuted\r\n") # Ask volume and mute state
 		with self.sock:
-			while True:
-				data = self.sock.recv(1024)
-				if not data:
-					break
-				buffer += data
-				while b"\n" in buffer:
-					line, buffer = buffer.split(b"\n", 1)
-					line = line.rstrip().decode("utf-8")
-					attr, value = line.split(":", 1)
-					if attr == "volume":
-						value = int(value)
-						print("From VLC:", value)
-						GLib.idle_add(self.update_position, value)
-					elif attr == "muted":
-						GLib.idle_add(self.mute.set_active, int(value))
-					else:
-						print(attr, value)
+			self.read_external("volume", "muted")
+		self.sock = None # TODO: Disable channel in GUI if no connection
 
 	def write_external(self, value):
 		if time.monotonic() > self.last_wrote + 0.01: # TODO: drop only writes that would result in bounce loop
