@@ -38,18 +38,18 @@ class MainUI(Gtk.Window):
 				# TODO: Scale 0-100% to 0-150%
 				GLib.idle_add(selected_channel.update_position, volume)
 
-class Channel(Gtk.EventBox):
+class Channel(Gtk.Frame):
 	mute_labels = ("Mute", "Muted")
 
 	def __init__(self, name, chan_select):
-		super().__init__()
+		super().__init__(label=name, shadow_type=Gtk.ShadowType.ETCHED_IN)
 		# Box stuff
 		box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=5)
 		box.set_size_request(50, 300)
 		self.add(box)
 		self.channel_name = name
-		channel_label = Gtk.Label(label=self.channel_name)
-		box.pack_start(channel_label, False, False, 0)
+		#channel_label = Gtk.Label(label=self.channel_name)
+		#box.pack_start(channel_label, False, False, 0)
 		# Slider stuff
 		self.slider = Gtk.Adjustment(value=100, lower=0, upper=150, step_increment=1, page_increment=10, page_size=0)
 		level = Gtk.Scale(orientation=Gtk.Orientation.VERTICAL, adjustment=self.slider, inverted=True)
@@ -73,6 +73,7 @@ class Channel(Gtk.EventBox):
 
 	def click_anywhere(self, widget, event):
 		self.selector.set_active(True)
+		return False
 
 	def check_selected(self, widget):
 		global selected_channel
