@@ -65,11 +65,14 @@ class Channel(Gtk.EventBox):
 		box.pack_start(self.mute, False, False, 0)
 		self.mute.connect("toggled", self.muted)
 		# Channel selector
-		# TODO: investigate event box to select channel by any interaction
 		self.selector = Gtk.RadioButton.new_from_widget(chan_select)
 		self.selector.set_label("Selected")
 		box.pack_start(self.selector, False, False, 0)
 		self.selector.connect("toggled", self.check_selected)
+		self.connect("button-press-event", self.click_anywhere) # TODO: add other events
+
+	def click_anywhere(self, widget, event):
+		self.selector.set_active(True)
 
 	def check_selected(self, widget):
 		global selected_channel
