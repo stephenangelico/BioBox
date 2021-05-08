@@ -127,7 +127,7 @@ class VLC(Channel):
 	def conn(self):
 		self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 		try:
-			self.sock.connect(('localhost',4221)) # TODO: don't show module on ConnectionRefusedError
+			self.sock.connect(('localhost',4221))
 		except ConnectionRefusedError:
 			self.sock = None
 			return
