@@ -38,35 +38,37 @@ class MainUI(Gtk.Window):
 				# TODO: Scale 0-100% to 0-150%
 				GLib.idle_add(selected_channel.update_position, volume)
 
-class Channel(Gtk.Box):
+class Channel(Gtk.EventBox):
 	mute_labels = ("Mute", "Muted")
 
 	def __init__(self, name, chan_select):
+		super().__init__()
 		# Box stuff
-		super().__init__(orientation=Gtk.Orientation.VERTICAL, spacing=5)
-		self.set_size_request(50, 300)
+		box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=5)
+		box.set_size_request(50, 300)
+		self.add(box)
 		self.channel_name = name
 		channel_label = Gtk.Label(label=self.channel_name)
-		self.pack_start(channel_label, False, False, 0)
+		box.pack_start(channel_label, False, False, 0)
 		# Slider stuff
 		self.slider = Gtk.Adjustment(value=100, lower=0, upper=150, step_increment=1, page_increment=10, page_size=0)
 		level = Gtk.Scale(orientation=Gtk.Orientation.VERTICAL, adjustment=self.slider, inverted=True)
 		level.add_mark(value=100, position=Gtk.PositionType.LEFT, markup=None)
 		level.add_mark(value=100, position=Gtk.PositionType.RIGHT, markup=None)
-		self.pack_start(level, True, True, 0)
+		box.pack_start(level, True, True, 0)
 		self.slider.connect("value-changed", self.refract_value)
 		# Spinner
 		spinvalue = Gtk.SpinButton(adjustment=self.slider)
-		self.pack_start(spinvalue, False, False, 0)
+		box.pack_start(spinvalue, False, False, 0)
 		# Mute button
 		self.mute = Gtk.ToggleButton(label=self.mute_labels[0])
-		self.pack_start(self.mute, False, False, 0)
+		box.pack_start(self.mute, False, False, 0)
 		self.mute.connect("toggled", self.muted)
 		# Channel selector
 		# TODO: investigate event box to select channel by any interaction
 		self.selector = Gtk.RadioButton.new_from_widget(chan_select)
 		self.selector.set_label("Selected")
-		self.pack_start(self.selector, False, False, 0)
+		box.pack_start(self.selector, False, False, 0)
 		self.selector.connect("toggled", self.check_selected)
 
 	def check_selected(self, widget):
