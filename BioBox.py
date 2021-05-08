@@ -126,28 +126,37 @@ class VLC(Channel):
 
 	def conn(self):
 		self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-		self.sock.connect(('localhost',4221)) # TODO: don't show module on ConnectionRefusedError
+		try:
+			self.sock.connect(('localhost',4221)) # TODO: don't show module on ConnectionRefusedError
+		except ConnectionRefusedError:
+			self.sock = None
+			return
 		self.sock.send(b"volume\r\nmuted\r\n") # Ask volume and mute state
 		with self.sock:
 			self.read_external("volume", "muted")
 		self.sock = None # TODO: Disable channel in GUI if no connection
 
 	def data_source(self):
-		return self.sock.recv(1024)
+		if self.sock:
+			return self.sock.recv(1024)
+		else:
+			return b""
 
 	def write_external(self, value):
-		if time.monotonic() > self.last_wrote + 0.01: # TODO: drop only writes that would result in bounce loop
-			self.sock.send(b"volume %d \r\n" %value)
-			print("To VLC: ", value)
+		if self.sock:
+			if time.monotonic() > self.last_wrote + 0.01: # TODO: drop only writes that would result in bounce loop
+				self.sock.send(b"volume %d \r\n" %value)
+				print("To VLC: ", value)
 
 	def update_position(self, value):
 		self.slider.set_value(value)
 		self.last_wrote = time.monotonic()
 
 	def muted(self, widget):
-		mute_state = super().muted(widget)
-		self.sock.send(b"muted %d \r\n" %mute_state)
-		print("VLC Mute status:", mute_state)
+		if self.sock:
+			mute_state = super().muted(widget)
+			self.sock.send(b"muted %d \r\n" %mute_state)
+			print("VLC Mute status:", mute_state)
 
 class WebcamFocus(Channel):
 	mute_labels = ("AF Off", "AF On")
