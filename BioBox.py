@@ -52,28 +52,42 @@ class Channel(Gtk.Frame):
 		#box.pack_start(channel_label, False, False, 0)
 		# Slider stuff
 		self.slider = Gtk.Adjustment(value=100, lower=0, upper=150, step_increment=1, page_increment=10, page_size=0)
-		level = Gtk.Scale(orientation=Gtk.Orientation.VERTICAL, adjustment=self.slider, inverted=True)
+		level = Gtk.Scale(orientation=Gtk.Orientation.VERTICAL, adjustment=self.slider, inverted=True, draw_value=False)
 		level.add_mark(value=100, position=Gtk.PositionType.LEFT, markup=None)
 		level.add_mark(value=100, position=Gtk.PositionType.RIGHT, markup=None)
 		box.pack_start(level, True, True, 0)
+		level.connect("focus", self.focus_delay)
 		self.slider.connect("value-changed", self.refract_value)
 		# Spinner
 		spinvalue = Gtk.SpinButton(adjustment=self.slider)
 		box.pack_start(spinvalue, False, False, 0)
+		spinvalue.connect("focus", self.focus_delay) # TODO: get signal for +/- presses
 		# Mute button
 		self.mute = Gtk.ToggleButton(label=self.mute_labels[0])
 		box.pack_start(self.mute, False, False, 0)
 		self.mute.connect("toggled", self.muted)
+		self.mute.connect("focus", self.focus_delay)
 		# Channel selector
 		self.selector = Gtk.RadioButton.new_from_widget(chan_select)
 		self.selector.set_label("Selected")
 		box.pack_start(self.selector, False, False, 0)
 		self.selector.connect("toggled", self.check_selected)
-		self.connect("button-press-event", self.click_anywhere) # TODO: add other events
+		self.connect("event", self.click_anywhere)
+
+	def focus_delay(self, widget, direction):
+		GLib.idle_add(self.focus_select, widget)
+
+	def focus_select(self, widget):
+		if widget.is_focus():
+			self.selector.set_active(True)
+			print(self.channel_name, "selected")
 
 	def click_anywhere(self, widget, event):
-		self.selector.set_active(True)
-		return False
+		if "BUTTON" in event.get_event_type().value_name:
+			self.selector.set_active(True)
+			return False
+		elif event.get_event_type().value_name != "GDK_MOTION_NOTIFY":
+			print(event.get_event_type().value_name)
 
 	def check_selected(self, widget):
 		global selected_channel
