@@ -32,10 +32,24 @@ TODO:
 		- R3 -> L1 (range)
 		- R4 -> GND (MCP pin 9)
 
-- Free up both breadboards from Char LCD
-	- Use one for ADC
-	- Use other for motor controller
-
+- Motor control
+	- TB6612FNG connections:
+		- VM -> Barrel +9V
+		- VCC -> +5V (pin 2)
+		- GND 1 unused
+		- A01 -> Motor yellow
+		- A02 -> Motor green
+		- B02 unused
+		- B01 unused
+		- GND 2 -> Barrel GND
+		- PWMA -> GPIO 17 (pin 11)
+		- AIN2 -> GPIO 27 (pin 13)
+		- AIN1 -> GPIO 18 (pin 12)
+		- STBY -> GPIO 23 (pin 16)
+		- BIN1 unused
+		- BIN2 unused
+		- PWMB unused
+		- GND 3 unused
 
 UI design:
 
