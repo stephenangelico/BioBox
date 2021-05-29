@@ -50,7 +50,7 @@ def read_value():
 			# save the potentiometer reading for the next loop
 			last_read = pot
 			yield(volume)
-		time.sleep(0.5)
+		time.sleep(0.0625)
 
 if __name__ == "__main__":
 	for volume in read_value():
