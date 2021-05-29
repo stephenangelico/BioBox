@@ -5,13 +5,10 @@
 Wanted controls:
 
 - OBS: Mic, desktop capture, other inputs
-- VLC
+- VLC - Done!
 - Specific app via Pulseaudio
+- Desk cam focus - Done!
 
-TODO:
-
-- Find a way to power motor in slider
-	- Use external power adapter @ 9V
 - Analogue input
 	- MCP3008 connections:
 		- VDD -> 3.3V (pin 17)
@@ -34,14 +31,14 @@ TODO:
 
 - Motor control
 	- TB6612FNG connections:
-		- VM -> Barrel +9V
+		- VM -> +5V (pin 2)
 		- VCC -> +5V (pin 2)
 		- GND 1 unused
 		- A01 -> Motor yellow
 		- A02 -> Motor green
 		- B02 unused
 		- B01 unused
-		- GND 2 -> Barrel GND
+		- GND 2 -> GND (pin 9)
 		- PWMA -> GPIO 17 (pin 11)
 		- AIN2 -> GPIO 27 (pin 13)
 		- AIN1 -> GPIO 18 (pin 12)
