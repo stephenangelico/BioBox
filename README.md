@@ -48,6 +48,22 @@ Wanted controls:
 		- PWMB unused
 		- GND 3 unused
 
+When slider should snap to a position, set a goal position.
+If a goal is set, don't yield to BioBox main.
+Calculate difference between current position and goal, and adjust direction
+and duty cycle based on table:
+if goal < pos, use reverse
+for abs(pos - goal): (subject to change)
+	>50: speed 100
+	>25: speed 75
+	>10: speed 50
+	>1: speed 25
+	Else: stop/apply brake
+
+After reaching goal, it may be necessary to not yield for another two ticks.
+
+TODO: Re-implement motor library
+
 UI design:
 
 ```
