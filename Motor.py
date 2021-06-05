@@ -41,12 +41,12 @@ def backward():
 	GPIO.output(PIN_B, True)
 	
 def stop():
-	GPIO.output(self.pin_one, False)
-	GPIO.output(self.pin_two, False)
+	GPIO.output(PIN_A, False)
+	GPIO.output(PIN_B, False)
 
 def brake():
-	GPIO.output(self.pin_one, True)
-	GPIO.output(self.pin_two, True)
+	GPIO.output(PIN_A, True)
+	GPIO.output(PIN_B, True)
 
 def speed(duty_cycle):
 	pwm.ChangeDutyCycle(duty_cycle)
@@ -54,4 +54,5 @@ def speed(duty_cycle):
 def cleanup():
 	stop()
 	speed(0)
+	standby(True)
 	GPIO.cleanup()
