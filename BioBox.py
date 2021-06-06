@@ -187,7 +187,7 @@ class WebcamFocus(Channel):
 		# TODO: use 'quit' command in camera.py
 
 	def conn(self):
-		self.ssh = subprocess.Popen(["ssh", "biobox@F-22Raptor", "python3", "/home/stephen/BioBox/camera.py"], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+		self.ssh = subprocess.Popen(["ssh", "-oBatchMode=yes", "biobox@F-22Raptor", "python3", "/home/stephen/BioBox/camera.py"], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
 		# Check camera state (auto-focus, focal distance)
 		self.ssh.stdin.write(("cam_check\n").encode("utf-8"))
 		self.ssh.stdin.flush()
