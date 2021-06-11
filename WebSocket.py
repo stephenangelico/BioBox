@@ -48,13 +48,18 @@ async def send_message(tabid, msg):
 		return "Gone" # Other end has gone away. Probably not a problem in practice.
 	await sockets[tabid].send(json.dumps(msg))
 
-def send_volume(tabid, vol):
+def set_volume(tabid, vol):
 	if not stop:
 		return "Not operating" # Probably in the middle of shutdown/cleanup
 	# What happens if the buffer fills up and we start another send?
 	# Ideally: prevent subsequent sends until the first one finishes, but remember the latest
 	# volume selection made. If that's not the same as the first volume, send another after.
 	asyncio.run_coroutine_threadsafe(send_message(tabid, {"cmd": "setvolume", "volume": vol}), stop.get_loop())
+
+def set_muted(tabid, muted):
+	if not stop:
+		return "Not operating"
+	asyncio.run_coroutine_threadsafe(send_message(tabid, {"cmd": "setvolume", "muted": bool(muted)}), stop.get_loop())
 
 async def listen():
 	global stop; stop = asyncio.get_running_loop().create_future()
