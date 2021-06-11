@@ -14,7 +14,7 @@ function connect()
 		console.log("VolSock connection established.");
 		socket.send(JSON.stringify({cmd: "init", type: "volume", group: tabid}));
 		document.querySelectorAll("video").forEach(vid =>
-			(vid.onvolumechange = e => socket.send(JSON.stringify({cmd: "setvolume", volume: vid.volume})))()
+			(vid.onvolumechange = e => socket.send(JSON.stringify({cmd: "setvolume", volume: vid.volume, muted: vid.muted})))()
 		);
 	};
 	socket.onclose = () => {
@@ -27,9 +27,9 @@ function connect()
 		if (data.cmd === "setvolume") {
 			document.querySelectorAll("video").forEach(vid => vid.volume = data.volume);
 		}
-		//TODO: Use the muted flag to control muting of the entire tab? Do I have permission to
-		//do that? Might need a separate background script. Seems overkill, although it would
-		//also mean we get real tab IDs.
+		if (data.cmd === "setmuted") {
+			document.querySelectorAll("video").forEach(vid => vid.muted = data.muted);
+		}
 	};
 }
 if (document.readyState !== "loading") connect();

@@ -33,7 +33,7 @@ async def volume(sock, path):
 				sockets[tabid] = sock # Possible floop
 			elif msg["cmd"] == "setvolume":
 				# TODO: Callback to elsewhere with the tabid and volume
-				print("Tab", tabid, "updates volume to", msg.get("volume", 0))
+				print("Tab", tabid, "vol", msg.get("volume", 0), "(muted)" if msg.get("muted") else "")
 	except websockets.ConnectionClosedError:
 		pass
 	# If this sock isn't in the dict, most likely another socket kicked us,
