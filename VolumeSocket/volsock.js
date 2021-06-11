@@ -27,6 +27,9 @@ function connect()
 		if (data.cmd === "setvolume") {
 			document.querySelectorAll("video").forEach(vid => vid.volume = data.volume);
 		}
+		//TODO: Use the muted flag to control muting of the entire tab? Do I have permission to
+		//do that? Might need a separate background script. Seems overkill, although it would
+		//also mean we get real tab IDs.
 	};
 }
 if (document.readyState !== "loading") connect();
