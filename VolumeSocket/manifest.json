@@ -1,0 +1,10 @@
+{
+	"manifest_version": 2,
+	"name": "WebSocket Volume Control",
+	"description": "Bidirectional volume control for YouTube pages",
+	"version": "0.0.1",
+	"content_scripts": [{
+		"matches": ["https://*.youtube.com/*"],
+		"js": ["volsock.js"]
+	}]
+}
