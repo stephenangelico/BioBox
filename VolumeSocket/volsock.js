@@ -5,10 +5,12 @@
 
 //Content scripts aren't allowed to see the actual tab ID, so hack in an unlikely-to-be-duplicated one
 const tabid = Math.random() + "" + Math.random();
+let retry_delay = 5000;
 function connect()
 {
 	let socket = new WebSocket("ws://localhost:8888/ws");
 	socket.onopen = () => {
+		retry_delay = 0;
 		console.log("VolSock connection established.");
 		socket.send(JSON.stringify({cmd: "init", type: "volume", group: tabid}));
 		document.querySelectorAll("video").forEach(vid =>
@@ -17,7 +19,8 @@ function connect()
 	};
 	socket.onclose = () => {
 		console.log("VolSock connection lost.");
-		setTimeout(connect, 250);
+		setTimeout(connect, retry_delay || 250);
+		if (retry_delay < 30000) retry_delay += 5000;
 	};
 	socket.onmessage = (ev) => {
 		let data = JSON.parse(ev.data);
