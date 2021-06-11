@@ -84,4 +84,8 @@ import threading; threading.Thread(target=fiddle).start()
 
 # Non-asyncio entry-point
 def run(): asyncio.run(listen())
-if __name__ == "__main__": run()
+if __name__ == "__main__":
+	try:
+		run()
+	except KeyboardInterrupt:
+		pass
