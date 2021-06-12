@@ -27,6 +27,8 @@ TOLERANCE = 250	# to keep from being jittery we'll only change
 		# on a 16-bit ADC
 
 goal = None
+last_speed = None
+last_dir = None
 
 def remap_range(value, left_min, left_max, right_min, right_max):
 	# this remaps a value from original (left) range to new (right) range
