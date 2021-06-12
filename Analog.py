@@ -27,8 +27,6 @@ TOLERANCE = 250	# to keep from being jittery we'll only change
 		# on a 16-bit ADC
 
 goal = None
-last_speed = None
-last_dir = None
 
 def remap_range(value, left_min, left_max, right_min, right_max):
 	# this remaps a value from original (left) range to new (right) range
@@ -59,6 +57,8 @@ def read_position():
 
 def read_value():
 	global goal
+	last_speed = None
+	last_dir = None
 	for pos in read_position():
 		if goal is not None:
 			dist = abs(pos - goal)
