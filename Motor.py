@@ -24,14 +24,6 @@ def standby(state):
 	# motor to run, call standby(False).
 	GPIO.output(PIN_STBY, not state)
 
-def move_to_goal(goal):
-	if goal > pos:
-		forward()
-	elif goal < pos:
-		backward()
-	elif goal == pos:
-		stop()
-
 def forward():
 	GPIO.output(PIN_A, True)
 	GPIO.output(PIN_B, False)

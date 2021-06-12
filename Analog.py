@@ -5,6 +5,7 @@ import digitalio
 import board
 import adafruit_mcp3xxx.mcp3008 as MCP
 from adafruit_mcp3xxx.analog_in import AnalogIn
+import Motor
 
 # create the spi bus
 spi = busio.SPI(clock=board.SCK, MISO=board.MISO, MOSI=board.MOSI)
@@ -25,6 +26,8 @@ TOLERANCE = 250	# to keep from being jittery we'll only change
 		# volume when the pot has moved a significant amount
 		# on a 16-bit ADC
 
+goal = None
+
 def remap_range(value, left_min, left_max, right_min, right_max):
 	# this remaps a value from original (left) range to new (right) range
 	# Figure out how 'wide' each range is
@@ -35,7 +38,7 @@ def remap_range(value, left_min, left_max, right_min, right_max):
 	# Convert the 0-1 range into a value in the right range.
 	return int(right_min + (max(valueScaled, 0) * right_span))
 
-def read_value():
+def read_position():
 	last_read = 0	# this keeps track of the last potentiometer value
 	while True:
 		# we'll assume that the pot didn't move
@@ -46,13 +49,45 @@ def read_value():
 		pot_adjust = abs(pot - last_read)
 		if pot_adjust > TOLERANCE:
 		# convert 16bit adc0 (0-65535) trim pot read into 0-100 volume level
-			volume = remap_range(pot, 32700, 65472, 0, 100)
+			pos = remap_range(pot, 32700, 65472, 0, 100)
 			# save the potentiometer reading for the next loop
 			last_read = pot
-			yield(volume)
+			yield(pos)
 		time.sleep(0.015625)
 
+def read_value():
+	global goal
+	for pos in read_position():
+		if goal is not None:
+			dist = abs(pos - goal)
+			if dist >= 50:
+				speed = 100
+			elif dist >= 25:
+				speed = 75
+			elif dist >= 10:
+				speed = 50
+			elif dist >= 1:
+				speed = 25
+			else:
+				speed = 0
+			if goal > pos:
+				dir = Motor.forward
+			elif goal < pos:
+				dir = Motor.backward
+			elif goal == pos:
+				dir = Motor.stop
+				goal = None
+			if speed != last_speed:
+				Motor.speed(speed)
+				last_speed = speed
+			if dir is not last_dir:
+				dir()
+				last_dir = dir
+		else:
+			yield(pos)
+
 if __name__ == "__main__":
+	goal = 75
 	for volume in read_value():
 		print("Volume = %d%%" % volume)
 		print(volume)
