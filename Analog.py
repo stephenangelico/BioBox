@@ -27,6 +27,7 @@ TOLERANCE = 250	# to keep from being jittery we'll only change
 		# on a 16-bit ADC
 
 goal = None
+Motor.standby(False)
 
 def remap_range(value, left_min, left_max, right_min, right_max):
 	# this remaps a value from original (left) range to new (right) range
@@ -90,6 +91,9 @@ def read_value():
 
 if __name__ == "__main__":
 	goal = 75
-	for volume in read_value():
-		print("Volume = %d%%" % volume)
-		print(volume)
+	try:
+		for volume in read_value():
+			print("Volume = %d%%" % volume)
+			print(volume)
+	finally:
+		Motor.cleanup()
