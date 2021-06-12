@@ -63,14 +63,14 @@ def read_value():
 	for pos in read_position():
 		if goal is not None:
 			dist = abs(pos - goal)
-			if dist >= 50:
+			if dist >= 25:
 				speed = 100
-			elif dist >= 25:
-				speed = 75
-			elif dist >= 10:
-				speed = 50
-			elif dist >= 1:
+			elif dist >= 5:
+				speed = 80
+			elif dist >= 2:
 				speed = 25
+			elif dist >= 1:
+				speed = 10
 			else:
 				speed = 0
 			if goal > pos:
@@ -86,6 +86,7 @@ def read_value():
 			if dir is not last_dir:
 				dir()
 				last_dir = dir
+			print(dir, speed, dist)
 		else:
 			yield(pos)
 
