@@ -20,7 +20,7 @@ except (ImportError, NotImplementedError): # Provide a dummy for testing
 			yield 0
 
 selected_channel = None
-slider_last_wrote = time.monotonic()
+slider_last_wrote = time.monotonic() + 0.5
 
 class MainUI(Gtk.Window):
 	def __init__(self):
