@@ -50,7 +50,7 @@ class MainUI(Gtk.Window):
 		finally:
 			motor_cleanup()
 
-	def init_motor_pos():
+	def init_motor_pos(self):
 		Analog.goal = round(selected_channel.slider.get_value())
 
 class Channel(Gtk.Frame):
