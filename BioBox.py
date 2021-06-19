@@ -35,6 +35,7 @@ class MainUI(Gtk.Window):
 		modules.pack_start(vlcmodule, True, True, 0)
 		c922module = WebcamFocus(chan_select)
 		modules.pack_start(c922module, True, True, 0)
+		GLib.timeout_add(500, init_motor_pos)
 
 	def read_analog(self):
 		global slider_last_wrote
@@ -48,6 +49,9 @@ class MainUI(Gtk.Window):
 					slider_last_wrote = time.monotonic()
 		finally:
 			motor_cleanup()
+
+	def init_motor_pos():
+		Analog.goal = round(selected_channel.slider.get_value())
 
 class Channel(Gtk.Frame):
 	mute_labels = ("Mute", "Muted")
