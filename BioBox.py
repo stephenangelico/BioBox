@@ -96,6 +96,7 @@ class Channel(Gtk.Frame):
 
 	def click_anywhere(self, widget, event):
 		if "BUTTON" in event.get_event_type().value_name:
+			# TODO: Get scroll wheel changing Gtk.Scale
 			self.selector.set_active(True)
 			return False
 		elif event.get_event_type().value_name != "GDK_MOTION_NOTIFY":
