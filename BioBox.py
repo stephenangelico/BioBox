@@ -44,6 +44,7 @@ class MainUI(Gtk.Window):
 					print("From slider:", volume)
 					# TODO: Scale 0-100% to 0-150%
 					GLib.idle_add(selected_channel.update_position, volume)
+					slider_last_wrote = time.monotonic()
 		finally:
 			motor_cleanup()
 
