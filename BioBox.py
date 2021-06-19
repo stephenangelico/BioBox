@@ -37,6 +37,7 @@ class MainUI(Gtk.Window):
 		modules.pack_start(c922module, True, True, 0)
 
 	def read_analog(self):
+		global slider_last_wrote
 		# Get analog value from Analog.py and write to selected channel's slider
 		try:
 			for volume in Analog.read_value():
