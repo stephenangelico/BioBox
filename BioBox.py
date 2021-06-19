@@ -40,15 +40,12 @@ class MainUI(Gtk.Window):
 	def read_analog(self):
 		global slider_last_wrote
 		# Get analog value from Analog.py and write to selected channel's slider
-		try:
-			for volume in Analog.read_value():
-				if selected_channel:
-					print("From slider:", volume)
-					# TODO: Scale 0-100% to 0-150%
-					GLib.idle_add(selected_channel.update_position, volume)
-					slider_last_wrote = time.monotonic()
-		finally:
-			motor_cleanup()
+		for volume in Analog.read_value():
+			if selected_channel:
+				print("From slider:", volume)
+				# TODO: Scale 0-100% to 0-150%
+				GLib.idle_add(selected_channel.update_position, volume)
+				slider_last_wrote = time.monotonic()
 
 	def init_motor_pos(self):
 		Analog.goal = round(selected_channel.slider.get_value())
@@ -236,4 +233,7 @@ if __name__ == "__main__":
 	win = MainUI()
 	win.connect("destroy", Gtk.main_quit)
 	win.show_all()
-	Gtk.main()
+	try:
+		Gtk.main()
+	finally:
+		motor_cleanup()
