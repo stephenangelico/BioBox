@@ -96,7 +96,7 @@ class Channel(Gtk.Frame):
 		if widget.get_active():
 			selected_channel = self
 			print(selected_channel.channel_name)
-			write_analog(selected_channel.slider.get_value())
+			self.write_analog(selected_channel.slider.get_value())
 
 	def refract_value(self, widget):
 		# Send adjustment value to multiple places - one will echo back
