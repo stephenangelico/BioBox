@@ -118,6 +118,7 @@ class Channel(Gtk.Frame):
 		if time.monotonic() > slider_last_wrote + 0.01:
 			Analog.goal = value
 			slider_last_wrote = time.monotonic()
+			print("Slider goal: %s" % Analog.goal)
 
 	def read_external(self, level_cmd, mute_cmd):
 		buffer = b""
