@@ -161,7 +161,7 @@ class VLC(Channel):
 	def conn(self):
 		self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 		try:
-			self.sock.connect(('localhost',4221))
+			self.sock.connect(('F-22Raptor',4221)) # TODO: Make config file
 		except ConnectionRefusedError:
 			self.sock = None
 			return
