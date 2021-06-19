@@ -20,6 +20,7 @@ except (ImportError, NotImplementedError): # Provide a dummy for testing
 			yield 0
 
 selected_channel = None
+slider_last_wrote = time.monotonic()
 
 class MainUI(Gtk.Window):
 	def __init__(self):
@@ -113,7 +114,10 @@ class Channel(Gtk.Frame):
 		self.write_analog(value)
 
 	def write_analog(self, value):
-		Analog.goal = value
+		global slider_last_wrote
+		if time.monotonic() > slider_last_wrote + 0.01:
+			Analog.goal = value
+			slider_last_wrote = time.monotonic()
 
 	def read_external(self, level_cmd, mute_cmd):
 		buffer = b""
