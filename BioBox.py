@@ -9,10 +9,12 @@ gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, GLib
 
 try:
-	from Analog import read_value
+	import Analog
 except (ImportError, NotImplementedError): # Provide a dummy for testing
-	def read_value():
-		yield 0
+	class Analog():
+		goal = None
+		def read_value():
+			yield 0
 
 selected_channel = None
 
@@ -32,7 +34,7 @@ class MainUI(Gtk.Window):
 
 	def read_analog(self):
 		# Get analog value from Analog.py and write to selected channel's slider
-		for volume in read_value():
+		for volume in Analog.read_value():
 			if selected_channel:
 				print("From slider:", volume)
 				# TODO: Scale 0-100% to 0-150%
@@ -94,6 +96,7 @@ class Channel(Gtk.Frame):
 		if widget.get_active():
 			selected_channel = self
 			print(selected_channel.channel_name)
+			write_analog(selected_channel.slider.get_value())
 
 	def refract_value(self, widget):
 		# Send adjustment value to multiple places - one will echo back
@@ -104,7 +107,7 @@ class Channel(Gtk.Frame):
 		self.write_analog(value)
 
 	def write_analog(self, value):
-		pass
+		Analog.goal = value
 
 	def read_external(self, level_cmd, mute_cmd):
 		buffer = b""
