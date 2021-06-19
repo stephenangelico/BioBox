@@ -10,7 +10,10 @@ from gi.repository import Gtk, GLib
 
 try:
 	import Analog
+	from Motor import cleanup as motor_cleanup
 except (ImportError, NotImplementedError): # Provide a dummy for testing
+	def motor_cleanup():
+		pass
 	class Analog():
 		goal = None
 		def read_value():
@@ -34,11 +37,14 @@ class MainUI(Gtk.Window):
 
 	def read_analog(self):
 		# Get analog value from Analog.py and write to selected channel's slider
-		for volume in Analog.read_value():
-			if selected_channel:
-				print("From slider:", volume)
-				# TODO: Scale 0-100% to 0-150%
-				GLib.idle_add(selected_channel.update_position, volume)
+		try:
+			for volume in Analog.read_value():
+				if selected_channel:
+					print("From slider:", volume)
+					# TODO: Scale 0-100% to 0-150%
+					GLib.idle_add(selected_channel.update_position, volume)
+		finally:
+			motor_cleanup()
 
 class Channel(Gtk.Frame):
 	mute_labels = ("Mute", "Muted")
