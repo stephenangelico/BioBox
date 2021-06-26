@@ -1,5 +1,6 @@
 import os
 import time
+import collections
 import busio
 import digitalio
 import board
@@ -26,6 +27,8 @@ TOLERANCE = 250	# to keep from being jittery we'll only change
 		# volume when the pot has moved a significant amount
 		# on a 16-bit ADC
 
+pot_min = 32700
+pot_max = 65472
 goal = None
 Motor.standby(False)
 
@@ -55,6 +58,37 @@ def read_position():
 			last_read = pot
 			yield(pos)
 		time.sleep(0.015625)
+
+def init_bounds():
+	if chan0.value < (pot_max+pot_min)/2:
+		bounds_test("top")
+		bounds_test("bottom")
+	else:
+		bounds_test("top")
+		bounds_test("bottom")
+
+def bounds_test(test_dir):
+	if test_dir == "top":
+		Motor.forward()
+	elif test_dir == "bottom":
+		Motor.backward()
+	Motor.speed(100)
+	span = collections.deque(maxlen=5)
+	while True:
+		span.append((chan0.value // 64))
+		if len(span) == span.maxlen:
+			if max(span) - min(span) < 2:
+				print(span[-1])
+				break
+		time.sleep(0.015625)
+
+def test_span():
+	try:
+		while True:
+			bounds_test("top")
+			bounds_test("bottom")
+	finally:
+		Motor.cleanup()
 
 def read_value():
 	global goal
