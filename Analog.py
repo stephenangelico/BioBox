@@ -78,17 +78,20 @@ def bounds_test(test_dir):
 		span.append((chan0.value // 64))
 		if len(span) == span.maxlen:
 			if max(span) - min(span) < 2:
-				print(span[-1])
-				break
+				return span[-1]
 		time.sleep(0.015625)
 
 def test_span():
+	high_set = []
+	low_set = []
 	try:
-		while True:
-			bounds_test("top")
-			bounds_test("bottom")
+		for int in range(1,100):
+			high_set.append(bounds_test("top"))
+			low_set.append(bounds_test("bottom"))
 	finally:
 		Motor.cleanup()
+	print(high_set)
+	print(low_set)
 
 def read_value():
 	global goal
