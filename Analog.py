@@ -62,6 +62,10 @@ def read_value():
 	last_dir = None
 	for pos in read_position():
 		if goal is not None:
+			if goal < 0:
+				goal = 0
+			if goal > 100:
+				goal = 100
 			dist = abs(pos - goal)
 			if dist >= 25:
 				speed = 100
