@@ -85,7 +85,7 @@ def test_span():
 	high_set = []
 	low_set = []
 	try:
-		for int in range(1,100):
+		for int in range(100):
 			high_set.append(bounds_test("top"))
 			low_set.append(bounds_test("bottom"))
 	finally:
