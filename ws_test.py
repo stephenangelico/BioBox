@@ -1,4 +1,3 @@
-# Listen for hype trains and alert when they happen
 import json
 import subprocess
 import time
