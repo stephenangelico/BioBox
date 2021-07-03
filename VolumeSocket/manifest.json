@@ -4,7 +4,7 @@
 	"description": "Bidirectional volume control for YouTube pages",
 	"version": "0.0.1",
 	"content_scripts": [{
-		"matches": ["https://*.youtube.com/*"],
+		"matches": ["https://*.youtube.com/*", "file://*"],
 		"js": ["volsock.js"]
 	}]
 }
