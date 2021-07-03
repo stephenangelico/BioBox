@@ -4,7 +4,7 @@ import subprocess
 import socket
 import threading
 import asyncio
-import websockets
+import WebSocket
 
 import gi
 gi.require_version("Gtk", "3.0")
@@ -234,17 +234,33 @@ class WebcamFocus(Channel):
 
 class OBS(Channel):
 	# Establish websocket connection to OBS
-	# Get audio devices on current scene
 	# On startup or scene change, create/destroy channels as necessary
+	# Get audio devices on current scene
 	# Create read/write external functions, which are mapped from channel to source
 	...
 
 class Browser(Channel):
-	# Establish websocket server
-	# Get audio controls for current tabs
-	# Create/destroy channels when tabs connect/disconnect
-	# Create read/write external functions, which are mapped to tabs
+	
+	#def __init__(self):
 	...
+	# Establish websocket server
+	# Create/destroy channels when tabs connect/disconnect
+	#new_tab = await WebSocket.new_tab #Doesn't exist yet
+	# Get audio controls for current tab
+	#create_channel(new_tab)
+	# Create read/write external functions for this tab
+
+def new_tab(tabid):
+	print("Creating channel for new tab:", tabid)
+
+def closed_tab(tabid):
+	print("Destroying channel for closed tab:", tabid)
+
+def volume_changed(tabid, volume, mute_state):
+	print("Volume:", volume, "Muted:", bool(mute_state))
+
+threading.Thread(target=WebSocket.run, kwargs=dict(connected=new_tab, disconnected=closed_tab, volumechanged=volume_changed)).start()
+
 
 if __name__ == "__main__":
 	win = MainUI()
@@ -253,4 +269,5 @@ if __name__ == "__main__":
 	try:
 		Gtk.main()
 	finally:
+		WebSocket.halt()
 		motor_cleanup()
