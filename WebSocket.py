@@ -6,11 +6,13 @@
 # parameters. Downgrade to Python 3.9 until this is fixed.
 import asyncio # ImportError? Upgrade to Python 3.7+
 import json
+import ssl
 from pprint import pprint
 import websockets # ImportError? pip install websockets
 
 sockets = { }
 stop = None # If this exists, it's a Future that can be set to halt the event loop
+callbacks = { }
 
 async def volume(sock, path):
 	if path != "/ws": return # Can we send back a 404 or something?
@@ -26,21 +28,21 @@ async def volume(sock, path):
 				if "group" not in msg: continue
 				tabid = str(msg["group"])
 				if tabid not in sockets:
-					# TODO: Callback to elsewhere signalling a new client
-					print("New socket with tab ID", tabid)
+					cb = callbacks.get("connected")
+					if cb: cb(tabid)
 				else:
-					... # TODO: Notify the other one that it's been disconnected
+					await send_message(tabid, {"cmd": "disconnect"})
 				sockets[tabid] = sock # Possible floop
 			elif msg["cmd"] == "setvolume":
-				# TODO: Callback to elsewhere with the tabid and volume
-				print("Tab", tabid, "vol", msg.get("volume", 0), "(muted)" if msg.get("muted") else "")
+				cb = callbacks.get("volumechanged")
+				if cb: cb(tabid, msg.get("volume", 0), bool(msg.get("muted")))
 	except websockets.ConnectionClosedError:
 		pass
 	# If this sock isn't in the dict, most likely another socket kicked us,
 	# which is uninteresting.
 	if sockets.get(tabid) is sock:
-		print("Tab gone:", tabid)
-		# TODO: Callback to elsewhere signalling a departing client
+		cb = callbacks.get("disconnected")
+		if cb: cb(tabid)
 		del sockets[tabid]
 
 async def send_message(tabid, msg):
@@ -61,10 +63,16 @@ def set_muted(tabid, muted):
 		return "Not operating"
 	asyncio.run_coroutine_threadsafe(send_message(tabid, {"cmd": "setvolume", "muted": bool(muted)}), stop.get_loop())
 
-async def listen():
+async def listen(*, connected=None, disconnected=None, volumechanged=None, host="", port=8888):
+	callbacks.update(connected=connected, disconnected=disconnected, volumechanged=volumechanged)
 	global stop; stop = asyncio.get_running_loop().create_future()
-	# TODO: Add an SSL context so Chrome allows non-localhost connections
-	async with websockets.serve(volume, "localhost", 8888):
+	ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+	try:
+		ssl_context.load_cert_chain("certificate.pem", "privkey.pem")
+	except FileNotFoundError:
+		# No cert found. Not an error, just don't support encryption.
+		ssl_context = None
+	async with websockets.serve(volume, host, port, ssl=ssl_context):
 		print("Listening.")
 		await stop
 		print("Shutting down.") # I don't hate you!
@@ -88,7 +96,7 @@ import threading; threading.Thread(target=fiddle).start()
 # End don't do this
 
 # Non-asyncio entry-point
-def run(): asyncio.run(listen())
+def run(**kw): asyncio.run(listen(**kw))
 if __name__ == "__main__":
 	try:
 		run()
