@@ -5,7 +5,7 @@ import websocket # ImportError? Try: pip install websocket-client
 
 while True:
 	try:
-		ws = websocket.create_connection("ws://localhost:8888/ws")
+		ws = websocket.create_connection("wss://F-35LightningII.rosuav.com:8888/ws")
 		break
 	except ConnectionRefusedError:
 		print("Unable to connect, retrying...")

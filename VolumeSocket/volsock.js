@@ -8,7 +8,7 @@ const tabid = Math.random() + "" + Math.random();
 let retry_delay = 5000;
 function connect()
 {
-	let socket = new WebSocket("ws://localhost:8888/ws");
+	let socket = new WebSocket("wss://F-35LightningII.rosuav.com:8888/ws");
 	socket.onopen = () => {
 		retry_delay = 0;
 		console.log("VolSock connection established.");
