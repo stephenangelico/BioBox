@@ -6,6 +6,7 @@
 # parameters. Downgrade to Python 3.9 until this is fixed.
 import asyncio # ImportError? Upgrade to Python 3.7+
 import json
+import ssl
 from pprint import pprint
 import websockets # ImportError? pip install websockets
 
@@ -63,8 +64,13 @@ def set_muted(tabid, muted):
 
 async def listen():
 	global stop; stop = asyncio.get_running_loop().create_future()
-	# TODO: Add an SSL context so Chrome allows non-localhost connections
-	async with websockets.serve(volume, "localhost", 8888):
+	ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+	try:
+		ssl_context.load_cert_chain("certificate.pem", "privkey.pem")
+	except FileNotFoundError:
+		# No cert found. Not an error, just don't support encryption.
+		ssl_context = None
+	async with websockets.serve(volume, "", 8888, ssl=None):
 		print("Listening.")
 		await stop
 		print("Shutting down.") # I don't hate you!
