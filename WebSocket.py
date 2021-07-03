@@ -68,7 +68,7 @@ async def listen(*, connected=None, disconnected=None, volumechanged=None, host=
 	global stop; stop = asyncio.get_running_loop().create_future()
 	ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
 	try:
-		ssl_context.load_cert_chain("certificate.pem", "privkey.pem")
+		ssl_context.load_cert_chain("fullchain.pem", "privkey.pem")
 	except FileNotFoundError:
 		# No cert found. Not an error, just don't support encryption.
 		ssl_context = None
@@ -92,7 +92,7 @@ def fiddle():
 		for tabid in sockets: set_volume(tabid, r / 100.0)
 	halt()
 	print("Halt requested.")
-import threading; threading.Thread(target=fiddle).start()
+#import threading; threading.Thread(target=fiddle).start()
 # End don't do this
 
 # Non-asyncio entry-point
