@@ -81,7 +81,7 @@ def fiddle():
 		import random; r = random.randrange(100)
 		print("Fiddling!", r)
 		if not r: break
-		for tabid in sockets: send_volume(tabid, r / 100.0)
+		for tabid in sockets: set_volume(tabid, r / 100.0)
 	halt()
 	print("Halt requested.")
 import threading; threading.Thread(target=fiddle).start()
