@@ -9,6 +9,7 @@ Dependencies:
 - `raspi-config` to enable the SPI interface for the ADC
 - `adafruit-blinka` and `adafruit-circuitpython-mcp3xxx` for the slider
 - `RPi.GPIO` for the motor
+- `websockets` for OBS and browser integration
 
 Wanted controls:
 ================

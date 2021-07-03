@@ -1,3 +1,4 @@
 adafruit-blinka
 adafruit-circuitpython-mcp3xxx
 RPi.GPIO
+websockets
