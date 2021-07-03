@@ -3,6 +3,8 @@ import time
 import subprocess
 import socket
 import threading
+import asyncio
+import websockets
 
 import gi
 gi.require_version("Gtk", "3.0")
@@ -229,6 +231,20 @@ class WebcamFocus(Channel):
 		self.ssh.stdin.flush()
 		print("C922 Autofocus " + ("Dis", "En")[mute_state] + "abled")
 		self.write_external(round(self.slider.get_value()))
+
+class OBS(Channel):
+	# Establish websocket connection to OBS
+	# Get audio devices on current scene
+	# On startup or scene change, create/destroy channels as necessary
+	# Create read/write external functions, which are mapped from channel to source
+	...
+
+class Browser(Channel):
+	# Establish websocket server
+	# Get audio controls for current tabs
+	# Create/destroy channels when tabs connect/disconnect
+	# Create read/write external functions, which are mapped to tabs
+	...
 
 if __name__ == "__main__":
 	win = MainUI()
