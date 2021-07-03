@@ -5,10 +5,10 @@
 Dependencies:
 =============
 
-`python3-gi` from your package manager
-`raspi-config` to enable the SPI interface for the ADC
-`adafruit-blinka` and `adafruit-circuitpython-mcp3xxx` for the slider
-`RPi.GPIO` for the motor
+- `python3-gi` from your package manager
+- `raspi-config` to enable the SPI interface for the ADC
+- `adafruit-blinka` and `adafruit-circuitpython-mcp3xxx` for the slider
+- `RPi.GPIO` for the motor
 
 Wanted controls:
 ================
