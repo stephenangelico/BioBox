@@ -4,7 +4,7 @@ import subprocess
 import socket
 import threading
 import asyncio
-import websockets
+import WebSocket
 
 import gi
 gi.require_version("Gtk", "3.0")
@@ -28,16 +28,37 @@ class MainUI(Gtk.Window):
 	def __init__(self):
 		super().__init__(title="Bio Box")
 		self.set_border_width(10)
-		modules = Gtk.Box()
-		self.add(modules)
+		self.modules = Gtk.Box()
+		self.add(self.modules)
 		global chan_select
 		chan_select = Gtk.RadioButton()
 		threading.Thread(target=self.read_analog, daemon=True).start()
-		vlcmodule = VLC(chan_select)
-		modules.pack_start(vlcmodule, True, True, 0)
-		c922module = WebcamFocus(chan_select)
-		modules.pack_start(c922module, True, True, 0)
+		self.add_module(VLC())
+		self.add_module(WebcamFocus())
 		GLib.timeout_add(500, self.init_motor_pos)
+		# Establish websocket server
+		threading.Thread(target=WebSocket.run, kwargs=dict(connected=self.idle_new_tab, disconnected=self.closed_tab, volumechanged=self.tab_volume_changed)).start()
+
+	# Create/destroy channels when tabs connect/disconnect
+	# Get audio controls for current tab
+	# Create read/write external functions for this tab
+
+	def idle_new_tab(self, tabid):
+		GLib.idle_add(self.new_tab, tabid)
+
+	def new_tab(self, tabid):
+		print("Creating channel for new tab:", tabid)
+		self.add_module(Browser())
+		self.show_all()
+
+	def closed_tab(self, tabid):
+		print("Destroying channel for closed tab:", tabid)
+
+	def tab_volume_changed(self, tabid, volume, mute_state):
+		print("On", tabid, ": Volume:", volume, "Muted:", bool(mute_state))
+
+	def add_module(self, module):
+		self.modules.pack_start(module, True, True, 0)
 
 	def read_analog(self):
 		global slider_last_wrote
@@ -52,10 +73,13 @@ class MainUI(Gtk.Window):
 	def init_motor_pos(self):
 		Analog.goal = round(selected_channel.slider.get_value())
 
+
+
+
 class Channel(Gtk.Frame):
 	mute_labels = ("Mute", "Muted")
 
-	def __init__(self, name, chan_select):
+	def __init__(self, name):
 		super().__init__(label=name, shadow_type=Gtk.ShadowType.ETCHED_IN)
 		# Box stuff
 		box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=5)
@@ -158,8 +182,8 @@ class Channel(Gtk.Frame):
 		return mute_state
 
 class VLC(Channel):
-	def __init__(self, chan_select):
-		super().__init__(name="VLC", chan_select=chan_select)
+	def __init__(self):
+		super().__init__(name="VLC")
 		self.sock = None
 		threading.Thread(target=self.conn, daemon=True).start()
 		self.last_wrote = time.monotonic()
@@ -201,8 +225,8 @@ class VLC(Channel):
 class WebcamFocus(Channel):
 	mute_labels = ("AF Off", "AF On")
 
-	def __init__(self, chan_select):
-		super().__init__(name="C922 Focus", chan_select=chan_select)
+	def __init__(self):
+		super().__init__(name="C922 Focus")
 		threading.Thread(target=self.conn, daemon=True).start()
 		# TODO: use 'quit' command in camera.py
 
@@ -234,17 +258,14 @@ class WebcamFocus(Channel):
 
 class OBS(Channel):
 	# Establish websocket connection to OBS
-	# Get audio devices on current scene
 	# On startup or scene change, create/destroy channels as necessary
+	# Get audio devices on current scene
 	# Create read/write external functions, which are mapped from channel to source
 	...
 
 class Browser(Channel):
-	# Establish websocket server
-	# Get audio controls for current tabs
-	# Create/destroy channels when tabs connect/disconnect
-	# Create read/write external functions, which are mapped to tabs
-	...
+	def __init__(self):
+		super().__init__(name="Browser #x")
 
 if __name__ == "__main__":
 	win = MainUI()
@@ -253,4 +274,5 @@ if __name__ == "__main__":
 	try:
 		Gtk.main()
 	finally:
+		WebSocket.halt()
 		motor_cleanup()
