@@ -92,7 +92,7 @@ def fiddle():
 		for tabid in sockets: set_volume(tabid, r / 100.0)
 	halt()
 	print("Halt requested.")
-import threading; threading.Thread(target=fiddle).start()
+#import threading; threading.Thread(target=fiddle).start()
 # End don't do this
 
 # Non-asyncio entry-point
