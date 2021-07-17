@@ -38,7 +38,7 @@ class MainUI(Gtk.Window):
 		self.add_module(WebcamFocus())
 		GLib.timeout_add(500, self.init_motor_pos)
 		# Establish websocket server
-		threading.Thread(target=WebSocket.run, kwargs=dict(connected=self.idle_new_tab, disconnected=self.closed_tab, volumechanged=self.idle_volume_changed)).start()
+		threading.Thread(target=WebSocket.run, kwargs=dict(connected=self.idle_new_tab, disconnected=self.idle_closed_tab, volumechanged=self.idle_volume_changed)).start()
 
 	# Create/destroy channels when tabs connect/disconnect
 	# Get audio controls for current tab
@@ -53,6 +53,9 @@ class MainUI(Gtk.Window):
 		tabs[tabid] = newtab
 		self.add_module(newtab)
 		self.show_all()
+
+	def idle_closed_tab(self, tabid)
+		GLib.idle_add(self.closed_tab, tabid)
 
 	def closed_tab(self, tabid):
 		print("Destroying channel for closed tab:", tabid)
