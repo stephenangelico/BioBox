@@ -280,7 +280,7 @@ class Browser(Channel):
 		self.tabid = tabid
 
 	def write_external(self, value):
-		WebSocket.set_volume(self.tabid, value)
+		WebSocket.set_volume(self.tabid, (value / 100))
 	
 	def muted(self, widget):
 		mute_state = super().muted(widget)
