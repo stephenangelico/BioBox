@@ -61,7 +61,7 @@ def set_volume(tabid, vol):
 def set_muted(tabid, muted):
 	if not stop:
 		return "Not operating"
-	asyncio.run_coroutine_threadsafe(send_message(tabid, {"cmd": "setvolume", "muted": bool(muted)}), stop.get_loop())
+	asyncio.run_coroutine_threadsafe(send_message(tabid, {"cmd": "setmuted", "muted": bool(muted)}), stop.get_loop())
 
 async def listen(*, connected=None, disconnected=None, volumechanged=None, host="", port=8888):
 	callbacks.update(connected=connected, disconnected=disconnected, volumechanged=volumechanged)
