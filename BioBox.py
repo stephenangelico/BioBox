@@ -23,6 +23,7 @@ except (ImportError, NotImplementedError): # Provide a dummy for testing
 
 selected_channel = None
 slider_last_wrote = time.monotonic() + 0.5
+tabs = {}
 
 class MainUI(Gtk.Window):
 	def __init__(self):
@@ -48,7 +49,9 @@ class MainUI(Gtk.Window):
 
 	def new_tab(self, tabid):
 		print("Creating channel for new tab:", tabid)
-		self.add_module(Browser())
+		newtab = Browser()
+		tabs[tabid] = newtab
+		self.add_module(newtab)
 		self.show_all()
 
 	def closed_tab(self, tabid):
@@ -56,6 +59,8 @@ class MainUI(Gtk.Window):
 
 	def tab_volume_changed(self, tabid, volume, mute_state):
 		print("On", tabid, ": Volume:", volume, "Muted:", bool(mute_state))
+		channel = tabs[tabid]
+		GLib.idle_add(channel.update_position, int(volume * 100)) # Truncate or round?
 
 	def add_module(self, module):
 		self.modules.pack_start(module, True, True, 0)
