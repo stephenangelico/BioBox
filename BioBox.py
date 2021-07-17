@@ -277,7 +277,7 @@ class OBS(Channel):
 class Browser(Channel):
 	def __init__(self, tabid):
 		super().__init__(name="Browser #x")
-		self.tabid(tabid)
+		self.tabid = tabid
 
 	def write_external(self, value):
 		WebSocket.set_volume(self.tabid, value)
