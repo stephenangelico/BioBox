@@ -278,6 +278,13 @@ class Browser(Channel):
 	def __init__(self):
 		super().__init__(name="Browser #x")
 
+	def write_external(self, value):
+		WebSocket.set_volume(value)
+	
+	def muted(self, widget):
+		mute_state = super().muted(widget)
+		WebSocket.set_muted(mute_state)
+
 if __name__ == "__main__":
 	win = MainUI()
 	win.connect("destroy", Gtk.main_quit)
