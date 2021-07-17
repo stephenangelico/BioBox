@@ -67,6 +67,7 @@ class MainUI(Gtk.Window):
 		print("On", tabid, ": Volume:", volume, "Muted:", bool(mute_state))
 		channel = tabs[tabid]
 		channel.update_position(int(volume * 100)) # Truncate or round?
+		channel.mute.set_active(int(mute_state))
 
 	def add_module(self, module):
 		self.modules.pack_start(module, True, True, 0)
