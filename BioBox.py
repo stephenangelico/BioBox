@@ -54,7 +54,7 @@ class MainUI(Gtk.Window):
 		self.add_module(newtab)
 		self.show_all()
 
-	def idle_closed_tab(self, tabid)
+	def idle_closed_tab(self, tabid):
 		GLib.idle_add(self.closed_tab, tabid)
 
 	def closed_tab(self, tabid):
