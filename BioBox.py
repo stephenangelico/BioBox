@@ -174,12 +174,15 @@ class Channel(Gtk.Frame):
 	def write_external(self, value):
 		print(value)
 
-	# Fallback/superclass function
+	# Fallback/superclass functions
 	def muted(self, widget):
 		mute_state = widget.get_active()
 		self.mute.set_label(self.mute_labels[mute_state])
 		print("Channel " + "un" * (not mute_state) + "muted")
 		return mute_state
+
+	def update_position(self, value):
+		self.slider.set_value(value)
 
 class VLC(Channel):
 	def __init__(self):
@@ -245,9 +248,6 @@ class WebcamFocus(Channel):
 		if not self.mute.get_active():
 			self.ssh.stdin.write(("focus_absolute %d\n" %value).encode("utf-8"))
 			self.ssh.stdin.flush()
-
-	def update_position(self, value):
-		self.slider.set_value(value)
 
 	def muted(self, widget):
 		mute_state = super().muted(widget)
