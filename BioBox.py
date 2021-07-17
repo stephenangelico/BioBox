@@ -49,7 +49,7 @@ class MainUI(Gtk.Window):
 
 	def new_tab(self, tabid):
 		print("Creating channel for new tab:", tabid)
-		newtab = Browser()
+		newtab = Browser(tabid)
 		tabs[tabid] = newtab
 		self.add_module(newtab)
 		self.show_all()
@@ -275,15 +275,16 @@ class OBS(Channel):
 	...
 
 class Browser(Channel):
-	def __init__(self):
+	def __init__(self, tabid):
 		super().__init__(name="Browser #x")
+		self.tabid(tabid)
 
 	def write_external(self, value):
-		WebSocket.set_volume(value)
+		WebSocket.set_volume(self.tabid, value)
 	
 	def muted(self, widget):
 		mute_state = super().muted(widget)
-		WebSocket.set_muted(mute_state)
+		WebSocket.set_muted(self.tabid, mute_state)
 
 if __name__ == "__main__":
 	win = MainUI()
