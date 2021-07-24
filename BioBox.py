@@ -245,6 +245,7 @@ class VLC(Channel):
 
 class WebcamFocus(Channel):
 	mute_labels = ("AF Off", "AF On")
+	#TODO: Make paramaterizable and add C920 (facecam)
 
 	def __init__(self):
 		super().__init__(name="C922 Focus")
