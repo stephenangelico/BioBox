@@ -260,6 +260,9 @@ class WebcamFocus(Channel):
 		return self.ssh.stdout.read1(1024)
 
 	def write_external(self, value):
+		# v4l2-ctl throws an error if focus_absolute is changed while AF is on.
+		# Therefore, if AF is on, quietly do nothing.
+		# When AF is toggled, this is called again anyway.
 		if not self.mute.get_active():
 			self.ssh.stdin.write(("focus_absolute %d\n" %value).encode("utf-8"))
 			self.ssh.stdin.flush()
