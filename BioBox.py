@@ -226,7 +226,9 @@ class VLC(Channel):
 
 	def write_external(self, value):
 		if self.sock:
-			if time.monotonic() > self.last_wrote + 0.01: # TODO: drop only writes that would result in bounce loop
+			if time.monotonic() > self.last_wrote + 0.01:
+				# TODO: drop only writes that would result in bounce loop
+				# See also Browser.write_external with same debounce
 				self.sock.send(b"volume %d \r\n" %value)
 				print("To VLC: ", value)
 
@@ -285,9 +287,11 @@ class Browser(Channel):
 	def __init__(self, tabid):
 		super().__init__(name="Browser")
 		self.tabid = tabid
+		self.last_wrote = time.monotonic()
 
 	def write_external(self, value):
-		WebSocket.set_volume(self.tabid, (value / 100))
+		if time.monotonic() > self.last_wrote + 0.01: # TODO: see VLC.write_external
+			WebSocket.set_volume(self.tabid, (value / 100))
 	
 	def muted(self, widget):
 		mute_state = super().muted(widget)
