@@ -29,6 +29,7 @@ class MainUI(Gtk.Window):
 	def __init__(self):
 		super().__init__(title="Bio Box")
 		self.set_border_width(10)
+		self.set_resizable(False)
 		self.modules = Gtk.Box()
 		self.add(self.modules)
 		global chan_select
@@ -60,6 +61,7 @@ class MainUI(Gtk.Window):
 	def closed_tab(self, tabid):
 		print("Destroying channel for closed tab:", tabid)
 		self.modules.remove(tabs[tabid])
+		self.resize(1,1) # Reset to minimum size
 
 	def idle_volume_changed(self, *args):
 		GLib.idle_add(self.tab_volume_changed, *args)
@@ -96,7 +98,7 @@ class Channel(Gtk.Frame):
 		super().__init__(label=name, shadow_type=Gtk.ShadowType.ETCHED_IN)
 		# Box stuff
 		box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=5)
-		box.set_size_request(50, 300)
+		box.set_size_request(50, 300) #TODO: Optimize size and widget scaling for tablet
 		self.add(box)
 		self.channel_name = name
 		#channel_label = Gtk.Label(label=self.channel_name)
