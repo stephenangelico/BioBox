@@ -280,7 +280,7 @@ class OBS(Channel):
 
 class Browser(Channel):
 	def __init__(self, tabid):
-		super().__init__(name="Browser #x")
+		super().__init__(name="Browser")
 		self.tabid = tabid
 
 	def write_external(self, value):
