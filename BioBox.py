@@ -292,6 +292,7 @@ class Browser(Channel):
 	def write_external(self, value):
 		if time.monotonic() > self.last_wrote + 0.5: # TODO: see VLC.write_external
 			WebSocket.set_volume(self.tabid, (value / 100))
+			self.last_wrote = time.monotonic()
 	
 	def muted(self, widget):
 		mute_state = super().muted(widget)
