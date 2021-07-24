@@ -156,7 +156,8 @@ class Channel(Gtk.Frame):
 		# hence 'refraction'.
 		value = round(widget.get_value())
 		self.write_external(value)
-		self.write_analog(value)
+		if selected_channel is self:
+			self.write_analog(value)
 
 	def write_analog(self, value):
 		global slider_last_wrote
