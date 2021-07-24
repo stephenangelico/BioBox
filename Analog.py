@@ -131,7 +131,7 @@ def read_value():
 				last_dir = dir
 			print(dir, speed, dist)
 		else:
-			if time.monotonic() > goal_completed + 0.25:
+			if time.monotonic() > goal_completed + 0.015625:
 				yield(pos)
 
 if __name__ == "__main__":
