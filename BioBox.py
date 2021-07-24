@@ -59,7 +59,7 @@ class MainUI(Gtk.Window):
 
 	def closed_tab(self, tabid):
 		print("Destroying channel for closed tab:", tabid)
-		self.remove(tabs[tabid])
+		self.modules.remove(tabs[tabid])
 
 	def idle_volume_changed(self, *args):
 		GLib.idle_add(self.tab_volume_changed, *args)
