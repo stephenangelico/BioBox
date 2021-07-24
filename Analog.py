@@ -97,7 +97,7 @@ def read_value():
 	global goal
 	last_speed = None
 	last_dir = None
-	goal_completed = time.monotonic()
+	goal_completed = 0
 	for pos in read_position():
 		if goal is not None:
 			if goal < 0:
