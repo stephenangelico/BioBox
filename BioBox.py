@@ -253,7 +253,7 @@ class WebcamFocus(Channel):
 		# TODO: use 'quit' command in camera.py
 
 	def conn(self):
-		self.ssh = subprocess.Popen(["ssh", "-oBatchMode=yes", "biobox@F-22Raptor", "python3", "/home/stephen/BioBox/camera.py"], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+		self.ssh = subprocess.Popen(["ssh", "-oBatchMode=yes", "biobox@F-22Raptor", "python3", "/home/stephen/BioBox/camera.py", "/dev/webcam_c922"], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
 		# TODO: If the process fails, disable the channel (eg if authentication fails)
 		# Check camera state (auto-focus, focal distance)
 		self.ssh.stdin.write(("cam_check\n").encode("utf-8"))
