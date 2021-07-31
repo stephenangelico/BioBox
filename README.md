@@ -2,22 +2,39 @@
 
 ## Audio slider control for Raspberry Pi
 
+This project arose out of the desire for a smooth volume control interface for
+various sources, especially when livestreaming. Inspired by digital sound desks,
+this project allows use of a motorised slider to smoothly adjust a number of
+audio or analog sources, such as:
+
+- OBS: Mic, desktop capture, other inputs - TODO
+- VLC
+- Media in Chrome - see unpacked extension in VolumeSocket
+- Webcam focus
+
+Reference hardware uses a motorized 10kΩ slide potentiometer from [SparkFun](https://www.sparkfun.com/products/10976)
+with the potentiometer attached to a MCP3008 analog-to-digital converter (ADC),
+and the motor connected to a TB6612FNG motor controller. See [Wiring](#wiring)
+for details on where to connect everything.
+
+
 Dependencies:
 =============
 
 - `python3-gi` from your package manager
-- `raspi-config` to enable the SPI interface for the ADC
-- `adafruit-blinka` and `adafruit-circuitpython-mcp3xxx` for the slider
-- `RPi.GPIO` for the motor
-- `websockets` for OBS and browser integration
+- Python packages as per `requirements.txt`
 
-Wanted controls:
-================
+Setup:
+======
 
-- OBS: Mic, desktop capture, other inputs
-- VLC - Done!
-- Specific app via Pulseaudio
-- Desk cam focus - Done!
+SPI must be enabled to connect to the ADC. This can be done with `raspi-config`
+(see [here](https://raspberrypi.stackexchange.com/a/47398/134450) for installation
+instructions) or by following [these instructions](https://www.raspberrypi.org/documentation/hardware/raspberrypi/spi/README.md#software).
+
+TODO: finish writing
+
+Wiring:
+=======
 
 - Analogue input
 	- MCP3008 connections:
@@ -71,26 +88,3 @@ for abs(pos - goal): (subject to change)
 	Else: stop/apply brake
 
 After reaching goal, it may be necessary to not yield for another two ticks.
-
-TODO: Re-implement motor library
-
-UI design:
-
-```
-+----------++----------++----------++----------++----------++----------+
-|  Label   ||  Label   ||  Label   ||  Label   ||  Label   ||  Label   |
-|    +     ||   [+]    ||    +     ||    +     ||    +     ||    +     |
-|    |     ||    |     ||    |     ||    |     ||    |     ||    |     |
-|    |     ||    |     ||    |     ||    |     ||    |     ||    |     |
-|    |     ||    |     ||    |     ||    |     ||    |     ||    |     |
-|   [|]    ||    |     ||    |     ||    |     ||   [|]    ||    |     |
-|    |     ||    |     ||    |     ||    |     ||    |     ||    |     |
-|    |     ||    |     ||    |     ||    |     ||    |     ||    |     |
-|    |     ||    |     ||    |     ||   [|]    ||    |     ||    |     |
-|    |     ||    |     ||    |     ||    |     ||    |     ||    |     |
-|    |     ||    |     ||    |     ||    |     ||    |     ||   [|]    |
-|    |     ||    |     ||    |     ||    |     ||    |     ||    |     |
-|    -     ||    -     ||   [-]    ||    -     ||    -     ||    -     |
-|  [Mute]  ||  [Mute]  ||  [Mute]  ||  [Mute]  ||  [Mute]  ||  [Mute]  |
-+----------++----------++----------++----------++----------++----------+
-```
