@@ -21,6 +21,8 @@ except (ImportError, NotImplementedError): # Provide a dummy for testing
 		def read_value():
 			yield 0
 
+import config # ImportError? See config_example.py
+
 selected_channel = None
 slider_last_wrote = time.monotonic() + 0.5
 tabs = {}
@@ -36,7 +38,8 @@ class MainUI(Gtk.Window):
 		chan_select = Gtk.RadioButton()
 		threading.Thread(target=self.read_analog, daemon=True).start()
 		self.add_module(VLC())
-		self.add_module(WebcamFocus())
+		self.add_module(WebcamFocus("C920"))
+		self.add_module(WebcamFocus("C922"))
 		GLib.timeout_add(500, self.init_motor_pos)
 		# Establish websocket server
 		threading.Thread(target=WebSocket.run, kwargs=dict(connected=self.idle_new_tab, disconnected=self.idle_closed_tab, volumechanged=self.idle_volume_changed)).start()
@@ -210,7 +213,7 @@ class VLC(Channel):
 	def conn(self):
 		self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 		try:
-			self.sock.connect(('F-22Raptor',4221)) # TODO: Make config file
+			self.sock.connect((config.host,config.vlc_port)) # TODO: Make config file
 		except ConnectionRefusedError:
 			self.sock = None
 			return
@@ -245,15 +248,15 @@ class VLC(Channel):
 
 class WebcamFocus(Channel):
 	mute_labels = ("AF Off", "AF On")
-	#TODO: Make paramaterizable and add C920 (facecam)
 
-	def __init__(self):
-		super().__init__(name="C922 Focus")
+	def __init__(self, cam):
+		super().__init__(name="%s Focus" %cam)
+		self.device = "/dev/webcam_%s" %cam.lower()
 		threading.Thread(target=self.conn, daemon=True).start()
 		# TODO: use 'quit' command in camera.py
 
 	def conn(self):
-		self.ssh = subprocess.Popen(["ssh", "-oBatchMode=yes", "biobox@F-22Raptor", "python3", "/home/stephen/BioBox/camera.py", "/dev/webcam_c922"], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+		self.ssh = subprocess.Popen(["ssh", "-oBatchMode=yes", (config.webcam_user + "@" + config.host), "python3", config.webcam_control_path, self.device], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
 		# TODO: If the process fails, disable the channel (eg if authentication fails)
 		# Check camera state (auto-focus, focal distance)
 		self.ssh.stdin.write(("cam_check\n").encode("utf-8"))
