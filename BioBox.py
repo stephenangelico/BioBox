@@ -44,10 +44,6 @@ class MainUI(Gtk.Window):
 		# Establish websocket server
 		threading.Thread(target=WebSocket.run, kwargs=dict(connected=self.idle_new_tab, disconnected=self.idle_closed_tab, volumechanged=self.idle_volume_changed)).start()
 
-	# Create/destroy channels when tabs connect/disconnect
-	# Get audio controls for current tab
-	# Create read/write external functions for this tab
-
 	def idle_new_tab(self, tabid):
 		GLib.idle_add(self.new_tab, tabid)
 
