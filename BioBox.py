@@ -5,6 +5,8 @@ import socket
 import threading
 import asyncio
 import WebSocket
+import websockets # ImportError? pip install websockets
+
 
 import gi
 gi.require_version("Gtk", "3.0")
@@ -28,6 +30,20 @@ selected_channel = None
 slider_last_wrote = time.monotonic() + 0.5
 tabs = {}
 
+def ws_mgr(gui):
+	global loop
+	loop = asyncio.new_event_loop()
+	asyncio.set_event_loop(loop)
+	loop.create_task(volsock())
+	loop.create_task(WebSocket.listen(connected=gui.idle_new_tab, disconnected=gui.idle_closed_tab, volumechanged=gui.idle_volume_changed))
+	loop.run_forever()
+
+async def volsock():
+	print("Hello")
+	await asyncio.sleep(5)
+	print("World")
+
+
 class MainUI(Gtk.Window):
 	def __init__(self):
 		super().__init__(title=("Bio Box (on %s)" % socket.gethostname()))
@@ -42,8 +58,8 @@ class MainUI(Gtk.Window):
 		self.add_module(WebcamFocus("C920"))
 		self.add_module(WebcamFocus("C922"))
 		GLib.timeout_add(500, self.init_motor_pos)
-		# Establish websocket server
-		threading.Thread(target=WebSocket.run, kwargs=dict(connected=self.idle_new_tab, disconnected=self.idle_closed_tab, volumechanged=self.idle_volume_changed)).start()
+		# Establish websocket connections
+		threading.Thread(target=ws_mgr, args=(self,)).start()
 
 	def idle_new_tab(self, tabid):
 		GLib.idle_add(self.new_tab, tabid)
@@ -309,3 +325,4 @@ if __name__ == "__main__":
 	finally:
 		WebSocket.halt()
 		motor_cleanup()
+		loop.stop()
