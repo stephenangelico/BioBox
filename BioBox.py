@@ -6,6 +6,7 @@ import threading
 import asyncio
 import WebSocket
 import websockets # ImportError? pip install websockets
+import json
 
 
 import gi
@@ -29,20 +30,26 @@ import config # ImportError? See config_example.py
 selected_channel = None
 slider_last_wrote = time.monotonic() + 0.5
 tabs = {}
+source_types = ['browser_source', 'pulse_input_capture', 'pulse_output_capture']
 
 def ws_mgr(gui):
 	global loop
 	loop = asyncio.new_event_loop()
 	asyncio.set_event_loop(loop)
-	loop.create_task(volsock())
+	loop.create_task(obs_ws())
 	loop.create_task(WebSocket.listen(connected=gui.idle_new_tab, disconnected=gui.idle_closed_tab, volumechanged=gui.idle_volume_changed))
 	loop.run_forever()
 
-async def volsock():
-	print("Hello")
-	await asyncio.sleep(5)
-	print("World")
-
+async def obs_ws():
+	obs_uri = "ws://%s:%d" % (config.host, config.obs_port)
+	async with websockets.connect(obs_uri) as obs:
+		await obs.send(json.dumps({"request-type": "GetCurrentScene", "message-id": "list"}))
+		msg = await obs.recv()
+		scene_data = json.loads(msg)
+		for source in scene_data['sources']:
+			if source['type'] in source_types: # TODO: add 'group' and recurse
+				print(source['id'], source['name'], source['volume'], "Muted:", source['muted'])
+		
 
 class MainUI(Gtk.Window):
 	def __init__(self):
