@@ -19,7 +19,8 @@ except (ImportError, NotImplementedError): # Provide a dummy for testing
 	class Analog():
 		goal = None
 		def read_value():
-			yield 0
+			yield 0 # Yield once and then stop
+			# Just as a function is destined to yield once, and then face termination...
 
 import config # ImportError? See config_example.py
 
