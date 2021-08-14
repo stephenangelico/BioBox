@@ -2,6 +2,8 @@
 
 ## Audio slider control for Raspberry Pi
 
+![BioBox UI showing multiple channels](GUI_BioBox.png)
+
 This project arose out of the desire for a smooth volume control interface for
 various sources, especially when livestreaming. Inspired by digital sound desks,
 this project allows use of a motorised slider to smoothly adjust a number of
