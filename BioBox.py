@@ -43,12 +43,27 @@ def ws_mgr(gui):
 async def obs_ws():
 	obs_uri = "ws://%s:%d" % (config.host, config.obs_port)
 	async with websockets.connect(obs_uri) as obs:
-		await obs.send(json.dumps({"request-type": "GetCurrentScene", "message-id": "list"}))
-		msg = await obs.recv()
-		scene_data = json.loads(msg)
-		for source in scene_data['sources']:
-			if source['type'] in source_types: # TODO: add 'group' and recurse
-				print(source['id'], source['name'], source['volume'], "Muted:", source['muted'])
+		await obs.send(json.dumps({"request-type": "GetCurrentScene", "message-id": "init"}))
+		while True:
+			data = await obs.recv()
+			msg = json.loads(data)
+			if msg.get("update-type") == "SourceVolumeChanged":
+				print(msg)
+			elif msg.get("update-type") == "SwitchScenes":
+				print(msg["scene-name"])
+				list_scene_sources(msg['sources'])
+			elif msg.get("message-id") == "init":
+				list_scene_sources(msg['sources'])
+
+def list_scene_sources(sources):
+	for source in sources:
+		if source['type'] in source_types:
+			print(source['id'], source['name'], source['volume'], "Muted:", source['muted'])
+		elif source['type'] == 'group':
+			list_scene_sources(source['groupChildren'])
+		elif source['type'] == 'scene':
+			#TODO: get this scene's sources and recurse
+			pass
 		
 
 class MainUI(Gtk.Window):
