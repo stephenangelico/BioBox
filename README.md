@@ -90,3 +90,38 @@ for abs(pos - goal): (subject to change)
 	Else: stop/apply brake
 
 After reaching goal, it may be necessary to not yield for another two ticks.
+
+Resistance testing over time:
+=============================
+
+Problem: When the slider is not moved, sometimes it drifts over time or is
+unable to reach extremities (causing secondary issue where motor keeps pushing
+slider beyond top of scale). Could be caused by change in temperature as on cold
+days, slider often cannot reach 100 at top of scale (observed as low as 80)
+until some time later such as middle of stream. Testing methodology: test all
+resistance values at cold, warmer and warm times. If observable drift in
+resistance values, test against static resistor and see if static resistor can
+be used to provide baseline resistance to compare with potentiometer "bragging
+wire" value and possibly use to calculate scaling factor to stabilize resultant
+percentage* values (*Before scaling to linear position values).
+
+20210821 10:26:
+Baseline 1.8Ω (probe to probe)
+R2 - L1 10.61kΩ irrespective of slider position
+Slider at top:
+R2 - R1 3.8Ω
+R1 - L1 10.62kΩ
+Slider at bottom:
+R1 - L1 ~13Ω (trending downward)
+R2 - R1 10.62kΩ
+
+20210821 11:21:
+Baseline 1.8Ω
+10kΩ "chunky" resistor 9.87kΩ
+R2 - L1 10.6kΩ
+Slider at top:
+R2 - R1 3.2Ω
+R1 - L1 10.6kΩ
+Slider at bottom:
+R1 - L1 12.3Ω
+R2 - R1 10.61kΩ
