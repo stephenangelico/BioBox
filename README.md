@@ -58,6 +58,16 @@ Wiring:
 		- R3 -> L1 ("bragging wire")
 		- R4 -> GND (MCP pin 9)
 
+The "bragging wire" tells you how great the range of the potentiometer is. The
+reason this is necessary for this slider is because the MCP3008 needs the full
+range of resistance to be present between +3.3V and GND. For most 3-pin
+potentiometers, this is simply done by wiring the outside pins to +3.3v and GND,
+and the middle pin to a channel. With this slider, there are two independent
+2-pin scales which work in opposite directions. When added together, the scales
+always add up to the full range, irrespective of the position of the slider.
+Therefore, by linking the opposite scales and measuring one of them, we can
+emulate a single 3-pin potentiometer to the MCP3008.
+
 - Motor control
 	- TB6612FNG connections:
 		- VM -> +5V (pin 2)
