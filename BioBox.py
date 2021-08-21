@@ -68,7 +68,7 @@ def list_scene_sources(sources):
 
 class MainUI(Gtk.Window):
 	def __init__(self):
-		super().__init__(title=("Bio Box (on %s)" % socket.gethostname()))
+		super().__init__(title="Bio Box")
 		self.set_border_width(10)
 		self.set_resizable(False)
 		self.modules = Gtk.Box()
