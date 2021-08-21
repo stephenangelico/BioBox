@@ -115,6 +115,7 @@ be used to provide baseline resistance to compare with potentiometer "bragging
 wire" value and possibly use to calculate scaling factor to stabilize resultant
 percentage* values (*Before scaling to linear position values).
 
+```
 20210821 10:26:
 Baseline 1.8Ω (probe to probe)
 R2 - L1 10.61kΩ irrespective of slider position
@@ -124,7 +125,9 @@ R1 - L1 10.62kΩ
 Slider at bottom:
 R1 - L1 ~13Ω (trending downward)
 R2 - R1 10.62kΩ
+```
 
+```
 20210821 11:21:
 Baseline 1.8Ω
 10kΩ "chunky" resistor 9.87kΩ
@@ -135,3 +138,4 @@ R1 - L1 10.6kΩ
 Slider at bottom:
 R1 - L1 12.3Ω
 R2 - R1 10.61kΩ
+```
