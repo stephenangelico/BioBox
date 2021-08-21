@@ -49,13 +49,13 @@ Wiring:
 		- CS -> GPIO #22 (pin 15)
 		- DGND -> GND (pin 25)
 	- Slider connections:
-		- L1 -> R3 (range)
+		- L1 -> R3 ("bragging wire")
 		- L2 NC
 		- L3 unused
 		- L4 unused
 		- R1 -> CH0 (MCP pin 1)
 		- R2 -> 3.3V (MCP pin 16)
-		- R3 -> L1 (range)
+		- R3 -> L1 ("bragging wire")
 		- R4 -> GND (MCP pin 9)
 
 - Motor control
