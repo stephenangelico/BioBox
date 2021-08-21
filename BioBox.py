@@ -285,8 +285,9 @@ class WebcamFocus(Channel):
 	mute_labels = ("AF Off", "AF On")
 
 	def __init__(self, cam):
-		super().__init__(name="%s Focus" %cam)
-		self.device = "/dev/webcam_%s" %cam.lower()
+		self.device_name = cam
+		super().__init__(name="%s Focus" %self.device_name)
+		self.device = "/dev/webcam_%s" %self.device_name.lower()
 		threading.Thread(target=self.conn, daemon=True).start()
 		# TODO: use 'quit' command in camera.py
 
@@ -313,7 +314,7 @@ class WebcamFocus(Channel):
 		mute_state = super().muted(widget)
 		self.ssh.stdin.write(("focus_auto %d\n" %mute_state).encode("utf-8"))
 		self.ssh.stdin.flush()
-		print("C922 Autofocus " + ("Dis", "En")[mute_state] + "abled")
+		print("%s Autofocus " %self.device_name + ("Dis", "En")[mute_state] + "abled")
 		self.write_external(round(self.slider.get_value()))
 
 class OBS(Channel):
