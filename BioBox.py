@@ -30,41 +30,8 @@ import config # ImportError? See config_example.py
 selected_channel = None
 slider_last_wrote = time.monotonic() + 0.5
 tabs = {}
+obs_sources = {}
 source_types = ['browser_source', 'pulse_input_capture', 'pulse_output_capture']
-
-def ws_mgr(gui):
-	global loop
-	loop = asyncio.new_event_loop()
-	asyncio.set_event_loop(loop)
-	loop.create_task(obs_ws())
-	loop.create_task(WebSocket.listen(connected=gui.idle_new_tab, disconnected=gui.idle_closed_tab, volumechanged=gui.idle_volume_changed))
-	loop.run_forever()
-
-async def obs_ws():
-	obs_uri = "ws://%s:%d" % (config.host, config.obs_port)
-	async with websockets.connect(obs_uri) as obs:
-		await obs.send(json.dumps({"request-type": "GetCurrentScene", "message-id": "init"}))
-		while True:
-			data = await obs.recv()
-			msg = json.loads(data)
-			if msg.get("update-type") == "SourceVolumeChanged":
-				print(msg)
-			elif msg.get("update-type") == "SwitchScenes":
-				print(msg["scene-name"])
-				list_scene_sources(msg['sources'])
-			elif msg.get("message-id") == "init":
-				list_scene_sources(msg['sources'])
-
-def list_scene_sources(sources):
-	for source in sources:
-		if source['type'] in source_types:
-			print(source['id'], source['name'], source['volume'], "Muted:", source['muted'])
-		elif source['type'] == 'group':
-			list_scene_sources(source['groupChildren'])
-		elif source['type'] == 'scene':
-			#TODO: get this scene's sources and recurse
-			pass
-		
 
 class MainUI(Gtk.Window):
 	def __init__(self):
@@ -81,7 +48,7 @@ class MainUI(Gtk.Window):
 		self.add_module(WebcamFocus("C922"))
 		GLib.timeout_add(500, self.init_motor_pos)
 		# Establish websocket connections
-		threading.Thread(target=ws_mgr, args=(self,)).start()
+		threading.Thread(target=self.ws_mgr).start()
 
 	def idle_new_tab(self, tabid):
 		GLib.idle_add(self.new_tab, tabid)
@@ -131,8 +98,55 @@ class MainUI(Gtk.Window):
 	def init_motor_pos(self):
 		Analog.goal = round(selected_channel.slider.get_value())
 
+	def ws_mgr(self):
+		global loop
+		loop = asyncio.new_event_loop()
+		asyncio.set_event_loop(loop)
+		loop.create_task(self.obs_ws())
+		loop.create_task(WebSocket.listen(connected=self.new_tab, disconnected=self.closed_tab, volumechanged=self.idle_volume_changed))
+		loop.run_forever()
 
+	async def obs_ws(self):
+		obs_uri = "ws://%s:%d" % (config.host, config.obs_port)
+		async with websockets.connect(obs_uri) as obs:
+			await obs.send(json.dumps({"request-type": "GetCurrentScene", "message-id": "init"}))
+			while True:
+				data = await obs.recv()
+				msg = json.loads(data)
+				collector = {}
+				if msg.get("update-type") == "SourceVolumeChanged":
+					print(msg)
+				elif msg.get("update-type") == "SwitchScenes":
+					print(msg["scene-name"])
+					self.list_scene_sources(msg['sources'], collector)
+					for source in list(obs_sources):
+						if source not in collector:
+							print("Removing", source)
+							print(obs_sources)
+							GLib.idle_add(self.remove_module, obs_sources[source])
+							obs_sources.pop(source, None)
+				elif msg.get("message-id") == "init":
+					obs_sources.clear() # TODO: Clean up modules on connection loss
+					self.list_scene_sources(msg['sources'], collector)
 
+	def list_scene_sources(self, sources, collector):
+		for source in sources:
+			if source['type'] in source_types:
+				print(source['id'], source['name'], source['volume'], "Muted:", source['muted'])
+				collector[source['name']] = source
+				if source['name'] not in obs_sources:
+					GLib.idle_add(self.obs_new_source, source)
+			elif source['type'] == 'group':
+				self.list_scene_sources(source['groupChildren'], collector)
+			elif source['type'] == 'scene':
+				#TODO: get this scene's sources and recurse
+				pass
+
+	def obs_new_source(self, source):
+		# Always call with GLib.idle_add()
+		new_source = OBS(source)
+		obs_sources[source['name']] = new_source
+		self.add_module(new_source)
 
 class Channel(Gtk.Frame):
 	mute_labels = ("Mute", "Muted")
@@ -323,11 +337,10 @@ class WebcamFocus(Channel):
 		self.write_external(round(self.slider.get_value()))
 
 class OBS(Channel):
-	# Establish websocket connection to OBS
-	# On startup or scene change, create/destroy channels as necessary
-	# Get audio devices on current scene
-	# Create read/write external functions, which are mapped from channel to source
-	...
+	def __init__(self, source):
+		super().__init__(name=source['name'])
+		self.update_position(int(source['volume'] * 100))
+		self.mute.set_active(source['muted'])
 
 class Browser(Channel):
 	def __init__(self, tabid):
