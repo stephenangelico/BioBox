@@ -87,31 +87,36 @@ class MainUI(Gtk.Window):
 		GLib.idle_add(self.new_tab, tabid)
 
 	def new_tab(self, tabid):
+		# Always call with GLib.idle_add()
 		print("Creating channel for new tab:", tabid)
 		newtab = Browser(tabid)
 		tabs[tabid] = newtab
 		self.add_module(newtab)
-		self.show_all()
-
-	def idle_closed_tab(self, tabid):
-		GLib.idle_add(self.closed_tab, tabid)
 
 	def closed_tab(self, tabid):
 		print("Destroying channel for closed tab:", tabid)
-		self.modules.remove(tabs[tabid])
-		self.resize(1,1) # Reset to minimum size
+		GLib.idle_add(self.remove_module, tabs[tabid])
+		tabs.pop(tabid, None)
 
 	def idle_volume_changed(self, *args):
 		GLib.idle_add(self.tab_volume_changed, *args)
 
 	def tab_volume_changed(self, tabid, volume, mute_state):
+		# Always call with GLib.idle_add()
 		print("On", tabid, ": Volume:", volume, "Muted:", bool(mute_state))
 		channel = tabs[tabid]
 		channel.update_position(int(volume * 100)) # Truncate or round?
 		channel.mute.set_active(int(mute_state))
 
 	def add_module(self, module):
+		# Always call with GLib.idle_add()
 		self.modules.pack_start(module, True, True, 0)
+		self.show_all()
+
+	def remove_module(self, module):
+		# Always call with GLib.idle_add()
+		self.modules.remove(module)
+		self.resize(1,1) # Reset to minimum size
 
 	def read_analog(self):
 		global slider_last_wrote
