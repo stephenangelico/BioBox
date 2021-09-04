@@ -115,7 +115,7 @@ class MainUI(Gtk.Window):
 				msg = json.loads(data)
 				collector = {}
 				if msg.get("update-type") == "SourceVolumeChanged":
-					GLib.idle_add(obs_sources[msg["sourceName"]].update_position, int(msg["volume"] * 100))
+					GLib.idle_add(obs_sources[msg["sourceName"]].update_position, int(max(msg["volume"], 0) ** 0.5 * 100))
 				elif msg.get("update-type") == "SourceMuteStateChanged":
 					GLib.idle_add(obs_sources[msg["sourceName"]].mute.set_active, msg["muted"])
 				elif msg.get("update-type") == "SwitchScenes":
@@ -340,7 +340,7 @@ class WebcamFocus(Channel):
 class OBS(Channel):
 	def __init__(self, source):
 		super().__init__(name=source['name'])
-		self.update_position(int(source['volume'] * 100))
+		self.update_position(int(max(source['volume'], 0) ** 0.5 * 100))
 		self.mute.set_active(source['muted'])
 
 class Browser(Channel):
