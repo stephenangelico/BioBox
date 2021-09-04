@@ -115,6 +115,10 @@ class MainUI(Gtk.Window):
 				msg = json.loads(data)
 				collector = {}
 				if msg.get("update-type") == "SourceVolumeChanged":
+					GLib.idle_add(obs_sources[msg["sourceName"]].update_position, int(msg["volume"] * 100))
+					print(msg)
+				elif msg.get("update-type") == "SourceMuteStateChanged":
+					GLib.idle_add(obs_sources[msg["sourceName"]].mute.set_active, msg["muted"])
 					print(msg)
 				elif msg.get("update-type") == "SwitchScenes":
 					print(msg["scene-name"])
