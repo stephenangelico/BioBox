@@ -235,8 +235,7 @@ class Channel(Gtk.Frame):
 				line = line.rstrip().decode("utf-8")
 				attr, value = line.split(":", 1)
 				if attr == level_cmd:
-					value = int(value)
-					GLib.idle_add(self.update_position, value)
+					GLib.idle_add(self.update_position, int(value))
 				elif attr == mute_cmd:
 					GLib.idle_add(self.mute.set_active, int(value))
 				else:
