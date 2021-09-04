@@ -108,6 +108,7 @@ class MainUI(Gtk.Window):
 
 	async def obs_ws(self):
 		obs_uri = "ws://%s:%d" % (config.host, config.obs_port)
+		global obs
 		async with websockets.connect(obs_uri) as obs:
 			await obs.send(json.dumps({"request-type": "GetCurrentScene", "message-id": "init"}))
 			while True:
@@ -130,6 +131,11 @@ class MainUI(Gtk.Window):
 				elif msg.get("message-id") == "init":
 					obs_sources.clear() # TODO: Clean up modules on connection loss
 					self.list_scene_sources(msg['sources'], collector)
+				elif msg.get("message-id"):
+					print(msg)
+
+	async def obs_send(self, request):
+		await obs.send(json.dumps(request))
 
 	def list_scene_sources(self, sources, collector):
 		for source in sources:
@@ -339,9 +345,20 @@ class WebcamFocus(Channel):
 
 class OBS(Channel):
 	def __init__(self, source):
-		super().__init__(name=source['name'])
+		self.name = source['name']
+		super().__init__(name=self.name)
+		self.last_wrote = time.monotonic()
 		self.update_position(int(max(source['volume'], 0) ** 0.5 * 100))
 		self.mute.set_active(source['muted'])
+
+	def write_external(self, value):
+		if time.monotonic() > self.last_wrote + 0.01: # TODO: see VLC.write_external
+			loop.create_task(win.obs_send({"request-type": "SetVolume", "message-id": "volume", "source": self.name, "volume": ((value / 100) ** 2)}))
+			self.last_wrote = time.monotonic()
+
+	def muted(self, widget):
+		mute_state = super().muted(widget)
+		loop.create_task(win.obs_send({"request-type": "SetMute", "message-id": "mute", "source": self.name, "muted": mute_state}))
 
 class Browser(Channel):
 	def __init__(self, tabid):
