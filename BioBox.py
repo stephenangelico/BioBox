@@ -191,6 +191,7 @@ class Channel(Gtk.Frame):
 		box.pack_start(self.selector, False, False, 0)
 		self.selector.connect("toggled", self.check_selected)
 		self.connect("event", self.click_anywhere)
+		self.last_wrote = time.monotonic()
 
 	def focus_delay(self, widget, direction):
 		GLib.idle_add(self.focus_select, widget)
@@ -220,7 +221,10 @@ class Channel(Gtk.Frame):
 		# to the source of the change, any others are echoing forward,
 		# hence 'refraction'.
 		value = round(widget.get_value())
-		self.write_external(value)
+		if time.monotonic() > self.last_wrote + 0.01:
+			# TODO: drop only writes that would result in bounce loop
+			self.write_external(value)
+			self.last_wrote = time.monotonic()
 		if selected_channel is self:
 			self.write_analog(value)
 
@@ -263,13 +267,13 @@ class Channel(Gtk.Frame):
 
 	def update_position(self, value):
 		self.slider.set_value(value)
+		self.last_wrote = time.monotonic()
 
 class VLC(Channel):
 	def __init__(self):
 		super().__init__(name="VLC")
 		self.sock = None
 		threading.Thread(target=self.conn, daemon=True).start()
-		self.last_wrote = time.monotonic()
 
 	def conn(self):
 		self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -291,15 +295,8 @@ class VLC(Channel):
 
 	def write_external(self, value):
 		if self.sock:
-			if time.monotonic() > self.last_wrote + 0.01:
-				# TODO: drop only writes that would result in bounce loop
-				# See also Browser.write_external with same debounce
-				self.sock.send(b"volume %d \r\n" %value)
-				print("To VLC: ", value)
-
-	def update_position(self, value):
-		self.slider.set_value(value)
-		self.last_wrote = time.monotonic()
+			self.sock.send(b"volume %d \r\n" %value)
+			print("To VLC: ", value)
 
 	def muted(self, widget):
 		if self.sock:
@@ -347,14 +344,11 @@ class OBS(Channel):
 	def __init__(self, source):
 		self.name = source['name']
 		super().__init__(name=self.name)
-		self.last_wrote = time.monotonic()
 		self.update_position(int(max(source['volume'], 0) ** 0.5 * 100))
 		self.mute.set_active(source['muted'])
 
 	def write_external(self, value):
-		if time.monotonic() > self.last_wrote + 0.01: # TODO: see VLC.write_external
-			loop.create_task(win.obs_send({"request-type": "SetVolume", "message-id": "volume", "source": self.name, "volume": ((value / 100) ** 2)}))
-			self.last_wrote = time.monotonic()
+		loop.create_task(win.obs_send({"request-type": "SetVolume", "message-id": "volume", "source": self.name, "volume": ((value / 100) ** 2)}))
 
 	def muted(self, widget):
 		mute_state = super().muted(widget)
@@ -364,12 +358,9 @@ class Browser(Channel):
 	def __init__(self, tabid):
 		super().__init__(name="Browser")
 		self.tabid = tabid
-		self.last_wrote = time.monotonic()
 
 	def write_external(self, value):
-		if time.monotonic() > self.last_wrote + 0.01: # TODO: see VLC.write_external
-			WebSocket.set_volume(self.tabid, (value / 100))
-			self.last_wrote = time.monotonic()
+		WebSocket.set_volume(self.tabid, (value / 100))
 	
 	def muted(self, widget):
 		mute_state = super().muted(widget)
