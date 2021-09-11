@@ -358,7 +358,7 @@ class OBS(Channel):
 
 	def muted(self, widget):
 		mute_state = super().muted(widget)
-		loop.create_task(win.obs_send({"request-type": "SetMute", "message-id": "mute", "source": self.name, "muted": mute_state}))
+		loop.create_task(win.obs_send({"request-type": "SetMute", "message-id": "mute", "source": self.name, "mute": mute_state}))
 
 class Browser(Channel):
 	def __init__(self, tabid):
