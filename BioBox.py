@@ -134,8 +134,8 @@ class MainUI(Gtk.Window):
 				elif msg.get("message-id"):
 					print(msg)
 
-	async def obs_send(self, request):
-		await obs.send(json.dumps(request))
+	def obs_send(self, request):
+		asyncio.run_coroutine_threadsafe(obs.send(json.dumps(request)), loop)
 
 	def list_scene_sources(self, sources, collector):
 		for source in sources:
@@ -348,11 +348,11 @@ class OBS(Channel):
 		self.mute.set_active(source['muted'])
 
 	def write_external(self, value):
-		loop.create_task(win.obs_send({"request-type": "SetVolume", "message-id": "volume", "source": self.name, "volume": ((value / 100) ** 2)}))
+		win.obs_send({"request-type": "SetVolume", "message-id": "volume", "source": self.name, "volume": ((value / 100) ** 2)})
 
 	def muted(self, widget):
 		mute_state = super().muted(widget)
-		loop.create_task(win.obs_send({"request-type": "SetMute", "message-id": "mute", "source": self.name, "mute": mute_state}))
+		win.obs_send({"request-type": "SetMute", "message-id": "mute", "source": self.name, "mute": mute_state})
 
 class Browser(Channel):
 	def __init__(self, tabid):
