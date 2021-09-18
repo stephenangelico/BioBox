@@ -137,8 +137,12 @@ def read_value():
 if __name__ == "__main__":
 	goal = 75
 	try:
-		for volume in read_value():
-			print("Volume = %d%%" % volume)
-			print(volume)
+		last = None
+		while True:
+			value = chan0.value
+			if value != last:
+				print(value)
+				last = value
+			time.sleep(0.015625)
 	finally:
 		Motor.cleanup()
