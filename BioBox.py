@@ -158,6 +158,7 @@ class MainUI(Gtk.Window):
 
 class Channel(Gtk.Frame):
 	mute_labels = ("Mute", "Muted")
+	step = 0.01
 
 	def __init__(self, name):
 		super().__init__(label=name, shadow_type=Gtk.ShadowType.ETCHED_IN)
@@ -169,7 +170,7 @@ class Channel(Gtk.Frame):
 		#channel_label = Gtk.Label(label=self.channel_name)
 		#box.pack_start(channel_label, False, False, 0)
 		# Slider stuff
-		self.slider = Gtk.Adjustment(value=100, lower=0, upper=150, step_increment=1, page_increment=10, page_size=0)
+		self.slider = Gtk.Adjustment(value=100.0, lower=0.0, upper=150.0, step_increment=1.0, page_increment=10.0, page_size=0)
 		level = Gtk.Scale(orientation=Gtk.Orientation.VERTICAL, adjustment=self.slider, inverted=True, draw_value=False)
 		level.add_mark(value=100, position=Gtk.PositionType.LEFT, markup=None)
 		level.add_mark(value=100, position=Gtk.PositionType.RIGHT, markup=None)
@@ -177,7 +178,7 @@ class Channel(Gtk.Frame):
 		level.connect("focus", self.focus_delay)
 		self.slider.connect("value-changed", self.refract_value)
 		# Spinner
-		spinvalue = Gtk.SpinButton(adjustment=self.slider)
+		spinvalue = Gtk.SpinButton(adjustment=self.slider, digits=2)
 		box.pack_start(spinvalue, False, False, 0)
 		spinvalue.connect("focus", self.focus_delay) # TODO: get signal for +/- presses
 		# Mute button
@@ -270,6 +271,8 @@ class Channel(Gtk.Frame):
 		self.last_wrote = time.monotonic()
 
 class VLC(Channel):
+	step = 1.0
+	
 	def __init__(self):
 		super().__init__(name="VLC")
 		self.sock = None
@@ -306,6 +309,7 @@ class VLC(Channel):
 
 class WebcamFocus(Channel):
 	mute_labels = ("AF Off", "AF On")
+	step = 1.0 # Cameras have different steps but v4l2 will round any int to the step for the camera in question
 
 	def __init__(self, cam):
 		self.device_name = cam
@@ -330,7 +334,7 @@ class WebcamFocus(Channel):
 		# Therefore, if AF is on, quietly do nothing.
 		# When AF is toggled, this is called again anyway.
 		if not self.mute.get_active():
-			self.ssh.stdin.write(("focus_absolute %d\n" %value).encode("utf-8"))
+			self.ssh.stdin.write(("focus_absolute %d\n" %int(value)).encode("utf-8"))
 			self.ssh.stdin.flush()
 
 	def muted(self, widget):
