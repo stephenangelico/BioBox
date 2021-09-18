@@ -53,7 +53,7 @@ def read_position():
 		pot_adjust = abs(pot - last_read)
 		if pot_adjust > TOLERANCE or goal is not None:
 		# convert 16bit adc0 (0-65535) trim pot read into 0-100 volume level
-			pos = remap_range(pot, 32700, 65472, 0, 100)
+			pos = remap_range(pot, 33024, 65472, 0, 100)
 			# save the potentiometer reading for the next loop
 			last_read = pot
 			yield(pos)
