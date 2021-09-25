@@ -39,12 +39,14 @@ def stop():
 def brake():
 	GPIO.output(PIN_A, True)
 	GPIO.output(PIN_B, True)
+	time.sleep(0.01)
+	stop()
 
 def speed(duty_cycle):
 	pwm.ChangeDutyCycle(duty_cycle)
 
 def cleanup():
-	stop()
+	brake()
 	speed(0)
 	standby(True)
 	GPIO.cleanup()
