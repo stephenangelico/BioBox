@@ -107,12 +107,8 @@ def read_value():
 			dist = abs(pos - goal)
 			if dist >= 25:
 				speed = 100
-			elif dist >= 5:
-				speed = 80
-			elif dist >= 2:
-				speed = 25
 			elif dist >= 1:
-				speed = 10
+				speed = 80
 			else:
 				speed = 0
 			if goal > pos:
