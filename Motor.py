@@ -39,7 +39,7 @@ def stop():
 def brake():
 	GPIO.output(PIN_A, True)
 	GPIO.output(PIN_B, True)
-	time.sleep(0.01)
+	time.sleep(0.1)
 	stop()
 
 def speed(duty_cycle):
