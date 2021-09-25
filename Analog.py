@@ -120,7 +120,7 @@ def read_value():
 			elif goal < pos:
 				dir = Motor.backward
 			elif goal == pos:
-				dir = Motor.stop
+				dir = Motor.brake
 				goal = None
 				goal_completed = time.monotonic()
 			if speed != last_speed:
