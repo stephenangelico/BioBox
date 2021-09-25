@@ -123,13 +123,13 @@ def read_value():
 				dir = Motor.brake
 				goal = None
 				goal_completed = time.monotonic()
+			print(dir.__name__, speed, dist)
 			if speed != last_speed:
 				Motor.speed(speed)
 				last_speed = speed
 			if dir is not last_dir:
 				dir()
 				last_dir = dir
-			print(dir, speed, dist)
 		else:
 			if time.monotonic() > goal_completed + 0.15:
 				yield(pos)
