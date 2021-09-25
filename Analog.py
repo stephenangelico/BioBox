@@ -134,6 +134,18 @@ def read_value():
 			if time.monotonic() > goal_completed + 0.15:
 				yield(pos)
 
+def test_slider():
+	Motor.forward()
+	Motor.speed(10)
+	start = chan0.value
+	while chan0.value < 36800:
+		print(chan0.value, chan0.value - start)
+		start = chan0.value
+		time.sleep(1/32)
+	print(chan0.value, chan0.value - start)
+	Motor.stop()
+	Motor.speed(0)
+
 if __name__ == "__main__":
 	goal = 75
 	try:
