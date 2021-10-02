@@ -23,24 +23,11 @@ chan0 = AnalogIn(mcp, MCP.P0)
 print('Raw ADC Value: ', chan0.value)
 print('ADC Voltage: ' + str(chan0.voltage) + 'V')
 
-TOLERANCE = 250	# to keep from being jittery we'll only change
-		# volume when the pot has moved a significant amount
-		# on a 16-bit ADC
-
-pot_min = 32700
-pot_max = 65472
+TOLERANCE = 4
+pot_min = 518
+pot_max = 1023
 goal = None
 Motor.standby(False)
-
-def remap_range(value, left_min, left_max, right_min, right_max):
-	# this remaps a value from original (left) range to new (right) range
-	# Figure out how 'wide' each range is
-	left_span = left_max - left_min
-	right_span = right_max - right_min
-	# Convert the left range into a 0-1 range (int)
-	valueScaled = int(value - left_min) / int(left_span)
-	# Convert the 0-1 range into a value in the right range.
-	return int(right_min + (max(valueScaled, 0) * right_span))
 
 def read_position():
 	last_read = 0	# this keeps track of the last potentiometer value
@@ -48,24 +35,36 @@ def read_position():
 		# we'll assume that the pot didn't move
 		pot_changed = False
 		# read the analog pin
-		pot = chan0.value
+		# ADC provides a 16-bit value, but the low 5 bits are always floored,
+		# so divide by 64 to get more usable numbers without losing precision.
+		pot = chan0.value // 64
 		# how much has it changed since the last read?
 		pot_adjust = abs(pot - last_read)
 		if pot_adjust > TOLERANCE or goal is not None:
-		# convert 16bit adc0 (0-65535) trim pot read into 0-100 volume level
-			pos = remap_range(pot, 33024, 65472, 0, 100)
+			pos = remap_range(pot, 518, 1023, 0, 100)
 			# save the potentiometer reading for the next loop
 			last_read = pot
 			yield(pos)
 		time.sleep(0.015625)
 
+def remap_range(raw):
+	...
+
 def init_bounds():
-	if chan0.value < (pot_max+pot_min)/2:
-		bounds_test("top")
-		bounds_test("bottom")
+	global pot_min
+	global pot_max
+	if chan0.value // 64 < 768:
+		test_max = bounds_test("top")
+		print("Max:", test_max)
+		test_min = bounds_test("bottom")
+		print("Min:", test_min)
 	else:
-		bounds_test("top")
-		bounds_test("bottom")
+		test_min = bounds_test("bottom")
+		print("Min:", test_min)
+		test_max = bounds_test("top")
+		print("Max:", test_max)
+	pot_min = test_min
+	pot_max = test_max
 
 def bounds_test(test_dir):
 	if test_dir == "top":
