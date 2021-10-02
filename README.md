@@ -108,6 +108,12 @@ The slider claims to be linear, but the actual travel-resistance response is,
 while not logarithmic, decidedly non-linear. This is an attempt to use linear
 interpolation to fix the resultant values when converted to 0-100% travel.
 
+Observation at 20211002: When 0% cannot reach as low, all values from 0-50% seem
+to shift by about the same amount - values were `520 548 578 612 651 698 746`.
+At 60% and above, values were within measurement error of original test.
+It remains to be seen if this will be consistent. More data required.
+
+```
 0:   517
 10:  545
 20:  575
@@ -119,3 +125,4 @@ interpolation to fix the resultant values when converted to 0-100% travel.
 80:  873
 90:  957
 100: 1023
+```
