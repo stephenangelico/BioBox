@@ -108,14 +108,14 @@ The slider claims to be linear, but the actual travel-resistance response is,
 while not logarithmic, decidedly non-linear. This is an attempt to use linear
 interpolation to fix the resultant values when converted to 0-100% travel.
 
-0:   33088
-10:  34880
-20:  36800
-30:  38976
-40:  41536
-50:  44480
-60:  47680
-70:  51520
-80:  55872
-90:  61248
-100: 65472
+0:   517
+10:  545
+20:  575
+30:  609
+40:  649
+50:  695
+60:  745
+70:  805
+80:  873
+90:  957
+100: 1023
