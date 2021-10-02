@@ -149,7 +149,7 @@ if __name__ == "__main__":
 		while True:
 			value = chan0.value
 			if value != last:
-				print(value)
+				print(value, end="\x1b[K\r")
 				last = value
 			time.sleep(0.015625)
 	finally:
