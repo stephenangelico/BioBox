@@ -19,6 +19,7 @@ with the potentiometer attached to a MCP3008 analog-to-digital converter (ADC),
 and the motor connected to a TB6612FNG motor controller. See [Wiring](#wiring)
 for details on where to connect everything.
 
+TODO: Find how to keep track of RPi "low power" mode (correlated with bolt icon on display) over SSH. Also try running headless to reduce power usage.
 
 Dependencies:
 =============
