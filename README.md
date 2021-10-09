@@ -127,3 +127,21 @@ It remains to be seen if this will be consistent. More data required.
 90:  957
 100: 1023
 ```
+
+After reseating connecting wires from ADC to slider (especially the bragging
+wire), floor became 511. More importantly, it seems that *all* values from 0-90%
+shifted (Δ ~6), though 90% (Δ 2) may have been measurement error.
+
+```
+0:   511
+10:  538
+20:  569
+30:  603
+40:  643
+50:  689
+60:  739
+70:  799
+80:  869
+90:  955
+100: 1023
+```
