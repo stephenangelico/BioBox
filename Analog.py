@@ -50,47 +50,22 @@ def read_position():
 def remap_range(raw):
 	...
 
-def init_bounds():
+def bounds_test():
 	global pot_min
-	global pot_max
-	if chan0.value // 64 < 768:
-		test_max = bounds_test("top")
-		print("Max:", test_max)
-		test_min = bounds_test("bottom")
-		print("Min:", test_min)
-	else:
-		test_min = bounds_test("bottom")
-		print("Min:", test_min)
-		test_max = bounds_test("top")
-		print("Max:", test_max)
-	pot_min = test_min
-	pot_max = test_max
-
-def bounds_test(test_dir):
-	if test_dir == "top":
-		Motor.forward()
-	elif test_dir == "bottom":
-		Motor.backward()
+	Motor.backward()
 	Motor.speed(100)
 	span = collections.deque(maxlen=5)
 	while True:
 		span.append((chan0.value // 64))
 		if len(span) == span.maxlen:
 			if max(span) - min(span) < 2:
-				return span[-1]
+				Motor.brake()
+				Motor.speed(0)
+				test_min = span[-1]
+				print("Min:", test_min)
+				pot_min = test_min
+				return(test_min)
 		time.sleep(0.015625)
-
-def test_span():
-	high_set = []
-	low_set = []
-	try:
-		for int in range(100):
-			high_set.append(bounds_test("top"))
-			low_set.append(bounds_test("bottom"))
-	finally:
-		Motor.cleanup()
-	print(high_set)
-	print(low_set)
 
 def read_value():
 	global goal
