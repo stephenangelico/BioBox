@@ -79,7 +79,7 @@ def bounds_test():
 				test_min = span[-1]
 				print("Min:", test_min)
 				pot_min = test_min
-				return(test_min)
+				return test_min
 		time.sleep(0.015625)
 
 def read_value():
