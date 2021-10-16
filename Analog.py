@@ -1,5 +1,6 @@
 import os
 import time
+import bisect
 import collections
 import busio
 import digitalio
@@ -51,7 +52,16 @@ def read_position():
 		time.sleep(0.015625)
 
 def remap_range(raw):
-	...
+	# Convert values from ADC to travel distance 0-100%
+	list_pos = bisect.bisect(interp_values, raw)
+	if list_pos == 0: # Check if in dead zones
+		return 0
+	elif list_pos == len(interp_values):
+		return 100
+	interp_scale = interp_values[list_pos] - interp_values[list_pos -1]
+	delta = interp_values[list_pos] - raw
+	pos = delta / interp_scale * 10 + (list_pos -1) * 10
+	return pos
 
 def interp_shift():
 	# Shift all values 0-90% by delta acquired from bounds_test()
