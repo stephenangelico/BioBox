@@ -150,7 +150,7 @@ if __name__ == "__main__":
 	try:
 		last = None
 		while True:
-			value = chan0.value
+			value = chan0.value // 64
 			if value != last:
 				print(value, end="\x1b[K\r")
 				last = value
