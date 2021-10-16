@@ -59,7 +59,7 @@ def remap_range(raw):
 	elif list_pos == len(interp_values):
 		return 100
 	interp_scale = interp_values[list_pos] - interp_values[list_pos -1]
-	delta = interp_values[list_pos] - raw
+	delta = raw - interp_values[list_pos -1]
 	pos = delta / interp_scale * 10 + (list_pos -1) * 10
 	return pos
 
