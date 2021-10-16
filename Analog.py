@@ -56,13 +56,17 @@ def remap_range(raw):
 def interp_shift():
 	# Shift all values 0-90% by delta acquired from bounds_test()
 	# Throughout testing, 100% has always been consistent
+	global interp_values
 	shift_values = []
 	test_min = bounds_test()
 	interp_delta = test_min - interp_values[0]
 	for level in interp_values[:-1]:
 		shift_values.append(level + interp_delta)
 	shift_values.append(interp_values[-1]) # Append original 100% value at the end
-	
+	# Add dead zones
+	shift_values[0] += dead_zone_low
+	shift_values[-1] -= dead_zone_high
+	interp_values = shift_values
 
 def bounds_test():
 	# Test the analogue value of 0% travel
