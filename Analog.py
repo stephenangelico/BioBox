@@ -24,10 +24,13 @@ print('Raw ADC Value: ', chan0.value)
 print('ADC Voltage: ' + str(chan0.voltage) + 'V')
 
 TOLERANCE = 4
-pot_min = 518
+pot_min = 511
 pot_max = 1023
 goal = None
 Motor.standby(False)
+interp_values = [511, 538, 569, 603, 643, 689, 739, 799, 869, 955, 1023] # 0-100% travel values
+dead_zone_low = 2
+dead_zone_high = 3
 
 def read_position():
 	last_read = 0	# this keeps track of the last potentiometer value
@@ -41,7 +44,7 @@ def read_position():
 		# how much has it changed since the last read?
 		pot_adjust = abs(pot - last_read)
 		if pot_adjust > TOLERANCE or goal is not None:
-			pos = remap_range(pot, 518, 1023, 0, 100)
+			pos = remap_range(pot)
 			# save the potentiometer reading for the next loop
 			last_read = pot
 			yield(pos)
@@ -50,7 +53,19 @@ def read_position():
 def remap_range(raw):
 	...
 
+def interp_shift():
+	# Shift all values 0-90% by delta acquired from bounds_test()
+	# Throughout testing, 100% has always been consistent
+	shift_values = []
+	test_min = bounds_test()
+	interp_delta = test_min - interp_values[0]
+	for level in interp_values[:-1]:
+		shift_values.append(level + interp_delta)
+	shift_values.append(interp_values[-1]) # Append original 100% value at the end
+	
+
 def bounds_test():
+	# Test the analogue value of 0% travel
 	global pot_min
 	Motor.backward()
 	Motor.speed(100)
