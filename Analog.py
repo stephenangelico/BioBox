@@ -107,6 +107,10 @@ def read_value():
 				goal = 0
 			if goal > 100:
 				goal = 100
+			if goal > pos:
+				dir = Motor.forward
+			elif goal < pos:
+				dir = Motor.backward
 			dist = abs(pos - goal)
 			if dist >= 25:
 				speed = 100
@@ -114,11 +118,6 @@ def read_value():
 				speed = 80
 			else:
 				speed = 0
-			if goal > pos:
-				dir = Motor.forward
-			elif goal < pos:
-				dir = Motor.backward
-			elif goal == pos:
 				dir = Motor.brake
 				goal = None
 				goal_completed = time.monotonic()
