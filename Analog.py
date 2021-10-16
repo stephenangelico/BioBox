@@ -1,5 +1,6 @@
 import os
 import time
+import bisect
 import collections
 import busio
 import digitalio
@@ -23,24 +24,14 @@ chan0 = AnalogIn(mcp, MCP.P0)
 print('Raw ADC Value: ', chan0.value)
 print('ADC Voltage: ' + str(chan0.voltage) + 'V')
 
-TOLERANCE = 250	# to keep from being jittery we'll only change
-		# volume when the pot has moved a significant amount
-		# on a 16-bit ADC
-
-pot_min = 32700
-pot_max = 65472
+TOLERANCE = 4
+pot_min = 511
+pot_max = 1023
 goal = None
 Motor.standby(False)
-
-def remap_range(value, left_min, left_max, right_min, right_max):
-	# this remaps a value from original (left) range to new (right) range
-	# Figure out how 'wide' each range is
-	left_span = left_max - left_min
-	right_span = right_max - right_min
-	# Convert the left range into a 0-1 range (int)
-	valueScaled = int(value - left_min) / int(left_span)
-	# Convert the 0-1 range into a value in the right range.
-	return int(right_min + (max(valueScaled, 0) * right_span))
+interp_values = [511, 538, 569, 603, 643, 689, 739, 799, 869, 955, 1023] # 0-100% travel values
+dead_zone_low = 2
+dead_zone_high = 3
 
 def read_position():
 	last_read = 0	# this keeps track of the last potentiometer value
@@ -48,50 +39,62 @@ def read_position():
 		# we'll assume that the pot didn't move
 		pot_changed = False
 		# read the analog pin
-		pot = chan0.value
+		# ADC provides a 16-bit value, but the low 5 bits are always floored,
+		# so divide by 64 to get more usable numbers without losing precision.
+		pot = chan0.value // 64
 		# how much has it changed since the last read?
 		pot_adjust = abs(pot - last_read)
 		if pot_adjust > TOLERANCE or goal is not None:
-		# convert 16bit adc0 (0-65535) trim pot read into 0-100 volume level
-			pos = remap_range(pot, 33024, 65472, 0, 100)
+			pos = remap_range(pot)
 			# save the potentiometer reading for the next loop
 			last_read = pot
 			yield(pos)
 		time.sleep(0.015625)
 
-def init_bounds():
-	if chan0.value < (pot_max+pot_min)/2:
-		bounds_test("top")
-		bounds_test("bottom")
-	else:
-		bounds_test("top")
-		bounds_test("bottom")
+def remap_range(raw):
+	# Convert values from ADC to travel distance 0-100%
+	list_pos = bisect.bisect(interp_values, raw)
+	if list_pos == 0: # Check if in dead zones
+		return 0
+	elif list_pos == len(interp_values):
+		return 100
+	interp_scale = interp_values[list_pos] - interp_values[list_pos -1]
+	delta = interp_values[list_pos] - raw
+	pos = delta / interp_scale * 10 + (list_pos -1) * 10
+	return pos
 
-def bounds_test(test_dir):
-	if test_dir == "top":
-		Motor.forward()
-	elif test_dir == "bottom":
-		Motor.backward()
+def interp_shift():
+	# Shift all values 0-90% by delta acquired from bounds_test()
+	# Throughout testing, 100% has always been consistent
+	global interp_values
+	shift_values = []
+	test_min = bounds_test()
+	interp_delta = test_min - interp_values[0]
+	for level in interp_values[:-1]:
+		shift_values.append(level + interp_delta)
+	shift_values.append(interp_values[-1]) # Append original 100% value at the end
+	# Add dead zones
+	shift_values[0] += dead_zone_low
+	shift_values[-1] -= dead_zone_high
+	interp_values = shift_values
+
+def bounds_test():
+	# Test the analogue value of 0% travel
+	global pot_min
+	Motor.backward()
 	Motor.speed(100)
 	span = collections.deque(maxlen=5)
 	while True:
 		span.append((chan0.value // 64))
 		if len(span) == span.maxlen:
 			if max(span) - min(span) < 2:
-				return span[-1]
+				Motor.brake()
+				Motor.speed(0)
+				test_min = span[-1]
+				print("Min:", test_min)
+				pot_min = test_min
+				return test_min
 		time.sleep(0.015625)
-
-def test_span():
-	high_set = []
-	low_set = []
-	try:
-		for int in range(100):
-			high_set.append(bounds_test("top"))
-			low_set.append(bounds_test("bottom"))
-	finally:
-		Motor.cleanup()
-	print(high_set)
-	print(low_set)
 
 def read_value():
 	global goal
