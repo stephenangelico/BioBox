@@ -163,15 +163,17 @@ def time_boundaries():
 		if max(safety) - min(safety) < 2: break # Guard against getting stuck
 		time.sleep(1 / 64)
 
+def print_value():
+	last = None
+	while True:
+		value = chan0.value // 64
+		if value != last:
+			print(value, end="\x1b[K\r")
+			last = value
+		time.sleep(0.015625)
+
 if __name__ == "__main__":
-	goal = 75
 	try:
-		last = None
-		while True:
-			value = chan0.value // 64
-			if value != last:
-				print(value, end="\x1b[K\r")
-				last = value
-			time.sleep(0.015625)
+		print_value()
 	finally:
 		Motor.cleanup()
