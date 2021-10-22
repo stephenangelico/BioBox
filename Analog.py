@@ -144,6 +144,33 @@ def test_slider():
 	Motor.stop()
 	Motor.speed(0)
 
+def time_boundaries():
+	boundaries = [None] * 11
+	with open("README.md") as f:
+		for line in f:
+			try:
+				idx, val = line.split(":")
+				boundaries[int(idx) // 10] = int(val)
+			except ValueError: pass
+	# print(boundaries)
+	# TODO: Seek to bottom first?
+	Motor.forward()
+	Motor.speed(100)
+	start = time.time()
+	next = 0
+	safety = collections.deque([0] * 10)
+	while True:
+		cur = chan0.value // 64
+		if cur >= next:
+			print("%3d: %4d --> %.2f\x1b[K" % (cur * 10, next, time.time() - start))
+			next += 1
+			if next >= len(boundaries): break
+		else:
+			print("%3d: %4d ... %.2f\x1b[K" % (cur * 10, next, time.time() - start))
+		safety.append(cur)
+		if max(safety) - min(safety) < 2: break # Guard against getting stuck
+		time.sleep(1 / 64)
+
 if __name__ == "__main__":
 	goal = 75
 	try:
