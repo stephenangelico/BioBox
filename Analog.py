@@ -145,14 +145,6 @@ def test_slider():
 	Motor.speed(0)
 
 def time_boundaries():
-	boundaries = [None] * 11
-	with open("README.md") as f:
-		for line in f:
-			try:
-				idx, val = line.split(":")
-				boundaries[int(idx) // 10] = int(val)
-			except ValueError: pass
-	# print(boundaries)
 	# TODO: Seek to bottom first?
 	Motor.forward()
 	Motor.speed(100)
@@ -164,7 +156,7 @@ def time_boundaries():
 		if cur >= next:
 			print("%3d: %4d --> %.2f\x1b[K" % (cur * 10, next, time.time() - start))
 			next += 1
-			if next >= len(boundaries): break
+			if next >= len(interp_values): break
 		else:
 			print("%3d: %4d ... %.2f\x1b[K" % (cur * 10, next, time.time() - start))
 		safety.append(cur)
