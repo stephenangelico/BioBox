@@ -9,10 +9,11 @@ various sources, especially when livestreaming. Inspired by digital sound desks,
 this project allows use of a motorised slider to smoothly adjust a number of
 audio or analog sources, such as:
 
-- OBS: Mic, desktop capture, other inputs - TODO
+- OBS: Mic, desktop capture, other inputs
 - VLC
 - Media in Chrome - see unpacked extension in VolumeSocket
 - Webcam focus
+- Pulseaudio - TODO
 
 Reference hardware uses a motorized 10kΩ slide potentiometer from [SparkFun](https://www.sparkfun.com/products/retired/10976)
 (discontinued) with the potentiometer attached to a MCP3008 analog-to-digital
