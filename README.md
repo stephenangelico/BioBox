@@ -14,10 +14,10 @@ audio or analog sources, such as:
 - Media in Chrome - see unpacked extension in VolumeSocket
 - Webcam focus
 
-Reference hardware uses a motorized 10kΩ slide potentiometer from [SparkFun](https://www.sparkfun.com/products/10976)
-with the potentiometer attached to a MCP3008 analog-to-digital converter (ADC),
-and the motor connected to a TB6612FNG motor controller. See [Wiring](#wiring)
-for details on where to connect everything.
+Reference hardware uses a motorized 10kΩ slide potentiometer from [SparkFun](https://www.sparkfun.com/products/retired/10976)
+(discontinued) with the potentiometer attached to a MCP3008 analog-to-digital
+converter (ADC), and the motor connected to a TB6612FNG motor controller. See
+[Wiring](#wiring) for details on where to connect everything.
 
 TODO: Find how to keep track of RPi "low power" mode (correlated with bolt icon
 on display) over SSH. Also try running headless to reduce power usage.
