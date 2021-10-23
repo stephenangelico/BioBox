@@ -150,7 +150,7 @@ def time_boundaries():
 	Motor.speed(100)
 	start = time.time()
 	next = 0
-	safety = collections.deque([0] * 10)
+	safety = collections.deque([0] * 10, 15)
 	while True:
 		cur = chan0.value // 64
 		if cur >= next:
@@ -161,7 +161,7 @@ def time_boundaries():
 			print("%3d: %4d ... %.2f\x1b[K" % (cur * 10, next, time.time() - start))
 		safety.append(cur)
 		if max(safety) - min(safety) < 2: break # Guard against getting stuck
-		time.sleep(1 / 64)
+		time.sleep(1 / 1000)
 
 def print_value():
 	last = None
