@@ -144,7 +144,7 @@ def test_slider():
 	Motor.stop()
 	Motor.speed(0)
 
-def time_boundaries():
+def time_boundaries_forward():
 	# TODO: Seek to bottom first?
 	Motor.forward()
 	Motor.speed(100)
@@ -157,6 +157,25 @@ def time_boundaries():
 			print("%3d: %4d --> %.3f\x1b[K" % (next * 10, cur, time.time() - start))
 			next += 1
 			if next >= len(interp_values): break
+		else:
+			print("%3d: %4d ... %.3f\x1b[K" % (next * 10, cur, time.time() - start))
+		safety.append(cur)
+		if max(safety) - min(safety) < 2: break # Guard against getting stuck
+		time.sleep(1 / 1000)
+
+def time_boundaries_backward():
+	# TODO: Seek to top first?
+	Motor.backward()
+	Motor.speed(100)
+	start = time.time()
+	next = len(interp_values) - 1
+	safety = collections.deque([0] * 10, 15)
+	while True:
+		cur = chan0.value // 64
+		if cur <= interp_values[next]:
+			print("%3d: %4d --> %.3f\x1b[K" % (next * 10, cur, time.time() - start))
+			next -= 1
+			if next < 0: break
 		else:
 			print("%3d: %4d ... %.3f\x1b[K" % (next * 10, cur, time.time() - start))
 		safety.append(cur)
