@@ -153,12 +153,12 @@ def time_boundaries():
 	safety = collections.deque([0] * 10, 15)
 	while True:
 		cur = chan0.value // 64
-		if cur >= next:
-			print("%3d: %4d --> %.2f\x1b[K" % (cur * 10, next, time.time() - start))
+		if cur >= interp_values[next]:
+			print("%3d: %4d --> %.3f\x1b[K" % (next * 10, cur, time.time() - start))
 			next += 1
 			if next >= len(interp_values): break
 		else:
-			print("%3d: %4d ... %.2f\x1b[K" % (cur * 10, next, time.time() - start))
+			print("%3d: %4d ... %.3f\x1b[K" % (next * 10, cur, time.time() - start))
 		safety.append(cur)
 		if max(safety) - min(safety) < 2: break # Guard against getting stuck
 		time.sleep(1 / 1000)
