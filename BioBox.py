@@ -162,6 +162,7 @@ class Channel(Gtk.Frame):
 
 	def __init__(self, name):
 		super().__init__(label=name, shadow_type=Gtk.ShadowType.ETCHED_IN)
+		super().set_label_align(0.5,0)
 		# Box stuff
 		box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=5)
 		box.set_size_request(50, 300) #TODO: Optimize size and widget scaling for tablet
