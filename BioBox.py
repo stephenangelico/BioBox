@@ -372,7 +372,15 @@ class Browser(Channel):
 		WebSocket.set_muted(self.tabid, mute_state)
 
 if __name__ == "__main__":
-	css = b"window {-gtk-dpi: 90;}"
+	css = b"""
+		window {-gtk-dpi: 90;}
+		scale slider {
+			background-size: 20px 40px;
+			min-width: 20px;
+			min-height: 40px;
+		}
+	"""
+	# TODO: Make this look good without hard-coding
 	style_provider = Gtk.CssProvider()
 	style_provider.load_from_data(css)
 	Gtk.StyleContext.add_provider_for_screen(
