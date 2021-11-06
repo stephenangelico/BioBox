@@ -44,6 +44,10 @@ class MainUI(Gtk.Window):
 		global chan_select
 		chan_select = Gtk.RadioButton()
 		threading.Thread(target=self.read_analog, daemon=True).start()
+		for category in Channel.__subclasses__():
+			group = Gtk.Box(name=category.__name__)
+			category.group = group
+			self.modules.add(group)
 		self.add_module(VLC())
 		self.add_module(WebcamFocus("C920"))
 		self.add_module(WebcamFocus("C922"))
@@ -78,12 +82,15 @@ class MainUI(Gtk.Window):
 
 	def add_module(self, module):
 		# Always call with GLib.idle_add()
-		self.modules.pack_start(module, True, True, 0)
+		module.group.pack_start(module, True, True, 0)
 		self.show_all()
 
 	def remove_module(self, module):
 		# Always call with GLib.idle_add()
-		self.modules.remove(module)
+		global selected_channel
+		if selected_channel is module:
+			selected_channel = None
+		module.group.remove(module)
 		self.resize(1,1) # Reset to minimum size
 
 	def read_analog(self):
