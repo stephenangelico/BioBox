@@ -32,6 +32,7 @@ slider_last_wrote = time.monotonic() + 0.5
 tabs = {}
 obs_sources = {}
 source_types = ['browser_source', 'pulse_input_capture', 'pulse_output_capture']
+# TODO: Configure OBS modules within BioBox
 
 class MainUI(Gtk.Window):
 	def __init__(self):
