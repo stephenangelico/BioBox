@@ -97,7 +97,10 @@ class MainUI(Gtk.Window):
 				slider_last_wrote = time.monotonic()
 
 	def init_motor_pos(self):
-		Analog.goal = round(selected_channel.slider.get_value())
+		if selected_channel:
+			Analog.goal = round(selected_channel.slider.get_value())
+		else:
+			Analog.goal = 100
 
 	def ws_mgr(self):
 		global loop
