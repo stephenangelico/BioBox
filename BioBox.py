@@ -89,7 +89,7 @@ class MainUI(Gtk.Window):
 		# Always call with GLib.idle_add()
 		global selected_channel
 		if selected_channel is module:
-			selected_channel = None
+			selected_channel = None # Because it doesn't make sense to select another module
 		module.group.remove(module)
 		self.resize(1,1) # Reset to minimum size
 
