@@ -61,25 +61,17 @@ class MainUI(Gtk.Window):
 		global win
 		win = self
 
-	def idle_new_tab(self, tabid):
-		GLib.idle_add(self.new_tab, tabid)
-
 	def new_tab(self, tabid):
-		# Always call with GLib.idle_add()
 		print("Creating channel for new tab:", tabid)
 		newtab = Browser(tabid)
 		tabs[tabid] = newtab
 
 	def closed_tab(self, tabid):
 		print("Destroying channel for closed tab:", tabid)
-		GLib.idle_add(tabs[tabid].remove)
+		tabs[tabid].remove()
 		tabs.pop(tabid, None)
 
-	def idle_volume_changed(self, *args):
-		GLib.idle_add(self.tab_volume_changed, *args)
-
 	def tab_volume_changed(self, tabid, volume, mute_state):
-		# Always call with GLib.idle_add()
 		print("On", tabid, ": Volume:", volume, "Muted:", bool(mute_state))
 		channel = tabs[tabid]
 		channel.update_position(int(volume * 100)) # Truncate or round?
@@ -397,7 +389,7 @@ if __name__ == "__main__":
 	asyncio.set_event_loop(loop)
 	MainUI()
 	loop.create_task(win.obs_ws())
-	loop.create_task(WebSocket.listen(connected=win.new_tab, disconnected=win.closed_tab, volumechanged=win.idle_volume_changed))
+	loop.create_task(WebSocket.listen(connected=win.new_tab, disconnected=win.closed_tab, volumechanged=win.tab_volume_changed))
 	try:
 		loop.run_forever()
 	finally:
