@@ -136,12 +136,13 @@ class MainUI(Gtk.Window):
 					for source in list(obs_sources):
 						if source not in collector:
 							print("Removing", source)
-							print(obs_sources)
 							GLib.idle_add(self.remove_module, obs_sources[source])
 							obs_sources.pop(source, None)
 				elif msg.get("message-id") == "init":
 					obs_sources.clear() # TODO: Clean up modules on connection loss
 					self.list_scene_sources(msg['sources'], collector)
+				elif msg.get("message-id") == "mute":
+					pass # Clean up message
 				elif msg.get("message-id"):
 					print(msg)
 
@@ -275,7 +276,7 @@ class Channel(Gtk.Frame):
 	def muted(self, widget):
 		mute_state = widget.get_active()
 		self.mute.set_label(self.mute_labels[mute_state])
-		print("Channel " + "un" * (not mute_state) + "muted")
+		print(self.channel_name, "un" * (not mute_state) + "muted")
 		return mute_state
 
 	def update_position(self, value):
