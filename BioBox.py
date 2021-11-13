@@ -13,6 +13,9 @@ import gi
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, Gdk, GLib
 
+import asyncio_glib
+asyncio.set_event_loop_policy(asyncio_glib.GLibEventLoopPolicy())
+
 try:
 	import Analog
 	from Motor import cleanup as motor_cleanup
@@ -52,10 +55,8 @@ class MainUI(Gtk.Window):
 		WebcamFocus("C920")
 		WebcamFocus("C922")
 		GLib.timeout_add(500, self.init_motor_pos)
-		# Establish websocket connections
-		threading.Thread(target=self.ws_mgr).start()
 		# Show window
-		self.connect("destroy", Gtk.main_quit)
+		self.connect("destroy", lambda *a: loop.stop())
 		self.show_all()
 		global win
 		win = self
@@ -99,14 +100,6 @@ class MainUI(Gtk.Window):
 			Analog.goal = round(selected_channel.slider.get_value())
 		else:
 			Analog.goal = 100
-
-	def ws_mgr(self):
-		global loop
-		loop = asyncio.new_event_loop()
-		asyncio.set_event_loop(loop)
-		loop.create_task(self.obs_ws())
-		loop.create_task(WebSocket.listen(connected=self.new_tab, disconnected=self.closed_tab, volumechanged=self.idle_volume_changed))
-		loop.run_forever()
 
 	async def obs_ws(self):
 		obs_uri = "ws://%s:%d" % (config.host, config.obs_port)
@@ -400,10 +393,13 @@ if __name__ == "__main__":
 		Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION
 	)
 
+	loop = asyncio.new_event_loop()
+	asyncio.set_event_loop(loop)
 	MainUI()
+	loop.create_task(win.obs_ws())
+	loop.create_task(WebSocket.listen(connected=win.new_tab, disconnected=win.closed_tab, volumechanged=win.idle_volume_changed))
 	try:
-		Gtk.main()
+		loop.run_forever()
 	finally:
 		WebSocket.halt()
 		motor_cleanup()
-		loop.stop()
