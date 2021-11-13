@@ -54,6 +54,11 @@ class MainUI(Gtk.Window):
 		GLib.timeout_add(500, self.init_motor_pos)
 		# Establish websocket connections
 		threading.Thread(target=self.ws_mgr).start()
+		# Show window
+		self.connect("destroy", Gtk.main_quit)
+		self.show_all()
+		global win
+		win = self
 
 	def idle_new_tab(self, tabid):
 		GLib.idle_add(self.new_tab, tabid)
@@ -400,9 +405,8 @@ if __name__ == "__main__":
 		style_provider,
 		Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION
 	)
-	win = MainUI()
-	win.connect("destroy", Gtk.main_quit)
-	win.show_all()
+
+	MainUI()
 	try:
 		Gtk.main()
 	finally:
