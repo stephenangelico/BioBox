@@ -103,16 +103,16 @@ class MainUI(Gtk.Window):
 				msg = json.loads(data)
 				collector = {}
 				if msg.get("update-type") == "SourceVolumeChanged":
-					GLib.idle_add(obs_sources[msg["sourceName"]].update_position, int(max(msg["volume"], 0) ** 0.5 * 100))
+					obs_sources[msg["sourceName"]].update_position(int(max(msg["volume"], 0) ** 0.5 * 100))
 				elif msg.get("update-type") == "SourceMuteStateChanged":
-					GLib.idle_add(obs_sources[msg["sourceName"]].mute.set_active, msg["muted"])
+					obs_sources[msg["sourceName"]].mute.set_active(msg["muted"])
 				elif msg.get("update-type") == "SwitchScenes":
 					print(msg["scene-name"])
 					self.list_scene_sources(msg['sources'], collector)
 					for source in list(obs_sources):
 						if source not in collector:
 							print("Removing", source)
-							GLib.idle_add(obs_sources[source].remove)
+							obs_sources[source].remove()
 							obs_sources.pop(source, None)
 				elif msg.get("message-id") == "init":
 					obs_sources.clear() # TODO: Clean up modules on connection loss
@@ -131,17 +131,12 @@ class MainUI(Gtk.Window):
 				print(source['id'], source['name'], source['volume'], "Muted:", source['muted'])
 				collector[source['name']] = source
 				if source['name'] not in obs_sources:
-					GLib.idle_add(self.obs_new_source, source)
+					obs_sources[source['name']] = OBS(source)
 			elif source['type'] == 'group':
 				self.list_scene_sources(source['groupChildren'], collector)
 			elif source['type'] == 'scene':
 				#TODO: get this scene's sources and recurse
 				pass
-
-	def obs_new_source(self, source):
-		# Always call with GLib.idle_add()
-		new_source = OBS(source)
-		obs_sources[source['name']] = new_source
 
 class Channel(Gtk.Frame):
 	mute_labels = ("Mute", "Muted")
