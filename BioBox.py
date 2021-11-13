@@ -48,9 +48,9 @@ class MainUI(Gtk.Window):
 			group = Gtk.Box(name=category.__name__)
 			category.group = group
 			self.modules.add(group)
-		self.add_module(VLC())
-		self.add_module(WebcamFocus("C920"))
-		self.add_module(WebcamFocus("C922"))
+		VLC()
+		WebcamFocus("C920")
+		WebcamFocus("C922")
 		GLib.timeout_add(500, self.init_motor_pos)
 		# Establish websocket connections
 		threading.Thread(target=self.ws_mgr).start()
@@ -68,11 +68,10 @@ class MainUI(Gtk.Window):
 		print("Creating channel for new tab:", tabid)
 		newtab = Browser(tabid)
 		tabs[tabid] = newtab
-		self.add_module(newtab)
 
 	def closed_tab(self, tabid):
 		print("Destroying channel for closed tab:", tabid)
-		GLib.idle_add(self.remove_module, tabs[tabid])
+		GLib.idle_add(tabs[tabid].remove)
 		tabs.pop(tabid, None)
 
 	def idle_volume_changed(self, *args):
@@ -84,19 +83,6 @@ class MainUI(Gtk.Window):
 		channel = tabs[tabid]
 		channel.update_position(int(volume * 100)) # Truncate or round?
 		channel.mute.set_active(int(mute_state))
-
-	def add_module(self, module):
-		# Always call with GLib.idle_add()
-		module.group.pack_start(module, True, True, 0)
-		self.show_all()
-
-	def remove_module(self, module):
-		# Always call with GLib.idle_add()
-		global selected_channel
-		if selected_channel is module:
-			selected_channel = None # Because it doesn't make sense to select another module
-		module.group.remove(module)
-		self.resize(1,1) # Reset to minimum size
 
 	def read_analog(self):
 		global slider_last_wrote
@@ -141,7 +127,7 @@ class MainUI(Gtk.Window):
 					for source in list(obs_sources):
 						if source not in collector:
 							print("Removing", source)
-							GLib.idle_add(self.remove_module, obs_sources[source])
+							GLib.idle_add(obs_sources[source].remove)
 							obs_sources.pop(source, None)
 				elif msg.get("message-id") == "init":
 					obs_sources.clear() # TODO: Clean up modules on connection loss
@@ -171,7 +157,6 @@ class MainUI(Gtk.Window):
 		# Always call with GLib.idle_add()
 		new_source = OBS(source)
 		obs_sources[source['name']] = new_source
-		self.add_module(new_source)
 
 class Channel(Gtk.Frame):
 	mute_labels = ("Mute", "Muted")
@@ -211,6 +196,9 @@ class Channel(Gtk.Frame):
 		self.selector.connect("toggled", self.check_selected)
 		self.connect("event", self.click_anywhere)
 		self.last_wrote = time.monotonic()
+		# Add self to group
+		self.group.pack_start(self, True, True, 0)
+		self.group.show_all()
 
 	def focus_delay(self, widget, direction):
 		GLib.idle_add(self.focus_select, widget)
@@ -287,6 +275,12 @@ class Channel(Gtk.Frame):
 	def update_position(self, value):
 		self.slider.set_value(value)
 		self.last_wrote = time.monotonic()
+
+	def remove(self):
+		global selected_channel
+		if selected_channel is self:
+			selected_channel = None # Because it doesn't make sense to select another module
+		self.group.remove(self)
 
 class VLC(Channel):
 	step = 1.0
