@@ -38,7 +38,7 @@ source_types = ['browser_source', 'pulse_input_capture', 'pulse_output_capture']
 # TODO: Configure OBS modules within BioBox
 
 class MainUI(Gtk.Window):
-	def __init__(self):
+	def __init__(self, stop):
 		super().__init__(title="Bio Box")
 		self.set_border_width(10)
 		self.set_resizable(False)
@@ -56,7 +56,7 @@ class MainUI(Gtk.Window):
 		WebcamFocus("C922")
 		GLib.timeout_add(500, self.init_motor_pos)
 		# Show window
-		self.connect("destroy", lambda *a: loop.stop())
+		self.connect("destroy", lambda *a: stop.set())
 		self.show_all()
 		global win
 		win = self
@@ -356,11 +356,19 @@ class Browser(Channel):
 		self.tabid = tabid
 
 	def write_external(self, value):
-		WebSocket.set_volume(self.tabid, (value / 100))
+		asyncio.create_task(WebSocket.set_volume(self.tabid, (value / 100)))
 	
 	def muted(self, widget):
 		mute_state = super().muted(widget)
-		WebSocket.set_muted(self.tabid, mute_state)
+		asyncio.create_task(WebSocket.set_muted(self.tabid, mute_state))
+
+async def main():
+	stop = asyncio.Event()
+	MainUI(stop)
+	asyncio.create_task(win.obs_ws())
+	asyncio.create_task(WebSocket.listen(connected=win.new_tab, disconnected=win.closed_tab, volumechanged=win.idle_volume_changed, stop=stop))
+	await stop.wait()
+	motor_cleanup()
 
 if __name__ == "__main__":
 	css = b"""
@@ -382,11 +390,7 @@ if __name__ == "__main__":
 
 	loop = asyncio.new_event_loop()
 	asyncio.set_event_loop(loop)
-	MainUI()
-	loop.create_task(win.obs_ws())
-	loop.create_task(WebSocket.listen(connected=win.new_tab, disconnected=win.closed_tab, volumechanged=win.tab_volume_changed))
 	try:
-		loop.run_forever()
+		loop.run_until_complete(main())
 	finally:
 		WebSocket.halt()
-		motor_cleanup()
