@@ -93,13 +93,16 @@ class MainUI(Gtk.Window):
 		else:
 			Analog.goal = 100
 
-	async def obs_ws(self):
+	async def obs_ws(self, stop):
 		obs_uri = "ws://%s:%d" % (config.host, config.obs_port)
 		global obs
 		async with websockets.connect(obs_uri) as obs:
 			await obs.send(json.dumps({"request-type": "GetCurrentScene", "message-id": "init"}))
 			while True:
-				data = await obs.recv()
+				done, pending = await asyncio.wait([obs.recv(), stop.wait()], return_when=asyncio.FIRST_COMPLETED)
+				if stop.is_set():
+					break
+				data = next(iter(done)).result()
 				msg = json.loads(data)
 				collector = {}
 				if msg.get("update-type") == "SourceVolumeChanged":
@@ -121,6 +124,7 @@ class MainUI(Gtk.Window):
 					pass # Clean up message
 				elif msg.get("message-id"):
 					print(msg)
+			await obs.close()
 
 	def obs_send(self, request):
 		asyncio.run_coroutine_threadsafe(obs.send(json.dumps(request)), loop)
@@ -365,9 +369,11 @@ class Browser(Channel):
 async def main():
 	stop = asyncio.Event()
 	MainUI(stop)
-	asyncio.create_task(win.obs_ws())
-	asyncio.create_task(WebSocket.listen(connected=win.new_tab, disconnected=win.closed_tab, volumechanged=win.tab_volume_changed, stop=stop))
+	obs_task = asyncio.create_task(win.obs_ws(stop))
+	browser_task = asyncio.create_task(WebSocket.listen(connected=win.new_tab, disconnected=win.closed_tab, volumechanged=win.tab_volume_changed, stop=stop))
 	await stop.wait()
+	await obs_task
+	await browser_task
 	motor_cleanup()
 
 if __name__ == "__main__":
