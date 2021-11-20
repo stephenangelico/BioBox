@@ -67,9 +67,9 @@ async def listen(*, stop, connected=None, disconnected=None, volumechanged=None,
 		# No cert found. Not an error, just don't support encryption.
 		ssl_context = None
 	async with websockets.serve(volume, host, port, ssl=ssl_context):
-		print("Listening.")
+		print("Websocket listening.")
 		await stop.wait()
-		print("Shutting down.") # I don't hate you!
+		print("Websocket shutting down:") # I don't hate you!
 
 # Non-asyncio entry-point
 def run(**kw): asyncio.run(listen(stop=asyncio.Event(), **kw))
