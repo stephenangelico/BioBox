@@ -69,7 +69,7 @@ async def listen(*, stop, connected=None, disconnected=None, volumechanged=None,
 	async with websockets.serve(volume, host, port, ssl=ssl_context):
 		print("Websocket listening.")
 		await stop.wait()
-		print("Websocket shutting down:") # I don't hate you!
+		print("Websocket shutting down.") # I don't hate you!
 
 # Non-asyncio entry-point
 def run(**kw): asyncio.run(listen(stop=asyncio.Event(), **kw))
