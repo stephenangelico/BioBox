@@ -366,7 +366,7 @@ async def main():
 	stop = asyncio.Event()
 	MainUI(stop)
 	asyncio.create_task(win.obs_ws())
-	asyncio.create_task(WebSocket.listen(connected=win.new_tab, disconnected=win.closed_tab, volumechanged=win.idle_volume_changed, stop=stop))
+	asyncio.create_task(WebSocket.listen(connected=win.new_tab, disconnected=win.closed_tab, volumechanged=win.tab_volume_changed, stop=stop))
 	await stop.wait()
 	motor_cleanup()
 
@@ -390,7 +390,4 @@ if __name__ == "__main__":
 
 	loop = asyncio.new_event_loop()
 	asyncio.set_event_loop(loop)
-	try:
-		loop.run_until_complete(main())
-	finally:
-		WebSocket.halt()
+	loop.run_until_complete(main())
