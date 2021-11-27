@@ -102,7 +102,15 @@ class MainUI(Gtk.Window):
 				done, pending = await asyncio.wait([obs.recv(), stop.wait()], return_when=asyncio.FIRST_COMPLETED)
 				if stop.is_set():
 					break
-				data = next(iter(done)).result()
+				try:
+					data = next(iter(done)).result()
+				except websockets.exceptions.ConnectionClosedOK:
+					print("OBS Connection lost.")
+					break
+				except BaseException as e:
+					print(type(e))
+					print(e)
+					break
 				msg = json.loads(data)
 				collector = {}
 				if msg.get("update-type") == "SourceVolumeChanged":
@@ -118,13 +126,16 @@ class MainUI(Gtk.Window):
 							obs_sources[source].remove()
 							obs_sources.pop(source, None)
 				elif msg.get("message-id") == "init":
-					obs_sources.clear() # TODO: Clean up modules on connection loss
+					obs_sources.clear()
 					self.list_scene_sources(msg['sources'], collector)
 				elif msg.get("message-id") == "mute":
 					pass # Clean up message
 				elif msg.get("message-id"):
 					print(msg)
 			await obs.close()
+		for source in obs_sources.values():
+			source.remove()
+		obs_sources.clear()
 
 	def obs_send(self, request):
 		asyncio.run_coroutine_threadsafe(obs.send(json.dumps(request)), loop)
