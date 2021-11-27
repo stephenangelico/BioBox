@@ -1,3 +1,4 @@
+import os
 import sys
 import time
 import subprocess
@@ -41,7 +42,7 @@ def report(msg):
 	print(time.time(), msg)
 
 class MainUI(Gtk.Window):
-	def __init__(self, stop):
+	def __init__(self, stop_pipe):
 		super().__init__(title="Bio Box")
 		self.set_border_width(10)
 		self.set_resizable(False)
@@ -59,7 +60,9 @@ class MainUI(Gtk.Window):
 		WebcamFocus("C922")
 		GLib.timeout_add(500, self.init_motor_pos)
 		# Show window
-		self.connect("destroy", lambda *a: stop.set())
+		def halt(*a):
+			os.write(stop_pipe, b"*")
+		self.connect("destroy", halt)
 		self.show_all()
 		global win
 		win = self
@@ -381,14 +384,17 @@ class Browser(Channel):
 		asyncio.create_task(WebSocket.set_muted(self.tabid, mute_state))
 
 async def main():
+	stopper, stoppew = os.pipe()
 	stop = asyncio.Event()
-	MainUI(stop)
+	loop.add_reader(stopper, stop.set)
+	MainUI(stoppew)
 	obs_task = asyncio.create_task(win.obs_ws(stop))
 	browser_task = asyncio.create_task(WebSocket.listen(connected=win.new_tab, disconnected=win.closed_tab, volumechanged=win.tab_volume_changed, stop=stop))
 	await stop.wait()
 	await obs_task
 	await browser_task
 	motor_cleanup()
+	os.close(stopper); os.close(stoppew)
 
 if __name__ == "__main__":
 	css = b"""
