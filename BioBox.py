@@ -37,6 +37,9 @@ obs_sources = {}
 source_types = ['browser_source', 'pulse_input_capture', 'pulse_output_capture']
 # TODO: Configure OBS modules within BioBox
 
+def report(msg):
+	print(time.time(), msg)
+
 class MainUI(Gtk.Window):
 	def __init__(self, stop):
 		super().__init__(title="Bio Box")
@@ -105,7 +108,7 @@ class MainUI(Gtk.Window):
 				try:
 					data = next(iter(done)).result()
 				except websockets.exceptions.ConnectionClosedOK:
-					print("OBS Connection lost.")
+					report("OBS Connection lost")
 					break
 				except BaseException as e:
 					print(type(e))
