@@ -42,7 +42,7 @@ def report(msg):
 	print(time.time(), msg)
 
 class MainUI(Gtk.Window):
-	def __init__(self, stop_pipe):
+	def __init__(self, stop_pipe, stop):
 		super().__init__(title="Bio Box")
 		self.set_border_width(10)
 		self.set_resizable(False)
@@ -55,12 +55,12 @@ class MainUI(Gtk.Window):
 			group = Gtk.Box(name=category.__name__)
 			category.group = group
 			self.modules.add(group)
-		VLC()
+		VLC(stop)
 		WebcamFocus("C920")
 		WebcamFocus("C922")
 		GLib.timeout_add(500, self.init_motor_pos)
 		# Show window
-		def halt(*a):
+		def halt(*a): # We could use a lambda function unless we need IIDPIO
 			os.write(stop_pipe, b"*")
 		self.connect("destroy", halt)
 		self.show_all()
@@ -261,6 +261,20 @@ class Channel(Gtk.Frame):
 				else:
 					print(attr, value)
 
+	async def read_asyncio(self, level_cmd, mute_cmd):
+		while True:
+			line = await self.data_source()
+			if not line:
+				break
+			line = line.rstrip().decode("utf-8")
+			attr, value = line.split(":", 1)
+			if attr == level_cmd:
+				self.update_position(int(value))
+			elif attr == mute_cmd:
+				self.mute.set_active(int(value))
+			else:
+				print("From", self.channel_name +":", attr, value)
+
 
 	# Fallback function if subclasses don't provide write_external()
 	def write_external(self, value):
@@ -286,39 +300,37 @@ class Channel(Gtk.Frame):
 class VLC(Channel):
 	step = 1.0
 	
-	def __init__(self):
+	def __init__(self, stop):
 		super().__init__(name="VLC")
-		self.sock = None
-		threading.Thread(target=self.conn, daemon=True).start()
+		asyncio.create_task(self.conn(stop))
 
-	def conn(self):
-		self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-		try:
-			self.sock.connect((config.host,config.vlc_port))
-		except ConnectionRefusedError:
-			self.sock = None
-			return
-		self.sock.send(b"volume\r\nmuted\r\n") # Ask volume and mute state
-		with self.sock:
-			self.read_external("volume", "muted")
-		self.sock = None # TODO: Disable channel in GUI if no connection
+	async def conn(self, stop):
+		self.reader, self.writer = await asyncio.open_connection(config.host, config.vlc_port)
+		self.writer.write(b"volume\r\nmuted\r\n") # Ask volume and mute state
+		await self.writer.drain()
+		await asyncio.wait([self.read_asyncio("volume", "muted"), stop.wait()], return_when=asyncio.FIRST_COMPLETED)
+		self.writer.close() # If above returns, we're shutting down this module
+		await self.writer.wait_closed()
+		self.remove() # Remove module once we're done
 
-	def data_source(self):
-		if self.sock:
-			return self.sock.recv(1024)
-		else:
-			return b""
+	async def data_source(self):
+		return await self.reader.readline()
+		#TODO: check if protection against missing connection is necessary:
+		#if self.sock:
+		#	...
+		#else:
+		#	return b""
 
 	def write_external(self, value):
-		if self.sock:
-			self.sock.send(b"volume %d \r\n" %value)
-			print("To VLC: ", value)
+		self.writer.write(b"volume %d \r\n" %value)
+		asyncio.create_task(self.writer.drain())
+		print("To VLC: ", value)
 
 	def muted(self, widget):
-		if self.sock:
-			mute_state = super().muted(widget)
-			self.sock.send(b"muted %d \r\n" %mute_state)
-			print("VLC Mute status:", mute_state)
+		mute_state = super().muted(widget)
+		self.writer.write(b"muted %d \r\n" %mute_state)
+		asyncio.create_task(self.writer.drain())
+		print("VLC Mute status:", mute_state)
 
 class WebcamFocus(Channel):
 	mute_labels = ("AF Off", "AF On")
@@ -387,7 +399,7 @@ async def main():
 	stopper, stoppew = os.pipe()
 	stop = asyncio.Event()
 	loop.add_reader(stopper, stop.set)
-	MainUI(stoppew)
+	MainUI(stoppew, stop)
 	obs_task = asyncio.create_task(win.obs_ws(stop))
 	browser_task = asyncio.create_task(WebSocket.listen(connected=win.new_tab, disconnected=win.closed_tab, volumechanged=win.tab_volume_changed, stop=stop))
 	await stop.wait()
