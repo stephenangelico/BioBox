@@ -2,7 +2,6 @@ import os
 import sys
 import time
 import subprocess
-import socket
 import threading
 import asyncio
 import WebSocket
