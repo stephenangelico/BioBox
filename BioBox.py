@@ -204,6 +204,9 @@ class Channel(Gtk.Frame):
 		GLib.idle_add(self.focus_select, widget)
 
 	def focus_select(self, widget):
+		# Select a module if it gains focus
+		# This will also select the first module on startup as its scale
+		# will be the first object and will be given focus initially.
 		if widget.is_focus():
 			self.selector.set_active(True)
 			print(self.channel_name, "selected")
