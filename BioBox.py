@@ -304,7 +304,10 @@ class VLC(Channel):
 		asyncio.create_task(self.conn(stop))
 
 	async def conn(self, stop):
-		self.reader, self.writer = await asyncio.open_connection(config.host, config.vlc_port)
+		try:
+			self.reader, self.writer = await asyncio.open_connection(config.host, config.vlc_port)
+		except ConnectionRefusedError:
+			self.remove()
 		self.writer.write(b"volume\r\nmuted\r\n") # Ask volume and mute state
 		await self.writer.drain()
 		await asyncio.wait([self.read_asyncio("volume", "muted"), stop.wait()], return_when=asyncio.FIRST_COMPLETED)
