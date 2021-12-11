@@ -364,10 +364,10 @@ class WebcamFocus(Channel):
 		# TODO: use 'quit' command in camera.py
 
 	def conn(self):
-		self.ssh = subprocess.Popen(["ssh", "-oBatchMode=yes", (config.webcam_user + "@" + config.host), "python3", config.webcam_control_path, self.device], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+		self.ssh = subprocess.Popen(["ssh", "-oBatchMode=yes", (config.webcam_user + "@" + config.host), "python3", config.webcam_control_path], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
 		# TODO: If the process fails, disable the channel (eg if authentication fails)
 		# Check camera state (auto-focus, focal distance)
-		self.ssh.stdin.write(("cam_check\n").encode("utf-8"))
+		self.ssh.stdin.write(("cam_check %s \n" %self.device).encode("utf-8"))
 		self.ssh.stdin.flush()
 		self.read_external("%s focus_absolute" %self.device, "%s focus_auto" %self.device)
 
@@ -379,12 +379,12 @@ class WebcamFocus(Channel):
 		# Therefore, if AF is on, quietly do nothing.
 		# When AF is toggled, this is called again anyway.
 		if not self.mute.get_active():
-			self.ssh.stdin.write(("focus_absolute %d\n" %int(value)).encode("utf-8"))
+			self.ssh.stdin.write(("focus_absolute %d %s\n" % (int(value), self.device)).encode("utf-8"))
 			self.ssh.stdin.flush()
 
 	def muted(self, widget):
 		mute_state = super().muted(widget)
-		self.ssh.stdin.write(("focus_auto %d\n" %mute_state).encode("utf-8"))
+		self.ssh.stdin.write(("focus_auto %d %s\n" % (mute_state, self.device)).encode("utf-8"))
 		self.ssh.stdin.flush()
 		print("%s Autofocus " %self.device_name + ("Dis", "En")[mute_state] + "abled")
 		self.write_external(round(self.slider.get_value()))

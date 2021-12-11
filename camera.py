@@ -2,8 +2,6 @@
 import sys
 import subprocess
 
-device = sys.argv[1]
-
 while True:
 	try:
 		cmd, *args = input().strip().split()
@@ -11,14 +9,14 @@ while True:
 			print("Bye!")
 			break
 		elif cmd == "cam_check":
-			cam_check = subprocess.run(["v4l2-ctl", "-d", device, "-C", "focus_auto,focus_absolute"], text=True, check=True, capture_output=True)
+			cam_check = subprocess.run(["v4l2-ctl", "-d", args[0], "-C", "focus_auto,focus_absolute"], text=True, check=True, capture_output=True)
 			for line in cam_check.stdout.split("\n"):
 				if line:
-					print(device, line)
+					print(args[0], line)
 		elif cmd == "focus_auto":
-			subprocess.run(["v4l2-ctl", "-d", device, "-c", "focus_auto=%d" %int(args[0])], check=True) # TODO: Add error boundary
+			subprocess.run(["v4l2-ctl", "-d", args[1], "-c", "focus_auto=%d" %int(args[0])], check=True) # TODO: Add error boundary
 		elif cmd == "focus_absolute":
-			subprocess.run(["v4l2-ctl", "-d", device, "-c", "focus_absolute=%d" %int(args[0])], check=True)
+			subprocess.run(["v4l2-ctl", "-d", args[1], "-c", "focus_absolute=%d" %int(args[0])], check=True)
 		else:
 			print("Unknown command", cmd)
 	except EOFError:
