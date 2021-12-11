@@ -311,6 +311,19 @@ class VLC(Channel):
 			self.reader, self.writer = await asyncio.open_connection(config.host, config.vlc_port)
 		except ConnectionRefusedError:
 			self.remove()
+			# TODO: This creates then removes the VLC module. The
+			# scale is given focus on startup, causing the VLC module
+			# to be selected for write_analog. Thus, upon removal, no
+			# module is selected, even though this happens on startup.
+			# I could have it select the next module but that will be
+			# rife with potential problems. The best solution, and the
+			# most consistent one, would be to start the connection
+			# to VLC before attempting to create its module. If we do
+			# that, we should do it properly by having each Channel
+			# subclass also have a backend object to manage its
+			# connection. This would be a significant architectural
+			# change, but will also make on-the-fly module adding
+			# and removing easier.
 		self.writer.write(b"volume\r\nmuted\r\n") # Ask volume and mute state
 		await self.writer.drain()
 		await asyncio.wait([self.read_asyncio("volume", "muted"), stop.wait()], return_when=asyncio.FIRST_COMPLETED)
@@ -340,11 +353,13 @@ class VLC(Channel):
 class WebcamFocus(Channel):
 	mute_labels = ("AF Off", "AF On")
 	step = 1.0 # Cameras have different steps but v4l2 will round any int to the step for the camera in question
+	# TODO: re-implement using asyncio
+	# TODO: use single SSH pipe for multiple cameras
 
 	def __init__(self, cam):
 		self.device_name = cam
 		super().__init__(name="%s Focus" %self.device_name)
-		self.device = "/dev/webcam_%s" %self.device_name.lower()
+		self.device = "/dev/webcam_%s" %self.device_name.lower() # Uses webcam symlinks rather than /dev/video*
 		threading.Thread(target=self.conn, daemon=True).start()
 		# TODO: use 'quit' command in camera.py
 
