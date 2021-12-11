@@ -369,7 +369,7 @@ class WebcamFocus(Channel):
 		# Check camera state (auto-focus, focal distance)
 		self.ssh.stdin.write(("cam_check\n").encode("utf-8"))
 		self.ssh.stdin.flush()
-		self.read_external("focus_absolute", "focus_auto")
+		self.read_external("%s focus_absolute" %self.device, "%s focus_auto" %self.device)
 
 	def data_source(self):
 		return self.ssh.stdout.read1(1024)
