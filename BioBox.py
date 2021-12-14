@@ -67,6 +67,11 @@ class MainUI(Gtk.Window):
 		win = self
 
 	def new_tab(self, tabid):
+		# TODO: Some browser media, including YouTube, reports volume to
+		# BioBox as 41% when its UI shows 100%. Test if any media can be
+		# boosted above 100%, then test boosting from 41% to 42%. If the
+		# tab still reports 41% after reading back, set a flag on the
+		# tab to sqrt/square values to/from that tab.
 		print("Creating channel for new tab:", tabid)
 		newtab = Browser(tabid)
 		tabs[tabid] = newtab
