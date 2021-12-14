@@ -72,6 +72,11 @@ class MainUI(Gtk.Window):
 		# boosted above 100%, then test boosting from 41% to 42%. If the
 		# tab still reports 41% after reading back, set a flag on the
 		# tab to sqrt/square values to/from that tab.
+		#
+		# TODO: Can the we run multiple instances of volsock with
+		# separate manifests for different sites in order to separate
+		# the ones which require scaling and the ones which don't? Would
+		# be FAR easier than the above TODO.
 		print("Creating channel for new tab:", tabid)
 		newtab = Browser(tabid)
 		tabs[tabid] = newtab
