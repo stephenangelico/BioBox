@@ -68,15 +68,10 @@ class MainUI(Gtk.Window):
 
 	def new_tab(self, tabid):
 		# TODO: Some browser media, including YouTube, reports volume to
-		# BioBox as 41% when its UI shows 100%. Test if any media can be
-		# boosted above 100%, then test boosting from 41% to 42%. If the
-		# tab still reports 41% after reading back, set a flag on the
-		# tab to sqrt/square values to/from that tab.
-		#
-		# TODO: Can the we run multiple instances of volsock with
-		# separate manifests for different sites in order to separate
-		# the ones which require scaling and the ones which don't? Would
-		# be FAR easier than the above TODO.
+		# BioBox as 41% when its UI shows 100%. Can the we run multiple
+		# instances of volsock with separate manifests for different
+		# sites in order to separate the ones which require scaling and
+		# the ones which don't?
 		print("Creating channel for new tab:", tabid)
 		newtab = Browser(tabid)
 		tabs[tabid] = newtab
