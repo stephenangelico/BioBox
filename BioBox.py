@@ -40,128 +40,108 @@ source_types = ['browser_source', 'pulse_input_capture', 'pulse_output_capture']
 def report(msg):
 	print(time.time(), msg)
 
-class MainUI(Gtk.Window):
-	def __init__(self, stop_pipe, stop):
-		super().__init__(title="Bio Box")
-		self.set_border_width(10)
-		self.set_resizable(False)
-		self.modules = Gtk.Box()
-		self.add(self.modules)
-		global chan_select
-		chan_select = Gtk.RadioButton()
-		threading.Thread(target=self.read_analog, daemon=True).start()
-		for category in Channel.__subclasses__():
-			group = Gtk.Box(name=category.__name__)
-			category.group = group
-			self.modules.add(group)
-		VLC(stop)
-		WebcamFocus("C920")
-		WebcamFocus("C922")
-		GLib.timeout_add(500, self.init_motor_pos)
-		# Show window
-		def halt(*a): # We could use a lambda function unless we need IIDPIO
-			os.write(stop_pipe, b"*")
-		self.connect("destroy", halt)
-		self.show_all()
-		global win
-		win = self
-
-	def new_tab(self, tabid):
-		# TODO: Some browser media, including YouTube, reports volume to
-		# BioBox as 41% when its UI shows 100%. Can the we run multiple
-		# instances of volsock with separate manifests for different
-		# sites in order to separate the ones which require scaling and
-		# the ones which don't?
-		print("Creating channel for new tab:", tabid)
-		newtab = Browser(tabid)
-		tabs[tabid] = newtab
-
-	def closed_tab(self, tabid):
-		print("Destroying channel for closed tab:", tabid)
-		tabs[tabid].remove()
-		tabs.pop(tabid, None)
-
-	def tab_volume_changed(self, tabid, volume, mute_state):
-		print("On", tabid, ": Volume:", volume, "Muted:", bool(mute_state))
-		channel = tabs[tabid]
-		channel.update_position(int(volume * 100)) # Truncate or round?
-		channel.mute.set_active(int(mute_state))
-
-	def read_analog(self):
-		global slider_last_wrote
-		# Get analog value from Analog.py and write to selected channel's slider
-		for volume in Analog.read_value():
-			if selected_channel:
-				print("From slider:", volume)
-				# TODO: Scale 0-100% to 0-150%
-				GLib.idle_add(selected_channel.update_position, volume)
-				slider_last_wrote = time.monotonic()
-
-	def init_motor_pos(self):
+# Slider
+def read_analog():
+	global slider_last_wrote
+	# Get analog value from Analog.py and write to selected channel's slider
+	for volume in Analog.read_value():
 		if selected_channel:
-			Analog.goal = round(selected_channel.slider.get_value())
-		else:
-			Analog.goal = 100
+			print("From slider:", volume)
+			# TODO: Scale 0-100% to 0-150%
+			GLib.idle_add(selected_channel.update_position, volume)
+			slider_last_wrote = time.monotonic()
 
-	async def obs_ws(self, stop):
-		obs_uri = "ws://%s:%d" % (config.host, config.obs_port)
-		global obs
-		async with websockets.connect(obs_uri) as obs:
-			await obs.send(json.dumps({"request-type": "GetCurrentScene", "message-id": "init"}))
-			while True:
-				done, pending = await asyncio.wait([obs.recv(), stop.wait()], return_when=asyncio.FIRST_COMPLETED)
-				if stop.is_set():
-					break
-				try:
-					data = next(iter(done)).result()
-				except websockets.exceptions.ConnectionClosedOK:
-					report("OBS Connection lost")
-					break
-				except BaseException as e:
-					print(type(e))
-					print(e)
-					break
-				msg = json.loads(data)
-				collector = {}
-				if msg.get("update-type") == "SourceVolumeChanged":
-					obs_sources[msg["sourceName"]].update_position(int(max(msg["volume"], 0) ** 0.5 * 100))
-				elif msg.get("update-type") == "SourceMuteStateChanged":
-					obs_sources[msg["sourceName"]].mute.set_active(msg["muted"])
-				elif msg.get("update-type") == "SwitchScenes":
-					print(msg["scene-name"])
-					self.list_scene_sources(msg['sources'], collector)
-					for source in list(obs_sources):
-						if source not in collector:
-							print("Removing", source)
-							obs_sources[source].remove()
-							obs_sources.pop(source, None)
-				elif msg.get("message-id") == "init":
-					obs_sources.clear()
-					self.list_scene_sources(msg['sources'], collector)
-				elif msg.get("message-id") == "mute":
-					pass # Clean up message
-				elif msg.get("message-id"):
-					print(msg)
-			await obs.close()
-		for source in obs_sources.values():
-			source.remove()
-		obs_sources.clear()
+def init_motor_pos():
+	if selected_channel:
+		Analog.goal = round(selected_channel.slider.get_value())
+	else:
+		Analog.goal = 100
 
-	def obs_send(self, request):
-		asyncio.run_coroutine_threadsafe(obs.send(json.dumps(request)), loop)
+# Webcam
 
-	def list_scene_sources(self, sources, collector):
-		for source in sources:
-			if source['type'] in source_types:
-				print(source['id'], source['name'], source['volume'], "Muted:", source['muted'])
-				collector[source['name']] = source
-				if source['name'] not in obs_sources:
-					obs_sources[source['name']] = OBS(source)
-			elif source['type'] == 'group':
-				self.list_scene_sources(source['groupChildren'], collector)
-			elif source['type'] == 'scene':
-				#TODO: get this scene's sources and recurse
-				pass
+
+# OBS
+async def obs_ws(stop):
+	obs_uri = "ws://%s:%d" % (config.host, config.obs_port)
+	global obs
+	async with websockets.connect(obs_uri) as obs:
+		await obs.send(json.dumps({"request-type": "GetCurrentScene", "message-id": "init"}))
+		while True:
+			done, pending = await asyncio.wait([obs.recv(), stop.wait()], return_when=asyncio.FIRST_COMPLETED)
+			if stop.is_set():
+				break
+			try:
+				data = next(iter(done)).result()
+			except websockets.exceptions.ConnectionClosedOK:
+				report("OBS Connection lost")
+				break
+			except BaseException as e:
+				print(type(e))
+				print(e)
+				break
+			msg = json.loads(data)
+			collector = {}
+			if msg.get("update-type") == "SourceVolumeChanged":
+				obs_sources[msg["sourceName"]].update_position(int(max(msg["volume"], 0) ** 0.5 * 100))
+			elif msg.get("update-type") == "SourceMuteStateChanged":
+				obs_sources[msg["sourceName"]].mute.set_active(msg["muted"])
+			elif msg.get("update-type") == "SwitchScenes":
+				print(msg["scene-name"])
+				list_scene_sources(msg['sources'], collector)
+				for source in list(obs_sources):
+					if source not in collector:
+						print("Removing", source)
+						obs_sources[source].remove()
+						obs_sources.pop(source, None)
+			elif msg.get("message-id") == "init":
+				obs_sources.clear()
+				list_scene_sources(msg['sources'], collector)
+			elif msg.get("message-id") == "mute":
+				pass # Clean up message
+			elif msg.get("message-id"):
+				print(msg)
+		await obs.close()
+	for source in obs_sources.values():
+		source.remove()
+	obs_sources.clear()
+
+def obs_send(request):
+	asyncio.run_coroutine_threadsafe(obs.send(json.dumps(request)), loop)
+
+def list_scene_sources(sources, collector):
+	for source in sources:
+		if source['type'] in source_types:
+			print(source['id'], source['name'], source['volume'], "Muted:", source['muted'])
+			collector[source['name']] = source
+			if source['name'] not in obs_sources:
+				obs_sources[source['name']] = OBS(source)
+		elif source['type'] == 'group':
+			list_scene_sources(source['groupChildren'], collector)
+		elif source['type'] == 'scene':
+			#TODO: get this scene's sources and recurse
+			pass
+
+# Browser
+def new_tab(tabid):
+	# TODO: Some browser media, including YouTube, reports volume to
+	# BioBox as 41% when its UI shows 100%. Can the we run multiple
+	# instances of volsock with separate manifests for different
+	# sites in order to separate the ones which require scaling and
+	# the ones which don't?
+	print("Creating channel for new tab:", tabid)
+	newtab = Browser(tabid)
+	tabs[tabid] = newtab
+
+def closed_tab(tabid):
+	print("Destroying channel for closed tab:", tabid)
+	tabs[tabid].remove()
+	tabs.pop(tabid, None)
+
+def tab_volume_changed(tabid, volume, mute_state):
+	print("On", tabid, ": Volume:", volume, "Muted:", bool(mute_state))
+	channel = tabs[tabid]
+	channel.update_position(int(volume * 100)) # Truncate or round?
+	channel.mute.set_active(int(mute_state))
 
 class Channel(Gtk.Frame):
 	mute_labels = ("Mute", "Muted")
@@ -402,11 +382,11 @@ class OBS(Channel):
 		self.mute.set_active(source['muted'])
 
 	def write_external(self, value):
-		win.obs_send({"request-type": "SetVolume", "message-id": "volume", "source": self.name, "volume": ((value / 100) ** 2)})
+		obs_send({"request-type": "SetVolume", "message-id": "volume", "source": self.name, "volume": ((value / 100) ** 2)})
 
 	def muted(self, widget):
 		mute_state = super().muted(widget)
-		win.obs_send({"request-type": "SetMute", "message-id": "mute", "source": self.name, "mute": mute_state})
+		obs_send({"request-type": "SetMute", "message-id": "mute", "source": self.name, "mute": mute_state})
 
 class Browser(Channel):
 	def __init__(self, tabid):
@@ -424,9 +404,29 @@ async def main():
 	stopper, stoppew = os.pipe()
 	stop = asyncio.Event()
 	loop.add_reader(stopper, stop.set)
-	MainUI(stoppew, stop)
-	obs_task = asyncio.create_task(win.obs_ws(stop))
-	browser_task = asyncio.create_task(WebSocket.listen(connected=win.new_tab, disconnected=win.closed_tab, volumechanged=win.tab_volume_changed, stop=stop))
+	main_ui = Gtk.Window(title="Bio Box")
+	main_ui.set_border_width(10)
+	main_ui.set_resizable(False)
+	modules = Gtk.Box()
+	main_ui.add(modules)
+	global chan_select
+	chan_select = Gtk.RadioButton()
+	threading.Thread(target=read_analog, daemon=True).start()
+	for category in Channel.__subclasses__():
+		group = Gtk.Box(name=category.__name__)
+		category.group = group
+		modules.add(group)
+	VLC(stop)
+	WebcamFocus("C920")
+	WebcamFocus("C922")
+	GLib.timeout_add(500, init_motor_pos)
+	# Show window
+	def halt(*a): # We could use a lambda function unless we need IIDPIO
+		os.write(stoppew, b"*")
+	main_ui.connect("destroy", halt)
+	main_ui.show_all()
+	obs_task = asyncio.create_task(obs_ws(stop))
+	browser_task = asyncio.create_task(WebSocket.listen(connected=new_tab, disconnected=closed_tab, volumechanged=tab_volume_changed, stop=stop))
 	await stop.wait()
 	await obs_task
 	await browser_task
