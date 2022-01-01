@@ -13,5 +13,8 @@ webcam_user = "biobox"
 # Path to camera.py on host with webcams
 webcam_control_path = "/home/biobox/BioBox/camera.py"
 
+# Set of webcams as names to devices
+webcams = {"Webcam #1 Focus": "/dev/video0", "Webcam #2 Focus": "/dev/video1"}
+
 # Port to connect to OBS WebSocket server
 obs_port = 4444
