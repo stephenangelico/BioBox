@@ -58,7 +58,11 @@ def init_motor_pos():
 		Analog.goal = 100
 
 # Webcam
-
+async def webcam(stop):
+	global ssh
+	ssh = asyncio.create_subprocess_exec("ssh", "-oBatchMode=yes", (config.webcam_user + "@" + config.host), "python3", config.webcam_control_path, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+	for cam_name, cam_path in config.webcams.items():
+		WebcamFocus(cam_name, cam_path)
 
 # OBS
 async def obs_ws(stop):
@@ -248,7 +252,10 @@ class Channel(Gtk.Frame):
 				else:
 					print(attr, value)
 
-	async def read_asyncio(self, level_cmd, mute_cmd):
+	async def read_asyncio(self, level_cmd, mute_cmd, device=None):
+		if device:
+			level_cmd = device + " " + level_cmd
+			mute_cmd = device + " " + mute_cmd
 		while True:
 			line = await self.data_source()
 			if not line:
@@ -341,10 +348,10 @@ class WebcamFocus(Channel):
 	# TODO: re-implement using asyncio
 	# TODO: use single SSH pipe for multiple cameras
 
-	def __init__(self, cam):
-		self.device_name = cam
-		super().__init__(name="%s Focus" %self.device_name)
-		self.device = "/dev/webcam_%s" %self.device_name.lower() # Uses webcam symlinks rather than /dev/video*
+	def __init__(self, cam_name, cam_path):
+		self.device_name = cam_name
+		super().__init__(name=self.device_name)
+		self.device = cam_path
 		threading.Thread(target=self.conn, daemon=True).start()
 		# TODO: use 'quit' command in camera.py
 
@@ -417,8 +424,8 @@ async def main():
 		category.group = group
 		modules.add(group)
 	VLC(stop)
-	WebcamFocus("C920")
-	WebcamFocus("C922")
+	WebcamFocus("C920 Focus", "/dev/webcam_c920")
+	WebcamFocus("C922 Focus", "/dev/webcam_c922")
 	GLib.timeout_add(500, init_motor_pos)
 	# Show window
 	def halt(*a): # We could use a lambda function unless we need IIDPIO
