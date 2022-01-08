@@ -65,6 +65,7 @@ async def webcam(stop):
 	# TODO: Handle connection failures
 	for cam_name, cam_path in config.webcams.items():
 		webcams[cam_path] = WebcamFocus(cam_name, cam_path)
+		await ssh.stdin.drain()
 	while True:
 		done, pending = await asyncio.wait([ssh.stdout.readline(), stop.wait()], return_when=asyncio.FIRST_COMPLETED)
 		if stop.is_set():
@@ -77,11 +78,21 @@ async def webcam(stop):
 			print(type(e))
 			print(e)
 			break
-		device, attr, value = data.decode("utf-8").split(": ")
-		if attr == "focus_absolute":
-			webcams[device].update_position(int(value))
-		elif attr == "focus_auto":
-			webcams[device].mute.set_active(int(value))
+		line = data.decode("utf-8")
+		device, sep, attr = line.partition(": ")
+		if sep:
+			if device == "Unknown":
+				print(line)
+			else:
+				cmd, sep, value = attr.partition(": ")
+				if not sep:
+					continue
+				if cmd == "focus_absolute":
+					webcams[device].update_position(int(value))
+				elif cmd == "focus_auto":
+					webcams[device].mute.set_active(int(value))
+				elif cmd == "Error":
+					print("Received error on %s: " %device, value)
 
 # OBS
 async def obs_ws(stop):
@@ -370,7 +381,6 @@ class WebcamFocus(Channel):
 		super().__init__(name=self.device_name)
 		self.device = cam_path
 		ssh.stdin.write(("cam_check %s \n" %self.device).encode("utf-8"))
-		asyncio.create_task(ssh.stdin.drain())
 
 	def write_external(self, value):
 		# v4l2-ctl throws an error if focus_absolute is changed while AF is on.
