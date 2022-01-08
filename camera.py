@@ -12,7 +12,7 @@ while True:
 			cam_check = subprocess.run(["v4l2-ctl", "-d", args[0], "-C", "focus_auto,focus_absolute"], text=True, check=True, capture_output=True)
 			for line in cam_check.stdout.split("\n"):
 				if line:
-					print(args[0], line)
+					print(args[0] + ": " + line)
 		elif cmd == "focus_auto":
 			subprocess.run(["v4l2-ctl", "-d", args[1], "-c", "focus_auto=%d" %int(args[0])], check=True) # TODO: Add error boundary
 		elif cmd == "focus_absolute":

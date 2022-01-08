@@ -32,6 +32,7 @@ import config # ImportError? See config_example.py
 
 selected_channel = None
 slider_last_wrote = time.monotonic() + 0.5
+webcams = {}
 tabs = {}
 obs_sources = {}
 source_types = ['browser_source', 'pulse_input_capture', 'pulse_output_capture']
@@ -60,9 +61,27 @@ def init_motor_pos():
 # Webcam
 async def webcam(stop):
 	global ssh
-	ssh = asyncio.create_subprocess_exec("ssh", "-oBatchMode=yes", (config.webcam_user + "@" + config.host), "python3", config.webcam_control_path, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+	ssh = await asyncio.create_subprocess_exec("ssh", "-oBatchMode=yes", (config.webcam_user + "@" + config.host), "python3", config.webcam_control_path, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+	# TODO: Handle connection failures
 	for cam_name, cam_path in config.webcams.items():
-		WebcamFocus(cam_name, cam_path)
+		webcams[cam_path] = WebcamFocus(cam_name, cam_path)
+	while True:
+		done, pending = await asyncio.wait([ssh.stdout.readline(), stop.wait()], return_when=asyncio.FIRST_COMPLETED)
+		if stop.is_set():
+			ssh.stdin.write("quit")
+			await ssh.stdin.flush()
+			break
+		try:
+			data = next(iter(done)).result()
+		except BaseException as e:
+			print(type(e))
+			print(e)
+			break
+		device, attr, value = data.decode("utf-8").split(": ")
+		if attr == "focus_absolute":
+			webcams[device].update_position(int(value))
+		elif attr == "focus_auto":
+			webcams[device].mute.set_active(int(value))
 
 # OBS
 async def obs_ws(stop):
@@ -345,39 +364,26 @@ class VLC(Channel):
 class WebcamFocus(Channel):
 	mute_labels = ("AF Off", "AF On")
 	step = 1.0 # Cameras have different steps but v4l2 will round any int to the step for the camera in question
-	# TODO: re-implement using asyncio
-	# TODO: use single SSH pipe for multiple cameras
 
 	def __init__(self, cam_name, cam_path):
 		self.device_name = cam_name
 		super().__init__(name=self.device_name)
 		self.device = cam_path
-		threading.Thread(target=self.conn, daemon=True).start()
-		# TODO: use 'quit' command in camera.py
-
-	def conn(self):
-		self.ssh = subprocess.Popen(["ssh", "-oBatchMode=yes", (config.webcam_user + "@" + config.host), "python3", config.webcam_control_path], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
-		# TODO: If the process fails, disable the channel (eg if authentication fails)
-		# Check camera state (auto-focus, focal distance)
-		self.ssh.stdin.write(("cam_check %s \n" %self.device).encode("utf-8"))
-		self.ssh.stdin.flush()
-		self.read_external("%s focus_absolute" %self.device, "%s focus_auto" %self.device)
-
-	def data_source(self):
-		return self.ssh.stdout.read1(1024)
+		ssh.stdin.write(("cam_check %s \n" %self.device).encode("utf-8"))
+		asyncio.create_task(ssh.stdin.drain())
 
 	def write_external(self, value):
 		# v4l2-ctl throws an error if focus_absolute is changed while AF is on.
 		# Therefore, if AF is on, quietly do nothing.
 		# When AF is toggled, this is called again anyway.
 		if not self.mute.get_active():
-			self.ssh.stdin.write(("focus_absolute %d %s\n" % (int(value), self.device)).encode("utf-8"))
-			self.ssh.stdin.flush()
+			ssh.stdin.write(("focus_absolute %d %s\n" % (int(value), self.device)).encode("utf-8"))
+			asyncio.create_task(ssh.stdin.drain())
 
 	def muted(self, widget):
 		mute_state = super().muted(widget)
-		self.ssh.stdin.write(("focus_auto %d %s\n" % (mute_state, self.device)).encode("utf-8"))
-		self.ssh.stdin.flush()
+		ssh.stdin.write(("focus_auto %d %s\n" % (mute_state, self.device)).encode("utf-8"))
+		asyncio.create_task(ssh.stdin.drain())
 		print("%s Autofocus " %self.device_name + ("Dis", "En")[mute_state] + "abled")
 		self.write_external(round(self.slider.get_value()))
 
@@ -424,8 +430,6 @@ async def main():
 		category.group = group
 		modules.add(group)
 	VLC(stop)
-	WebcamFocus("C920 Focus", "/dev/webcam_c920")
-	WebcamFocus("C922 Focus", "/dev/webcam_c922")
 	GLib.timeout_add(500, init_motor_pos)
 	# Show window
 	def halt(*a): # We could use a lambda function unless we need IIDPIO
@@ -434,9 +438,11 @@ async def main():
 	main_ui.show_all()
 	obs_task = asyncio.create_task(obs_ws(stop))
 	browser_task = asyncio.create_task(WebSocket.listen(connected=new_tab, disconnected=closed_tab, volumechanged=tab_volume_changed, stop=stop))
+	webcam_task = asyncio.create_task(webcam(stop))
 	await stop.wait()
 	await obs_task
 	await browser_task
+	await webcam_task
 	motor_cleanup()
 	os.close(stopper); os.close(stoppew)
 
