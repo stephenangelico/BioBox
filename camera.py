@@ -2,10 +2,13 @@
 import sys
 import subprocess
 
+print("Info: Hi")
+
 while True:
 	try:
 		cmd, *args, dev = input().strip().split()
 		if cmd == "quit":
+			print("Info: Bye")
 			break
 		elif cmd == "cam_check":
 			cam_check = subprocess.run(["v4l2-ctl", "-d", dev, "-C", "focus_auto,focus_absolute"], text=True, capture_output=True)
@@ -23,6 +26,6 @@ while True:
 			except ValueError:
 				print(dev + ": Error: Unknown value '%s' for %s" % (args[0], cmd))
 		else:
-			print("Unknown:", cmd)
+			print("Unknown command:", cmd)
 	except EOFError:
 		break

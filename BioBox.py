@@ -33,6 +33,7 @@ import config # ImportError? See config_example.py
 selected_channel = None
 slider_last_wrote = time.monotonic() + 0.5
 webcams = {}
+ssh = None
 tabs = {}
 obs_sources = {}
 source_types = ['browser_source', 'pulse_input_capture', 'pulse_output_capture']
@@ -61,16 +62,20 @@ def init_motor_pos():
 # Webcam
 async def webcam(stop):
 	global ssh
+	if ssh is not None:
+		# TODO: Revisit this when on-demand modules are working
+		ssh.stdin.write("quit")
+		try:
+			asyncio.wait_for(ssh.stdin.drain(), timeout=10)
+		except asyncio.TimeoutError:
+			ssh.terminate()
 	ssh = await asyncio.create_subprocess_exec("ssh", "-oBatchMode=yes", (config.webcam_user + "@" + config.host), "python3", config.webcam_control_path, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
 	# TODO: Handle connection failures
-	for cam_name, cam_path in config.webcams.items():
-		webcams[cam_path] = WebcamFocus(cam_name, cam_path)
-		await ssh.stdin.drain()
 	while True:
 		done, pending = await asyncio.wait([ssh.stdout.readline(), stop.wait()], return_when=asyncio.FIRST_COMPLETED)
 		if stop.is_set():
 			ssh.stdin.write("quit")
-			await ssh.stdin.flush()
+			await ssh.stdin.drain()
 			break
 		try:
 			data = next(iter(done)).result()
@@ -79,10 +84,17 @@ async def webcam(stop):
 			print(e)
 			break
 		line = data.decode("utf-8")
-		device, sep, attr = line.partition(": ")
+		device, sep, attr = line.rstrip().partition(": ")
 		if sep:
-			if device == "Unknown":
+			if device == "Unknown command":
 				print(line)
+			elif device == "Info":
+				if attr == "Hi":
+					for cam_name, cam_path in config.webcams.items():
+						webcams[cam_path] = WebcamFocus(cam_name, cam_path)
+					await ssh.stdin.drain()
+				elif attr == "Bye":
+					...
 			else:
 				cmd, sep, value = attr.partition(": ")
 				if not sep:
