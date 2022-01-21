@@ -74,8 +74,6 @@ async def webcam(stop):
 	while True:
 		done, pending = await asyncio.wait([ssh.stdout.readline(), stop.wait()], return_when=asyncio.FIRST_COMPLETED)
 		if stop.is_set():
-			ssh.stdin.write("quit")
-			await ssh.stdin.drain()
 			break
 		try:
 			data = next(iter(done)).result()
@@ -94,7 +92,7 @@ async def webcam(stop):
 						webcams[cam_path] = WebcamFocus(cam_name, cam_path)
 					await ssh.stdin.drain()
 				elif attr == "Bye":
-					...
+					break
 			else:
 				cmd, sep, value = attr.partition(": ")
 				if not sep:

@@ -28,4 +28,5 @@ while True:
 		else:
 			print("Unknown command:", cmd)
 	except EOFError:
+		print("Info: Bye")
 		break
