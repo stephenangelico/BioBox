@@ -69,11 +69,19 @@ async def webcam(stop):
 			asyncio.wait_for(ssh.stdin.drain(), timeout=10)
 		except asyncio.TimeoutError:
 			ssh.terminate()
-	ssh = await asyncio.create_subprocess_exec("ssh", "-oBatchMode=yes", (config.webcam_user + "@" + config.host), "python3", config.webcam_control_path, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+	try:
+		ssh = await asyncio.create_subprocess_exec("ssh", "-oBatchMode=yes", (config.webcam_user + "@" + config.host), "python3", config.webcam_control_path, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+		print("SSH:", ssh.pid)
+	except ConnectionResetError:
+		print("SSH connection lost")
 	# TODO: Handle connection failures
 	while True:
-		done, pending = await asyncio.wait([ssh.stdout.readline(), stop.wait()], return_when=asyncio.FIRST_COMPLETED)
-		if stop.is_set():
+		try:
+			done, pending = await asyncio.wait([ssh.stdout.readline(), stop.wait(), ssh.wait()], return_when=asyncio.FIRST_COMPLETED)
+		except ConnectionResetError:
+			print("SSH connection lost")
+			break
+		if ssh.returncode is not None or stop.is_set():
 			break
 		try:
 			data = next(iter(done)).result()
@@ -103,6 +111,11 @@ async def webcam(stop):
 					webcams[device].mute.set_active(int(value))
 				elif cmd == "Error":
 					print("Received error on %s: " %device, value)
+	print("SSH connection done")
+	for cam in webcams:
+		webcams[cam].remove() # FIXME. For some unknown reason, this doesn't make the modules disappear.
+		print(webcams[cam])
+		print(type(webcams[cam]))
 
 # OBS
 async def obs_ws(stop):
@@ -398,7 +411,12 @@ class WebcamFocus(Channel):
 		# When AF is toggled, this is called again anyway.
 		if not self.mute.get_active():
 			ssh.stdin.write(("focus_absolute %d %s\n" % (int(value), self.device)).encode("utf-8"))
-			asyncio.create_task(ssh.stdin.drain())
+			async def write_ssh():
+				try:
+					await ssh.stdin.drain()
+				except ConnectionResetError as e:
+					print("SSH connection lost")
+			asyncio.create_task(write_ssh())
 
 	def muted(self, widget):
 		mute_state = super().muted(widget)
