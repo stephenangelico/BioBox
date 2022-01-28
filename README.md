@@ -28,6 +28,8 @@ Pi spends power limited. Command to watch power limiting:
 `throttled=0x50000` means not throttled, and `throttled=0x50005` means power
 throttled.
 
+TODO: use joystick throttle (and buttons?) as alternate analog source
+
 Dependencies:
 =============
 
