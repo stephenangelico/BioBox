@@ -486,16 +486,10 @@ async def main():
 	obs_task = asyncio.create_task(obs_ws(stop))
 	browser_task = asyncio.create_task(WebSocket.listen(connected=new_tab, disconnected=closed_tab, volumechanged=tab_volume_changed, stop=stop))
 	webcam_task = asyncio.create_task(webcam(stop))
-	async def kill_webcam():
-		await asyncio.sleep(5)
-		ssh.stdin.write(b"quit foo\n")
-		await ssh.stdin.drain()
-	webcam_timeout = asyncio.create_task(kill_webcam())
 	await stop.wait()
 	await obs_task
 	await browser_task
 	await webcam_task
-	await webcam_timeout
 	motor_cleanup()
 	os.close(stopper); os.close(stoppew)
 
