@@ -76,17 +76,16 @@ async def webcam(stop):
 	global ssh
 	if ssh is not None:
 		# TODO: Revisit this when on-demand modules are working
-		ssh.stdin.write("quit")
+		ssh.stdin.write(b"quit foo\n")
 		try:
 			asyncio.wait_for(ssh.stdin.drain(), timeout=10)
 		except asyncio.TimeoutError:
 			ssh.terminate()
-	try:
-		ssh = await asyncio.create_subprocess_exec("ssh", "-oBatchMode=yes", (config.webcam_user + "@" + config.host), "python3", config.webcam_control_path, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
-		print("SSH:", ssh.pid)
-	except ConnectionResetError:
-		print("SSH connection lost")
+	ssh = await asyncio.create_subprocess_exec("ssh", "-oBatchMode=yes", (config.webcam_user + "@" + config.host), "python3", config.webcam_control_path, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
 	# TODO: Handle connection failures
+	# Testing/simulating connection issues is difficult as simply killing
+	# the ssh process causes the window contents to stop drawing (while
+	# remaining fully functional, as far as makes sense)
 	while True:
 		try:
 			done, pending = await asyncio.wait([ssh.stdout.readline(), stop.wait(), ssh.wait()], return_when=asyncio.FIRST_COMPLETED)
@@ -112,6 +111,7 @@ async def webcam(stop):
 						webcams[cam_path] = WebcamFocus(cam_name, cam_path)
 					await ssh.stdin.drain()
 				elif attr == "Bye":
+					print("camera.py quit")
 					break
 			else:
 				cmd, sep, value = attr.partition(": ")
@@ -123,11 +123,8 @@ async def webcam(stop):
 					webcams[device].mute.set_active(int(value))
 				elif cmd == "Error":
 					print("Received error on %s: " %device, value)
-	print("SSH connection done")
-	for cam in webcams:
-		webcams[cam].remove() # FIXME. For some unknown reason, this doesn't make the modules disappear.
-		print(webcams[cam])
-		print(type(webcams[cam]))
+	for cam in list(webcams):
+		webcams[cam].remove()
 
 # OBS
 async def obs_ws(stop):
@@ -351,6 +348,7 @@ class Channel(Gtk.Frame):
 		self.last_wrote = time.monotonic()
 
 	def remove(self):
+		print(self.group.get_children())
 		global selected_channel
 		if selected_channel is self:
 			selected_channel = None # Because it doesn't make sense to select another module
@@ -489,10 +487,16 @@ async def main():
 	obs_task = asyncio.create_task(obs_ws(stop))
 	browser_task = asyncio.create_task(WebSocket.listen(connected=new_tab, disconnected=closed_tab, volumechanged=tab_volume_changed, stop=stop))
 	webcam_task = asyncio.create_task(webcam(stop))
+	async def kill_webcam():
+		await asyncio.sleep(5)
+		ssh.stdin.write(b"quit foo\n")
+		await ssh.stdin.drain()
+	webcam_timeout = asyncio.create_task(kill_webcam())
 	await stop.wait()
 	await obs_task
 	await browser_task
 	await webcam_task
+	await webcam_timeout
 	motor_cleanup()
 	os.close(stopper); os.close(stoppew)
 
