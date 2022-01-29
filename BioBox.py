@@ -3,6 +3,7 @@ import sys
 import time
 import subprocess
 import threading
+import traceback
 import asyncio
 import WebSocket
 import websockets # ImportError? pip install websockets
@@ -41,6 +42,17 @@ source_types = ['browser_source', 'pulse_input_capture', 'pulse_output_capture']
 
 def report(msg):
 	print(time.time(), msg)
+
+async def threadlet(coro, title):
+	try:
+		await coro
+	except:
+		print("====== Unhandled exception in", title)
+		traceback.print_exc()
+
+# Instead of creating tasks directly, call spawn(some_func(arg, arg, arg))
+def spawn(coro, title="task"):
+	return asyncio.create_task(threadlet(coro, title))
 
 # Slider
 def read_analog():
