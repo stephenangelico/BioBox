@@ -125,6 +125,7 @@ async def webcam(stop):
 					print("Received error on %s: " %device, value)
 	for cam in list(webcams):
 		webcams[cam].remove()
+	print("After camera.py:", Gtk.events_pending(), Gtk.main_level())
 
 # OBS
 async def obs_ws(stop):
@@ -358,7 +359,7 @@ class VLC(Channel):
 	
 	def __init__(self, stop):
 		super().__init__(name="VLC")
-		asyncio.create_task(self.conn(stop))
+		spawn(self.conn(stop))
 
 	async def conn(self, stop):
 		try:
@@ -395,13 +396,13 @@ class VLC(Channel):
 
 	def write_external(self, value):
 		self.writer.write(b"volume %d \r\n" %value)
-		asyncio.create_task(self.writer.drain())
+		spawn(self.writer.drain())
 		print("To VLC: ", value)
 
 	def muted(self, widget):
 		mute_state = super().muted(widget)
 		self.writer.write(b"muted %d \r\n" %mute_state)
-		asyncio.create_task(self.writer.drain())
+		spawn(self.writer.drain())
 		print("VLC Mute status:", mute_state)
 
 class WebcamFocus(Channel):
@@ -425,12 +426,12 @@ class WebcamFocus(Channel):
 					await ssh.stdin.drain()
 				except ConnectionResetError as e:
 					print("SSH connection lost")
-			asyncio.create_task(write_ssh())
+			spawn(write_ssh())
 
 	def muted(self, widget):
 		mute_state = super().muted(widget)
 		ssh.stdin.write(("focus_auto %d %s\n" % (mute_state, self.device)).encode("utf-8"))
-		asyncio.create_task(ssh.stdin.drain())
+		spawn(ssh.stdin.drain())
 		print("%s Autofocus " %self.device_name + ("Dis", "En")[mute_state] + "abled")
 		self.write_external(round(self.slider.get_value()))
 
@@ -454,11 +455,11 @@ class Browser(Channel):
 		self.tabid = tabid
 
 	def write_external(self, value):
-		asyncio.create_task(WebSocket.set_volume(self.tabid, (value / 100)))
+		spawn(WebSocket.set_volume(self.tabid, (value / 100)))
 	
 	def muted(self, widget):
 		mute_state = super().muted(widget)
-		asyncio.create_task(WebSocket.set_muted(self.tabid, mute_state))
+		spawn(WebSocket.set_muted(self.tabid, mute_state))
 
 async def main():
 	stopper, stoppew = os.pipe()
@@ -483,19 +484,25 @@ async def main():
 		os.write(stoppew, b"*")
 	main_ui.connect("destroy", halt)
 	main_ui.show_all()
-	obs_task = asyncio.create_task(obs_ws(stop))
-	browser_task = asyncio.create_task(WebSocket.listen(connected=new_tab, disconnected=closed_tab, volumechanged=tab_volume_changed, stop=stop))
-	webcam_task = asyncio.create_task(webcam(stop))
+	obs_task = spawn(obs_ws(stop))
+	#browser_task = spawn(WebSocket.listen(connected=new_tab, disconnected=closed_tab, volumechanged=tab_volume_changed, stop=stop))
+	webcam_task = spawn(webcam(stop))
 	async def kill_webcam():
 		await asyncio.sleep(5)
 		ssh.stdin.write(b"quit foo\n")
 		await ssh.stdin.drain()
-	webcam_timeout = asyncio.create_task(kill_webcam())
+	async def print_events():
+		while True:
+			await asyncio.sleep(1)
+			print(Gtk.events_pending(), Gtk.main_level())
+	webcam_timeout = spawn(kill_webcam())
+	pending_events = spawn(print_events())
 	await stop.wait()
 	await obs_task
-	await browser_task
+	#await browser_task
 	await webcam_task
 	await webcam_timeout
+	await pending_events
 	motor_cleanup()
 	os.close(stopper); os.close(stoppew)
 
