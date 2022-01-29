@@ -348,7 +348,6 @@ class Channel(Gtk.Frame):
 		self.last_wrote = time.monotonic()
 
 	def remove(self):
-		print(self.group.get_children())
 		global selected_channel
 		if selected_channel is self:
 			selected_channel = None # Because it doesn't make sense to select another module
