@@ -40,6 +40,17 @@ obs_sources = {}
 source_types = ['browser_source', 'pulse_input_capture', 'pulse_output_capture']
 # TODO: Configure OBS modules within BioBox
 
+UI_HEADER = """
+<ui>
+	<menubar name='MenuBar'>
+		<menu action='ModulesMenu'>
+"""
+UI_FOOTER = """
+		</menu>
+	</menubar>
+</ui>
+"""
+
 def report(msg):
 	print(time.time(), msg)
 
@@ -465,17 +476,38 @@ async def main():
 	stop = asyncio.Event()
 	loop.add_reader(stopper, stop.set)
 	main_ui = Gtk.Window(title="Bio Box")
-	main_ui.set_border_width(10)
 	main_ui.set_resizable(False)
+	action_group = Gtk.ActionGroup(name="biobox_actions")
+
+	menubox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+	main_ui.add(menubox)
 	modules = Gtk.Box()
-	main_ui.add(modules)
+	modules.set_border_width(10)
 	global chan_select
 	chan_select = Gtk.RadioButton()
 	threading.Thread(target=read_analog, daemon=True).start()
+	ui_items = ""
+	menu_entries = []
 	for category in Channel.__subclasses__():
-		group = Gtk.Box(name=category.__name__)
+		group_name = category.__name__
+		group = Gtk.Box(name=group_name)
 		category.group = group
 		modules.add(group)
+		menuitem = "<menuitem action='%sToggle' />" %group_name
+		ui_items += menuitem
+		menu_entry = ("%sToggle" %group_name, None, group_name, None, None, None, True) #Last None is callback function
+		menu_entries.append(menu_entry)
+	ui_tree = UI_HEADER + ui_items + UI_FOOTER
+	action_group.add_action(Gtk.Action(name="ModulesMenu", label="Modules"))
+	action_group.add_toggle_actions(menu_entries)
+	ui_manager = Gtk.UIManager()
+	ui_manager.add_ui_from_string(ui_tree)
+	ui_manager.insert_action_group(action_group)
+	menubar = ui_manager.get_widget("/MenuBar")
+	menubox.pack_start(menubar, False, False, 0)
+	menubox.add(modules)
+
+
 	VLC(stop)
 	GLib.timeout_add(500, init_motor_pos)
 	# Show window
