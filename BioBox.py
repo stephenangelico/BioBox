@@ -66,9 +66,12 @@ def spawn(coro, title="task"):
 	return asyncio.create_task(threadlet(coro, title))
 
 # Slider
-def read_analog():
+def read_analog(): #TODO: Pass stop event when migrating to asyncio task
 	global slider_last_wrote
 	# Get analog value from Analog.py and write to selected channel's slider
+	#done, pending = await asyncio.wait([Analog.read_value(), stop.wait()], return_when=asyncio.FIRST_COMPLETED)
+	#if stop.is_set():
+	#	break
 	for volume in Analog.read_value():
 		if selected_channel:
 			print("From slider:", volume)
@@ -508,17 +511,19 @@ async def main():
 	menubox.add(modules)
 
 
-	VLC(stop)
+	VLC(stop) #TODO: Make a task like the other module classes
 	GLib.timeout_add(500, init_motor_pos)
 	# Show window
 	def halt(*a): # We could use a lambda function unless we need IIDPIO
 		os.write(stoppew, b"*")
 	main_ui.connect("destroy", halt)
 	main_ui.show_all()
+	#slider_task = asyncio.create_task(read_analog(stop))
 	obs_task = asyncio.create_task(obs_ws(stop))
 	browser_task = asyncio.create_task(WebSocket.listen(connected=new_tab, disconnected=closed_tab, volumechanged=tab_volume_changed, stop=stop))
 	webcam_task = asyncio.create_task(webcam(stop))
 	await stop.wait()
+	#await slider_task
 	await obs_task
 	await browser_task
 	await webcam_task
