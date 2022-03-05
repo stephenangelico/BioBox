@@ -302,7 +302,7 @@ class Channel(Gtk.Frame):
 
 	def write_analog(self, value):
 		global slider_last_wrote
-		if time.monotonic() > slider_last_wrote + 0.01:
+		if time.monotonic() > slider_last_wrote + 0.1:
 			Analog.goal = value
 			slider_last_wrote = time.monotonic()
 			print("Slider goal: %s" % Analog.goal)
