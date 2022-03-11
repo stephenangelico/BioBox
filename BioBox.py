@@ -518,6 +518,7 @@ async def main():
 		os.write(stoppew, b"*")
 	main_ui.connect("destroy", halt)
 	main_ui.show_all()
+	# TODO: Have the ability to cancel these tasks (such as when disabled in menu)
 	#slider_task = asyncio.create_task(read_analog(stop))
 	obs_task = asyncio.create_task(obs_ws(stop))
 	browser_task = asyncio.create_task(WebSocket.listen(connected=new_tab, disconnected=closed_tab, volumechanged=tab_volume_changed, stop=stop))
