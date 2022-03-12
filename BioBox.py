@@ -25,9 +25,10 @@ except (ImportError, NotImplementedError): # Provide a dummy for testing
 		pass
 	class Analog():
 		goal = None
-		async def read_value(stop):
+		async def read_value():
 			yield 0 # Yield once and then stop
 			# Just as a function is destined to yield once, and then face termination...
+			# TODO: instead of creating dummy function, disable slider task on startup
 
 import config # ImportError? See config_example.py
 
