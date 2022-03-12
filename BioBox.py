@@ -311,25 +311,7 @@ class Channel(Gtk.Frame):
 			slider_last_wrote = time.monotonic()
 			print("Slider goal: %s" % Analog.goal)
 
-	def read_external(self, level_cmd, mute_cmd):
-		buffer = b""
-		while True:
-			data = self.data_source()
-			if not data:
-				break
-			buffer += data
-			while b"\n" in buffer:
-				line, buffer = buffer.split(b"\n", 1)
-				line = line.rstrip().decode("utf-8")
-				attr, value = line.split(":", 1)
-				if attr == level_cmd:
-					GLib.idle_add(self.update_position, int(value))
-				elif attr == mute_cmd:
-					GLib.idle_add(self.mute.set_active, int(value))
-				else:
-					print(attr, value)
-
-	async def read_asyncio(self, level_cmd, mute_cmd, device=None):
+	async def read_external(self, level_cmd, mute_cmd, device=None):
 		if device:
 			level_cmd = device + " " + level_cmd
 			mute_cmd = device + " " + mute_cmd
@@ -395,7 +377,7 @@ class VLC(Channel):
 			# and removing easier.
 		self.writer.write(b"volume\r\nmuted\r\n") # Ask volume and mute state
 		await self.writer.drain()
-		await asyncio.wait([self.read_asyncio("volume", "muted"), stop.wait()], return_when=asyncio.FIRST_COMPLETED)
+		await asyncio.wait([self.read_external("volume", "muted"), stop.wait()], return_when=asyncio.FIRST_COMPLETED)
 		self.writer.close() # If above returns, we're shutting down this module
 		await self.writer.wait_closed()
 		self.remove() # Remove module once we're done
