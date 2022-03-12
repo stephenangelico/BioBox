@@ -25,7 +25,7 @@ except (ImportError, NotImplementedError): # Provide a dummy for testing
 		pass
 	class Analog():
 		goal = None
-		def read_value():
+		async def read_value():
 			yield 0 # Yield once and then stop
 			# Just as a function is destined to yield once, and then face termination...
 
@@ -66,18 +66,19 @@ def spawn(coro, title="task"):
 	return asyncio.create_task(threadlet(coro, title))
 
 # Slider
-def read_analog(): #TODO: Pass stop event when migrating to asyncio task
+async def read_analog(stop):
 	global slider_last_wrote
 	# Get analog value from Analog.py and write to selected channel's slider
-	#done, pending = await asyncio.wait([Analog.read_value(), stop.wait()], return_when=asyncio.FIRST_COMPLETED)
-	#if stop.is_set():
-	#	break
-	for volume in Analog.read_value():
-		if selected_channel:
-			print("From slider:", volume)
-			# TODO: Scale 0-100% to 0-150%
-			GLib.idle_add(selected_channel.update_position, volume)
-			slider_last_wrote = time.monotonic()
+	while True:
+		if stop.is_set():
+			break
+		else:
+			async for volume in Analog.read_value(stop):
+				if selected_channel:
+					print("From slider:", volume)
+					# TODO: Scale 0-100% to 0-150%
+					selected_channel.update_position(volume)
+					slider_last_wrote = time.monotonic()
 
 def init_motor_pos():
 	if selected_channel:
@@ -488,7 +489,6 @@ async def main():
 	modules.set_border_width(10)
 	global chan_select
 	chan_select = Gtk.RadioButton()
-	threading.Thread(target=read_analog, daemon=True).start()
 	ui_items = ""
 	menu_entries = []
 	for category in Channel.__subclasses__():
@@ -512,19 +512,19 @@ async def main():
 
 
 	VLC(stop) #TODO: Make a task like the other module classes
-	GLib.timeout_add(500, init_motor_pos)
+	GLib.timeout_add(1000, init_motor_pos)
 	# Show window
 	def halt(*a): # We could use a lambda function unless we need IIDPIO
 		os.write(stoppew, b"*")
 	main_ui.connect("destroy", halt)
 	main_ui.show_all()
 	# TODO: Have the ability to cancel these tasks (such as when disabled in menu)
-	#slider_task = asyncio.create_task(read_analog(stop))
+	slider_task = asyncio.create_task(read_analog(stop))
 	obs_task = asyncio.create_task(obs_ws(stop))
 	browser_task = asyncio.create_task(WebSocket.listen(connected=new_tab, disconnected=closed_tab, volumechanged=tab_volume_changed, stop=stop))
 	webcam_task = asyncio.create_task(webcam(stop))
 	await stop.wait()
-	#await slider_task
+	await slider_task
 	await obs_task
 	await browser_task
 	await webcam_task

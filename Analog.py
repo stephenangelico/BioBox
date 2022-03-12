@@ -1,4 +1,5 @@
 import os
+import asyncio
 import time
 import bisect
 import collections
@@ -33,9 +34,12 @@ interp_values = [511, 538, 569, 603, 643, 689, 739, 799, 869, 955, 1023] # 0-100
 dead_zone_low = 2
 dead_zone_high = 3
 
-def read_position():
+async def read_position(stop):
 	last_read = 0	# this keeps track of the last potentiometer value
 	while True:
+		done, pending = await asyncio.wait([asyncio.sleep(0.015625), stop.wait()], return_when=asyncio.FIRST_COMPLETED)
+		if stop.is_set():
+			break
 		# we'll assume that the pot didn't move
 		pot_changed = False
 		# read the analog pin
@@ -49,7 +53,6 @@ def read_position():
 			# save the potentiometer reading for the next loop
 			last_read = pot
 			yield(pos)
-		time.sleep(0.015625)
 
 def remap_range(raw):
 	# Convert values from ADC to travel distance 0-100%
@@ -96,41 +99,46 @@ def bounds_test():
 				return test_min
 		time.sleep(0.015625)
 
-def read_value():
+async def read_value(stop): # 'stop' event passed down from BioBox.main
 	global goal
 	last_speed = None
 	last_dir = None
 	goal_completed = 0
-	for pos in read_position():
-		if goal is not None:
-			if goal < 0:
-				goal = 0
-			if goal > 100:
-				goal = 100
-			if goal > pos:
-				dir = Motor.forward
-			elif goal < pos:
-				dir = Motor.backward
-			dist = abs(pos - goal)
-			if dist >= 25:
-				speed = 100
-			elif dist >= 1:
-				speed = 80
-			else:
-				speed = 0
-				dir = Motor.brake
-				goal = None
-				goal_completed = time.monotonic()
-			print(dir.__name__, speed, dist)
-			if speed != last_speed:
-				Motor.speed(speed)
-				last_speed = speed
-			if dir is not last_dir:
-				dir()
-				last_dir = dir
+	async for pos in read_position(stop):
+		if stop.is_set():
+			goal = None
+			Motor.speed(0)
+			Motor.brake()
 		else:
-			if time.monotonic() > goal_completed + 0.15:
-				yield(pos)
+			if goal is not None:
+				if goal < 0:
+					goal = 0
+				if goal > 100:
+					goal = 100
+				if goal > pos:
+					dir = Motor.forward
+				elif goal < pos:
+					dir = Motor.backward
+				dist = abs(pos - goal)
+				if dist >= 25:
+					speed = 100
+				elif dist >= 1:
+					speed = 80
+				else:
+					speed = 0
+					dir = Motor.brake
+					goal = None
+					goal_completed = time.monotonic()
+				print(dir.__name__, speed, dist)
+				if speed != last_speed:
+					Motor.speed(speed)
+					last_speed = speed
+				if dir is not last_dir:
+					dir()
+					last_dir = dir
+			else:
+				if time.monotonic() > goal_completed + 0.15:
+					yield(pos)
 
 def test_slider():
 	Motor.forward()
