@@ -25,7 +25,7 @@ except (ImportError, NotImplementedError): # Provide a dummy for testing
 		pass
 	class Analog():
 		goal = None
-		async def read_value():
+		async def read_value(stop):
 			yield 0 # Yield once and then stop
 			# Just as a function is destined to yield once, and then face termination...
 
