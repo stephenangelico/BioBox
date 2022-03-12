@@ -297,6 +297,14 @@ class Channel(Gtk.Frame):
 		# Send adjustment value to multiple places - one will echo back
 		# to the source of the change, any others are echoing forward,
 		# hence 'refraction'.
+		# TODO: Completely rethink this to take changes from backend,
+		# slider or GTK scale, keeping track of the value and
+		# suppressing duplicates. This would require refract to be
+		# authoratative on the true desired value of the channel,
+		# removing that status from the GTK scale. It would still need
+		# to catch the 'value-changed' signal from the scale but also
+		# would need to intercept changes from the other sources (which
+		# currently change the scale's value directly).
 		value = round(widget.get_value())
 		if time.monotonic() > self.last_wrote + 0.01:
 			# TODO: drop only writes that would result in bounce loop
