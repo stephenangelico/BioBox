@@ -104,12 +104,14 @@ async def read_value(stop): # 'stop' event passed down from BioBox.main
 	last_speed = None
 	last_dir = None
 	goal_completed = 0
+	safety = collections.deque([0] * 2, 5)
 	async for pos in read_position(stop):
 		if stop.is_set():
 			goal = None
 			Motor.speed(0)
 			Motor.brake()
 		else:
+			safety.append(pos)
 			if goal is not None:
 				if goal < 0:
 					goal = 0
@@ -129,6 +131,13 @@ async def read_value(stop): # 'stop' event passed down from BioBox.main
 					dir = Motor.brake
 					goal = None
 					goal_completed = time.monotonic()
+				if max(safety) - min(safety) < 0.1: # Guard against getting stuck
+					# This does not solve slider fighting, but it should stop the motor wearing out as fast
+					speed = 0
+					dir = Motor.brake
+					goal = None
+					goal_completed = time.monotonic()
+
 				print(dir.__name__, speed, dist)
 				if speed != last_speed:
 					Motor.speed(speed)
@@ -139,6 +148,7 @@ async def read_value(stop): # 'stop' event passed down from BioBox.main
 			else:
 				if time.monotonic() > goal_completed + 0.15:
 					yield(pos)
+
 
 def test_slider():
 	Motor.forward()
