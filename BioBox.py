@@ -310,7 +310,7 @@ class Channel(Gtk.Frame):
 
 	def refract_value(self, widget):
 		# Send value to multiple places, keeping track of sent value to
-		# avoid bounce of slider fighting.
+		# avoid bounce or slider fighting.
 		value = round(widget.get_value())
 		if value != self.oldvalue:
 			if not isinstance(widget, Gtk.Adjustment):
