@@ -66,20 +66,6 @@ async def threadlet(coro, title):
 def spawn(coro, title="task"):
 	return asyncio.create_task(threadlet(coro, title))
 
-class SliderPacket():
-	def __init__(self, volume):
-		self.volume = volume
-	
-	def get_value(self):
-		return self.volume
-
-class BackendPacket():
-	def __init__(self, volume):
-		self.volume = volume
-	
-	def get_value(self):
-		return self.volume
-
 # Slider
 async def read_analog(stop):
 	global slider_last_wrote
@@ -92,7 +78,7 @@ async def read_analog(stop):
 				if selected_channel:
 					print("From slider:", volume)
 					# TODO: Scale 0-100% to 0-150%
-					selected_channel.refract_value(SliderPacket(volume))
+					selected_channel.refract_value(volume, "analog")
 					slider_last_wrote = time.monotonic()
 
 def init_motor_pos():
@@ -148,7 +134,7 @@ async def webcam(stop):
 				if not sep:
 					continue
 				if cmd == "focus_absolute":
-					webcams[device].refract_value(BackendPacket(int(value)))
+					webcams[device].refract_value(int(value), "backend")
 				elif cmd == "focus_auto":
 					webcams[device].mute.set_active(int(value))
 				elif cmd == "Error":
@@ -178,7 +164,7 @@ async def obs_ws(stop):
 			msg = json.loads(data)
 			collector = {}
 			if msg.get("update-type") == "SourceVolumeChanged":
-				obs_sources[msg["sourceName"]].refract_value(BackendPacket(int(max(msg["volume"], 0) ** 0.5 * 100)))
+				obs_sources[msg["sourceName"]].refract_value(int(max(msg["volume"], 0) ** 0.5 * 100), "backend")
 			elif msg.get("update-type") == "SourceMuteStateChanged":
 				obs_sources[msg["sourceName"]].mute.set_active(msg["muted"])
 			elif msg.get("update-type") == "SwitchScenes":
@@ -236,7 +222,7 @@ def closed_tab(tabid):
 def tab_volume_changed(tabid, volume, mute_state):
 	print("On", tabid, ": Volume:", volume, "Muted:", bool(mute_state))
 	channel = tabs[tabid]
-	channel.refract_value(BackendPacket(int(volume * 100))) # Truncate or round?
+	channel.refract_value(int(volume * 100), "backend") # Truncate or round?
 	channel.mute.set_active(int(mute_state))
 
 class Channel(Gtk.Frame):
@@ -261,7 +247,7 @@ class Channel(Gtk.Frame):
 		level.add_mark(value=100, position=Gtk.PositionType.RIGHT, markup=None)
 		box.pack_start(level, True, True, 0)
 		level.connect("focus", self.focus_delay)
-		self.slider.connect("value-changed", self.refract_value)
+		self.slider.connect("value-changed", self.adjustment_changed)
 		# Spinner
 		spinvalue = Gtk.SpinButton(adjustment=self.slider, digits=2)
 		box.pack_start(spinvalue, False, False, 0)
@@ -308,20 +294,23 @@ class Channel(Gtk.Frame):
 			print(selected_channel.channel_name)
 			self.write_analog(round(selected_channel.slider.get_value()))
 
-	def refract_value(self, widget):
+	def adjustment_changed(self, widget):
+		value = round(widget.get_value())
+		self.refract_value(value, "gtk")
+
+	def refract_value(self, value, source):
 		# Send value to multiple places, keeping track of sent value to
 		# avoid bounce or slider fighting.
-		value = round(widget.get_value())
 		if value != self.oldvalue:
-			if not isinstance(widget, Gtk.Adjustment):
+			if source != "gtk":
 				self.update_position(value)
-			if not isinstance(widget, SliderPacket):
+			if source != "slider":
 				if selected_channel is self:
 					self.write_analog(value)
-			if not isinstance(widget, BackendPacket):
+			if source != "backend":
 				if time.monotonic() > self.last_wrote + 0.01:
 					# TODO: drop only writes that would result in bounce loop
-					self.write_external(value)
+					self.write_external(round(value))
 					self.last_wrote = time.monotonic()
 			self.oldvalue = value
 
@@ -343,7 +332,7 @@ class Channel(Gtk.Frame):
 			line = line.rstrip().decode("utf-8")
 			attr, value = line.split(":", 1)
 			if attr == level_cmd:
-				self.refract_value(BackendPacket(int(value)))
+				self.refract_value(int(value), "backend")
 			elif attr == mute_cmd:
 				self.mute.set_active(int(value))
 			else:
@@ -456,7 +445,7 @@ class OBS(Channel):
 	def __init__(self, source):
 		self.name = source['name']
 		super().__init__(name=self.name)
-		self.refract_value(BackendPacket(int(max(source['volume'], 0) ** 0.5 * 100)))
+		self.refract_value(int(max(source['volume'], 0) ** 0.5 * 100), "backend")
 		self.mute.set_active(source['muted'])
 
 	def write_external(self, value):
