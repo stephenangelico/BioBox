@@ -66,6 +66,20 @@ async def threadlet(coro, title):
 def spawn(coro, title="task"):
 	return asyncio.create_task(threadlet(coro, title))
 
+class SliderPacket():
+	def __init__(self, volume):
+		self.volume = volume
+	
+	def get_value(self):
+		return self.volume
+
+class BackendPacket():
+	def __init__(self, volume):
+		self.volume = volume
+	
+	def get_value(self):
+		return self.volume
+
 # Slider
 async def read_analog(stop):
 	global slider_last_wrote
@@ -78,7 +92,7 @@ async def read_analog(stop):
 				if selected_channel:
 					print("From slider:", volume)
 					# TODO: Scale 0-100% to 0-150%
-					selected_channel.update_position(volume)
+					selected_channel.refract_value(SliderPacket(volume))
 					slider_last_wrote = time.monotonic()
 
 def init_motor_pos():
@@ -134,7 +148,7 @@ async def webcam(stop):
 				if not sep:
 					continue
 				if cmd == "focus_absolute":
-					webcams[device].update_position(int(value))
+					webcams[device].refract_value(BackendPacket(int(value)))
 				elif cmd == "focus_auto":
 					webcams[device].mute.set_active(int(value))
 				elif cmd == "Error":
@@ -164,7 +178,7 @@ async def obs_ws(stop):
 			msg = json.loads(data)
 			collector = {}
 			if msg.get("update-type") == "SourceVolumeChanged":
-				obs_sources[msg["sourceName"]].update_position(int(max(msg["volume"], 0) ** 0.5 * 100))
+				obs_sources[msg["sourceName"]].refract_value(BackendPacket(int(max(msg["volume"], 0) ** 0.5 * 100)))
 			elif msg.get("update-type") == "SourceMuteStateChanged":
 				obs_sources[msg["sourceName"]].mute.set_active(msg["muted"])
 			elif msg.get("update-type") == "SwitchScenes":
@@ -222,7 +236,7 @@ def closed_tab(tabid):
 def tab_volume_changed(tabid, volume, mute_state):
 	print("On", tabid, ": Volume:", volume, "Muted:", bool(mute_state))
 	channel = tabs[tabid]
-	channel.update_position(int(volume * 100)) # Truncate or round?
+	channel.refract_value(BackendPacket(int(volume * 100))) # Truncate or round?
 	channel.mute.set_active(int(mute_state))
 
 class Channel(Gtk.Frame):
@@ -240,7 +254,8 @@ class Channel(Gtk.Frame):
 		#channel_label = Gtk.Label(label=self.channel_name)
 		#box.pack_start(channel_label, False, False, 0)
 		# Slider stuff
-		self.slider = Gtk.Adjustment(value=100.0, lower=0.0, upper=150.0, step_increment=1.0, page_increment=10.0, page_size=0)
+		self.oldvalue = 100.0
+		self.slider = Gtk.Adjustment(value=self.oldvalue, lower=0.0, upper=150.0, step_increment=1.0, page_increment=10.0, page_size=0)
 		level = Gtk.Scale(orientation=Gtk.Orientation.VERTICAL, adjustment=self.slider, inverted=True, draw_value=False)
 		level.add_mark(value=100, position=Gtk.PositionType.LEFT, markup=None)
 		level.add_mark(value=100, position=Gtk.PositionType.RIGHT, markup=None)
@@ -294,24 +309,21 @@ class Channel(Gtk.Frame):
 			self.write_analog(round(selected_channel.slider.get_value()))
 
 	def refract_value(self, widget):
-		# Send adjustment value to multiple places - one will echo back
-		# to the source of the change, any others are echoing forward,
-		# hence 'refraction'.
-		# TODO: Completely rethink this to take changes from backend,
-		# slider or GTK scale, keeping track of the value and
-		# suppressing duplicates. This would require refract to be
-		# authoratative on the true desired value of the channel,
-		# removing that status from the GTK scale. It would still need
-		# to catch the 'value-changed' signal from the scale but also
-		# would need to intercept changes from the other sources (which
-		# currently change the scale's value directly).
+		# Send value to multiple places, keeping track of sent value to
+		# avoid bounce of slider fighting.
 		value = round(widget.get_value())
-		if time.monotonic() > self.last_wrote + 0.01:
-			# TODO: drop only writes that would result in bounce loop
-			self.write_external(value)
-			self.last_wrote = time.monotonic()
-		if selected_channel is self:
-			self.write_analog(value)
+		if value != self.oldvalue:
+			if not isinstance(widget, Gtk.Adjustment):
+				self.update_position(value)
+			if not isinstance(widget, SliderPacket):
+				if selected_channel is self:
+					self.write_analog(value)
+			if not isinstance(widget, BackendPacket):
+				if time.monotonic() > self.last_wrote + 0.01:
+					# TODO: drop only writes that would result in bounce loop
+					self.write_external(value)
+					self.last_wrote = time.monotonic()
+			self.oldvalue = value
 
 	def write_analog(self, value):
 		global slider_last_wrote
@@ -331,7 +343,7 @@ class Channel(Gtk.Frame):
 			line = line.rstrip().decode("utf-8")
 			attr, value = line.split(":", 1)
 			if attr == level_cmd:
-				self.update_position(int(value))
+				self.refract_value(BackendPacket(int(value)))
 			elif attr == mute_cmd:
 				self.mute.set_active(int(value))
 			else:
@@ -444,7 +456,7 @@ class OBS(Channel):
 	def __init__(self, source):
 		self.name = source['name']
 		super().__init__(name=self.name)
-		self.update_position(int(max(source['volume'], 0) ** 0.5 * 100))
+		self.refract_value(BackendPacket(int(max(source['volume'], 0) ** 0.5 * 100)))
 		self.mute.set_active(source['muted'])
 
 	def write_external(self, value):
