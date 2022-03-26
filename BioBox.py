@@ -483,6 +483,23 @@ async def main():
 	chan_select = Gtk.RadioButton()
 	ui_items = ""
 	menu_entries = []
+	class Task():
+		running = {}
+		def vlctoggle():
+			return VLC(stop)
+		def webcamfocustoggle():
+			return asyncio.create_task(webcam(stop))
+		def obstoggle():
+			return asyncio.create_task(obs_ws(stop))
+		def browsertoggle():
+			return asyncio.create_task(WebSocket.listen(connected=new_tab, disconnected=closed_tab, volumechanged=tab_volume_changed, stop=stop))
+	def toggle_menu_item(widget):
+		toggle_group = widget.get_name()
+		if widget.get_active():
+			task = getattr(Task, toggle_group.lower())()
+			Task.running[toggle_group] = task
+		else:
+			Task.running[toggle_group].cancel() #TODO: Check each task to make sure it handles cancellation
 	for category in Channel.__subclasses__():
 		group_name = category.__name__
 		group = Gtk.Box(name=group_name)
@@ -490,7 +507,7 @@ async def main():
 		modules.add(group)
 		menuitem = "<menuitem action='%sToggle' />" %group_name
 		ui_items += menuitem
-		menu_entry = ("%sToggle" %group_name, None, group_name, None, None, None, True) #Last None is callback function
+		menu_entry = ("%sToggle" %group_name, None, group_name, None, None, toggle_menu_item, True) #Last None is callback function, boolean is default state
 		menu_entries.append(menu_entry)
 	ui_tree = UI_HEADER + ui_items + UI_FOOTER
 	action_group.add_action(Gtk.Action(name="ModulesMenu", label="Modules"))
@@ -503,7 +520,7 @@ async def main():
 	menubox.add(modules)
 
 
-	VLC(stop) #TODO: Make a task like the other module classes
+	vlc_task = VLC(stop) #TODO: Make like the other module tasks
 	GLib.timeout_add(1000, init_motor_pos)
 	# Show window
 	def halt(*a): # We could use a lambda function unless we need IIDPIO
