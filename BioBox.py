@@ -34,7 +34,6 @@ import config # ImportError? See config_example.py
 selected_channel = None
 slider_last_wrote = time.monotonic() + 0.5
 webcams = {}
-ssh = None
 tabs = {}
 obs_sources = {}
 source_types = ['browser_source', 'pulse_input_capture', 'pulse_output_capture']
@@ -77,58 +76,64 @@ def init_motor_pos():
 
 # Webcam
 async def webcam(stop):
-	global ssh
-	if ssh is not None:
+	ssh = None
+	async def cleanup():
 		# TODO: Revisit this when on-demand modules are working
 		ssh.stdin.write(b"quit foo\n")
 		try:
-			asyncio.wait_for(ssh.stdin.drain(), timeout=10)
+			await asyncio.wait_for(ssh.stdin.drain(), timeout=5)
 		except asyncio.TimeoutError:
 			ssh.terminate()
-	ssh = await asyncio.create_subprocess_exec("ssh", "-oBatchMode=yes", (config.webcam_user + "@" + config.host), "python3", config.webcam_control_path, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
-	# TODO: Handle connection failures
-	# Testing/simulating connection issues is difficult as simply killing
-	# the ssh process causes the window contents to stop drawing (while
-	# remaining fully functional, as far as makes sense)
-	while True:
-		try:
-			done, pending = await asyncio.wait([ssh.stdout.readline(), stop.wait(), ssh.wait()], return_when=asyncio.FIRST_COMPLETED)
-		except ConnectionResetError:
-			print("SSH connection lost")
-			break
-		if ssh.returncode is not None or stop.is_set():
-			break
-		try:
-			data = next(iter(done)).result()
-		except BaseException as e:
-			print(type(e))
-			print(e)
-			break
-		line = data.decode("utf-8")
-		device, sep, attr = line.rstrip().partition(": ")
-		if sep:
-			if device == "Unknown command":
-				print(line)
-			elif device == "Info":
-				if attr == "Hi":
-					for cam_name, cam_path in config.webcams.items():
-						webcams[cam_path] = WebcamFocus(cam_name, cam_path)
-					await ssh.stdin.drain()
-				elif attr == "Bye":
-					print("camera.py quit")
-					break
-			else:
-				cmd, sep, value = attr.partition(": ")
-				if not sep:
-					continue
-				if cmd == "focus_absolute":
-					webcams[device].refract_value(int(value), "backend")
-				elif cmd == "focus_auto":
-					webcams[device].mute.set_active(int(value))
-				elif cmd == "Error":
-					print("Received error on %s: " %device, value)
-	for cam in list(webcams):
-		webcams[cam].remove()
+	try:
+		ssh = await asyncio.create_subprocess_exec("ssh", "-oBatchMode=yes", (config.webcam_user + "@" + config.host), "python3", config.webcam_control_path, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+		# TODO: Handle connection failures
+		# Testing/simulating connection issues is difficult as simply killing
+		# the ssh process causes the window contents to stop drawing (while
+		# remaining fully functional, as far as makes sense)
+		while True:
+			try:
+				done, pending = await asyncio.wait([ssh.stdout.readline(), stop.wait(), ssh.wait()], return_when=asyncio.FIRST_COMPLETED)
+			except ConnectionResetError:
+				print("SSH connection lost")
+				break
+			if ssh.returncode is not None or stop.is_set():
+				break
+			try:
+				data = next(iter(done)).result()
+			except BaseException as e:
+				print(type(e))
+				print(e)
+				break
+			line = data.decode("utf-8")
+			device, sep, attr = line.rstrip().partition(": ")
+			if sep:
+				if device == "Unknown command":
+					print(line)
+				elif device == "Info":
+					if attr == "Hi":
+						for cam_name, cam_path in config.webcams.items():
+							webcams[cam_path] = WebcamFocus(cam_name, cam_path, ssh)
+						await ssh.stdin.drain()
+					elif attr == "Bye":
+						print("camera.py quit")
+						break
+				else:
+					cmd, sep, value = attr.partition(": ")
+					if not sep:
+						continue
+					if cmd == "focus_absolute":
+						webcams[device].refract_value(int(value), "backend")
+					elif cmd == "focus_auto":
+						webcams[device].mute.set_active(int(value))
+					elif cmd == "Error":
+						print("Received error on %s: " %device, value)
+	except asyncio.CancelledError:
+		await cleanup()
+		raise
+	finally:
+		for cam in list(webcams):
+			webcams[cam].remove()
+		ssh = None
 
 # OBS
 async def obs_ws(stop):
@@ -402,33 +407,37 @@ class VLC(Channel):
 	def cancel(self):
 		self.backend.cancel()
 		self.remove()
+
 class WebcamFocus(Channel):
 	mute_labels = ("AF Off", "AF On")
 	step = 1.0 # Cameras have different steps but v4l2 will round any int to the step for the camera in question
 
-	def __init__(self, cam_name, cam_path):
+	def __init__(self, cam_name, cam_path, ssh):
 		self.device_name = cam_name
 		super().__init__(name=self.device_name)
 		self.device = cam_path
-		ssh.stdin.write(("cam_check %s \n" %self.device).encode("utf-8"))
+		self.ssh = ssh
+		self.ssh.stdin.write(("cam_check %s \n" %self.device).encode("utf-8"))
+		# Drain done at backend after starting all webcam modules
 
 	def write_external(self, value):
 		# v4l2-ctl throws an error if focus_absolute is changed while AF is on.
 		# Therefore, if AF is on, quietly do nothing.
 		# When AF is toggled, this is called again anyway.
 		if not self.mute.get_active():
-			ssh.stdin.write(("focus_absolute %d %s\n" % (int(value), self.device)).encode("utf-8"))
-			async def write_ssh():
-				try:
-					await ssh.stdin.drain()
-				except ConnectionResetError as e:
-					print("SSH connection lost")
-			asyncio.create_task(write_ssh())
+			self.ssh.stdin.write(("focus_absolute %d %s\n" % (int(value), self.device)).encode("utf-8"))
+			asyncio.create_task(self.write_ssh())
+
+	async def write_ssh(self):
+		try:
+			await self.ssh.stdin.drain()
+		except ConnectionResetError as e:
+			print("SSH connection lost")
 
 	def muted(self, widget):
 		mute_state = super().muted(widget)
-		ssh.stdin.write(("focus_auto %d %s\n" % (mute_state, self.device)).encode("utf-8"))
-		asyncio.create_task(ssh.stdin.drain())
+		self.ssh.stdin.write(("focus_auto %d %s\n" % (mute_state, self.device)).encode("utf-8"))
+		asyncio.create_task(self.ssh.stdin.drain())
 		print("%s Autofocus " %self.device_name + ("Dis", "En")[mute_state] + "abled")
 		self.write_external(round(self.slider.get_value()))
 
@@ -481,7 +490,9 @@ async def main():
 			Task.running["VLC"] = obj
 			return obj
 		def webcamfocus():
-			return asyncio.create_task(webcam(stop))
+			obj = asyncio.create_task(webcam(stop))
+			Task.running["WebcamFocus"] = obj
+			return obj
 		def obs():
 			return asyncio.create_task(obs_ws(stop))
 		def browser():
