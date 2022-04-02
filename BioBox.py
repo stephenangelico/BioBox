@@ -353,7 +353,7 @@ class VLC(Channel):
 	
 	def __init__(self, stop):
 		super().__init__(name="VLC")
-		asyncio.create_task(self.conn(stop))
+		self.backend = asyncio.create_task(self.conn(stop))
 
 	async def conn(self, stop):
 		try:
@@ -399,6 +399,9 @@ class VLC(Channel):
 		asyncio.create_task(self.writer.drain())
 		print("VLC Mute status:", mute_state)
 
+	def cancel(self):
+		self.backend.cancel()
+		self.remove()
 class WebcamFocus(Channel):
 	mute_labels = ("AF Off", "AF On")
 	step = 1.0 # Cameras have different steps but v4l2 will round any int to the step for the camera in question
@@ -473,13 +476,15 @@ async def main():
 	menu_entries = []
 	class Task():
 		running = {}
-		def vlctoggle():
-			return VLC(stop)
-		def webcamfocustoggle():
+		def vlc():
+			obj = VLC(stop)
+			Task.running["VLC"] = obj
+			return obj
+		def webcamfocus():
 			return asyncio.create_task(webcam(stop))
-		def obstoggle():
+		def obs():
 			return asyncio.create_task(obs_ws(stop))
-		def browsertoggle():
+		def browser():
 			return asyncio.create_task(WebSocket.listen(connected=new_tab, disconnected=closed_tab, volumechanged=tab_volume_changed, stop=stop))
 	def toggle_menu_item(widget):
 		toggle_group = widget.get_name()
@@ -493,9 +498,9 @@ async def main():
 		group = Gtk.Box(name=group_name)
 		category.group = group
 		modules.add(group)
-		menuitem = "<menuitem action='%sToggle' />" %group_name
+		menuitem = "<menuitem action='%s' />" %group_name
 		ui_items += menuitem
-		menu_entry = ("%sToggle" %group_name, None, group_name, None, None, toggle_menu_item, True) #Last None is callback function, boolean is default state
+		menu_entry = ("%s" %group_name, None, group_name, None, None, toggle_menu_item, True) #Last None is callback function, boolean is default state
 		menu_entries.append(menu_entry)
 	ui_tree = UI_HEADER + ui_items + UI_FOOTER
 	action_group.add_action(Gtk.Action(name="ModulesMenu", label="Modules"))
@@ -508,7 +513,7 @@ async def main():
 	menubox.add(modules)
 
 
-	vlc_task = VLC(stop) #TODO: Make like the other module tasks
+	vlc_task = Task.vlc() #TODO: Make like the other module tasks
 	GLib.timeout_add(1000, init_motor_pos)
 	# Show window
 	def halt(*a): # We could use a lambda function unless we need IIDPIO
@@ -517,9 +522,9 @@ async def main():
 	main_ui.show_all()
 	# TODO: Have the ability to cancel these tasks (such as when disabled in menu)
 	slider_task = asyncio.create_task(read_analog(stop))
-	obs_task = asyncio.create_task(obs_ws(stop))
-	browser_task = asyncio.create_task(WebSocket.listen(connected=new_tab, disconnected=closed_tab, volumechanged=tab_volume_changed, stop=stop))
-	webcam_task = asyncio.create_task(webcam(stop))
+	obs_task = Task.obs()
+	browser_task = Task.browser()
+	webcam_task = Task.webcamfocus()
 	await stop.wait()
 	await slider_task
 	await obs_task
