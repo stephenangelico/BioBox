@@ -240,7 +240,7 @@ class Channel(Gtk.Frame):
 		level.add_mark(value=100, position=Gtk.PositionType.RIGHT, markup=None)
 		box.pack_start(level, True, True, 0)
 		level.connect("focus", self.focus_delay)
-		self.slider.connect("value-changed", self.adjustment_changed)
+		self.slider_signal = self.slider.connect("value-changed", self.adjustment_changed)
 		# Spinner
 		spinvalue = Gtk.SpinButton(adjustment=self.slider, digits=2)
 		box.pack_start(spinvalue, False, False, 0)
@@ -256,7 +256,6 @@ class Channel(Gtk.Frame):
 		box.pack_start(self.selector, False, False, 0)
 		self.selector.connect("toggled", self.check_selected)
 		self.connect("event", self.click_anywhere)
-		self.last_wrote = time.monotonic()
 		# Add self to group
 		self.group.pack_start(self, True, True, 0)
 		self.group.show_all()
@@ -295,20 +294,18 @@ class Channel(Gtk.Frame):
 		# Send value to multiple places, keeping track of sent value to
 		# avoid bounce or slider fighting.
 		if value != self.oldvalue:
+			#print(self.channel_name, source, value)
 			if source != "gtk":
 				self.update_position(value)
-			if source != "slider":
+			if source != "analog":
 				if selected_channel is self:
 					self.write_analog(value)
 			if source != "backend":
-				if time.monotonic() > self.last_wrote + 0.01:
-					# TODO: drop only writes that would result in bounce loop
-					self.write_external(round(value))
-					self.last_wrote = time.monotonic()
+				self.write_external(round(value))
 			self.oldvalue = value
 
 	def write_analog(self, value):
-		global slider_last_wrote
+		global slider_last_wrote # TODO: Check whether this is actually needed, now that last_wrote isn't
 		if time.monotonic() > slider_last_wrote + 0.1:
 			Analog.goal = value
 			slider_last_wrote = time.monotonic()
@@ -334,7 +331,7 @@ class Channel(Gtk.Frame):
 
 	# Fallback function if subclasses don't provide write_external()
 	def write_external(self, value):
-		print(value)
+		print(self.channel_name, value)
 
 	# Fallback/superclass functions
 	def muted(self, widget):
@@ -344,14 +341,18 @@ class Channel(Gtk.Frame):
 		return mute_state
 
 	def update_position(self, value):
-		self.slider.set_value(value)
-		self.last_wrote = time.monotonic()
+		with self.slider.handler_block(self.slider_signal):
+			self.slider.set_value(value)
 
 	def remove(self):
 		global selected_channel
 		if selected_channel is self:
 			selected_channel = None # Because it doesn't make sense to select another module
 		self.group.remove(self)
+
+class Dummy(Channel):
+	def __init__(self, stop):
+		super().__init__(name="Dummy")
 
 class VLC(Channel):
 	step = 1.0
@@ -513,6 +514,7 @@ async def main():
 		ui_items += menuitem
 		menu_entry = ("%s" %group_name, None, group_name, None, None, toggle_menu_item, True) #Last None is callback function, boolean is default state
 		menu_entries.append(menu_entry)
+	#Dummy(stop)
 	ui_tree = UI_HEADER + ui_items + UI_FOOTER
 	action_group.add_action(Gtk.Action(name="ModulesMenu", label="Modules"))
 	action_group.add_toggle_actions(menu_entries)
