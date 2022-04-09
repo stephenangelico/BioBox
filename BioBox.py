@@ -70,7 +70,7 @@ async def read_analog(stop):
 
 def init_motor_pos():
 	if selected_channel:
-		Analog.goal = round(selected_channel.slider.get_value())
+		Analog.goal = selected_channel.slider.get_value()
 	else:
 		Analog.goal = 100
 
@@ -215,7 +215,7 @@ def closed_tab(tabid):
 def tab_volume_changed(tabid, volume, mute_state):
 	print("On", tabid, ": Volume:", volume, "Muted:", bool(mute_state))
 	channel = tabs[tabid]
-	channel.refract_value(int(volume * 100), "backend") # Truncate or round?
+	channel.refract_value(float(volume * 100), "backend")
 	channel.mute.set_active(int(mute_state))
 
 class Channel(Gtk.Frame):
@@ -284,10 +284,10 @@ class Channel(Gtk.Frame):
 		if widget.get_active():
 			selected_channel = self
 			print(selected_channel.channel_name)
-			self.write_analog(round(selected_channel.slider.get_value()))
+			self.write_analog(selected_channel.slider.get_value())
 
 	def adjustment_changed(self, widget):
-		value = round(widget.get_value())
+		value = widget.get_value()
 		self.refract_value(value, "gtk")
 
 	def refract_value(self, value, source):
@@ -301,7 +301,7 @@ class Channel(Gtk.Frame):
 				if selected_channel is self:
 					self.write_analog(value)
 			if source != "backend":
-				self.write_external(round(value))
+				self.write_external(value)
 			self.oldvalue = value
 
 	def write_analog(self, value):
@@ -322,7 +322,7 @@ class Channel(Gtk.Frame):
 			line = line.rstrip().decode("utf-8")
 			attr, value = line.split(":", 1)
 			if attr == level_cmd:
-				self.refract_value(int(value), "backend")
+				self.refract_value(float(value), "backend")
 			elif attr == mute_cmd:
 				self.mute.set_active(int(value))
 			else:
@@ -411,7 +411,7 @@ class VLC(Channel):
 
 class WebcamFocus(Channel):
 	mute_labels = ("AF Off", "AF On")
-	step = 1.0 # Cameras have different steps but v4l2 will round any int to the step for the camera in question
+	step = 1.0 # Cameras have different steps but v4l2 will round any value to the step for the camera in question
 
 	def __init__(self, cam_name, cam_path, ssh):
 		self.device_name = cam_name
@@ -426,7 +426,7 @@ class WebcamFocus(Channel):
 		# Therefore, if AF is on, quietly do nothing.
 		# When AF is toggled, this is called again anyway.
 		if not self.mute.get_active():
-			self.ssh.stdin.write(("focus_absolute %d %s\n" % (int(value), self.device)).encode("utf-8"))
+			self.ssh.stdin.write(("focus_absolute %d %s\n" % (value, self.device)).encode("utf-8"))
 			asyncio.create_task(self.write_ssh())
 
 	async def write_ssh(self):
@@ -440,13 +440,13 @@ class WebcamFocus(Channel):
 		self.ssh.stdin.write(("focus_auto %d %s\n" % (mute_state, self.device)).encode("utf-8"))
 		asyncio.create_task(self.ssh.stdin.drain())
 		print("%s Autofocus " %self.device_name + ("Dis", "En")[mute_state] + "abled")
-		self.write_external(round(self.slider.get_value()))
+		self.write_external(self.slider.get_value())
 
 class OBS(Channel):
 	def __init__(self, source):
 		self.name = source['name']
 		super().__init__(name=self.name)
-		self.refract_value(int(max(source['volume'], 0) ** 0.5 * 100), "backend")
+		self.refract_value(max(source['volume'], 0) ** 0.5 * 100, "backend")
 		self.mute.set_active(source['muted'])
 
 	def write_external(self, value):
