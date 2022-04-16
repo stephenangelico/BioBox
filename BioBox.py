@@ -121,7 +121,12 @@ async def webcam(stop):
 					cmd, sep, value = attr.partition(": ")
 					if not sep:
 						continue
-					if cmd == "focus_absolute":
+					if cmd == "set_range":
+						min, max, step = map(int, value.split())
+						webcams[device].slider.set_lower(min)
+						webcams[device].slider.set_upper(max)
+						webcams[device].slider.set_page_increment(step)
+					elif cmd == "focus_absolute":
 						webcams[device].refract_value(int(value), "backend")
 					elif cmd == "focus_auto":
 						webcams[device].mute.set_active(int(value))
