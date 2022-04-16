@@ -429,7 +429,7 @@ class WebcamFocus(Channel):
 	def write_external(self, value):
 		# v4l2-ctl throws an error if focus_absolute is changed while AF is on.
 		# Therefore, if AF is on, quietly do nothing.
-		# When AF is toggled, this is called again anyway.
+		# Feedback continues when AF is on, so theoretically value should be correct.
 		if not self.mute.get_active():
 			self.ssh.stdin.write(("focus_absolute %d %s\n" % (value, self.device)).encode("utf-8"))
 			asyncio.create_task(self.write_ssh())
