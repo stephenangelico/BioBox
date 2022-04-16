@@ -445,7 +445,6 @@ class WebcamFocus(Channel):
 		self.ssh.stdin.write(("focus_auto %d %s\n" % (mute_state, self.device)).encode("utf-8"))
 		asyncio.create_task(self.ssh.stdin.drain())
 		print("%s Autofocus " %self.device_name + ("Dis", "En")[mute_state] + "abled")
-		self.write_external(self.slider.get_value())
 
 class OBS(Channel):
 	def __init__(self, source):
