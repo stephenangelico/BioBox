@@ -273,7 +273,7 @@ class Channel(Gtk.Frame):
 		# will be the first object and will be given focus initially.
 		if widget.is_focus():
 			self.selector.set_active(True)
-			print(self.channel_name, "selected")
+			print(self.channel_name, "pulled focus")
 
 	def click_anywhere(self, widget, event):
 		if "BUTTON" in event.get_event_type().value_name:
@@ -287,7 +287,7 @@ class Channel(Gtk.Frame):
 		global selected_channel
 		if widget.get_active():
 			selected_channel = self
-			print(selected_channel.channel_name)
+			print(selected_channel.channel_name, "selected")
 			self.write_analog(selected_channel.slider.get_value())
 
 	def adjustment_changed(self, widget):
@@ -352,6 +352,7 @@ class Channel(Gtk.Frame):
 		global selected_channel
 		if selected_channel is self:
 			selected_channel = None # Because it doesn't make sense to select another module
+		print("Removing:", self.channel_name)
 		self.group.remove(self)
 
 class Dummy(Channel):
