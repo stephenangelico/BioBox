@@ -3,3 +3,4 @@ adafruit-circuitpython-mcp3xxx
 RPi.GPIO
 websockets
 asyncio-glib
+v4l2py
