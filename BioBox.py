@@ -509,8 +509,8 @@ async def main():
 	def start_task(task):
 		obj = asyncio.create_task(getattr(Task, task)())
 		Task.running[task] = obj
-	async def cancel_task(task):
-		task.cancel()
+	async def cancel_task(task): #TODO: accept a string, IE toggle_group from toggle_menu_item
+		task.cancel() #TODO: Use on shutdown instead of firing stop event
 		try:
 			await task
 		except asyncio.CancelledError:
