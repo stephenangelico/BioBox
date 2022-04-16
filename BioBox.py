@@ -180,7 +180,6 @@ async def obs_ws(stop):
 				pass # Clean up message
 			elif msg.get("message-id"):
 				print(msg)
-		await obs.close()
 	for source in obs_sources.values():
 		source.remove()
 	obs_sources.clear()
