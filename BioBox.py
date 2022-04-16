@@ -490,25 +490,31 @@ async def main():
 	menu_entries = []
 	class Task():
 		running = {}
-		def vlc():
+		def VLC():
 			obj = VLC(stop)
 			Task.running["VLC"] = obj
 			return obj
-		def webcamfocus():
-			obj = asyncio.create_task(webcam(stop))
-			Task.running["WebcamFocus"] = obj
-			return obj
-		def obs():
-			return asyncio.create_task(obs_ws(stop))
-		def browser():
-			return asyncio.create_task(WebSocket.listen(connected=new_tab, disconnected=closed_tab, volumechanged=tab_volume_changed, stop=stop))
+		def WebcamFocus():
+			return webcam(stop)
+		def OBS():
+			return obs_ws(stop)
+		def Browser():
+			return WebSocket.listen(connected=new_tab, disconnected=closed_tab, volumechanged=tab_volume_changed, stop=stop)
 	def toggle_menu_item(widget):
 		toggle_group = widget.get_name()
 		if widget.get_active():
-			task = getattr(Task, toggle_group.lower())()
-			Task.running[toggle_group] = task
+			start_task(toggle_group)
 		else:
-			Task.running[toggle_group].cancel() #TODO: Check each task to make sure it handles cancellation
+			asyncio.create_task(cancel_task(Task.running[toggle_group])) #TODO: Check each task to make sure it handles cancellation
+	def start_task(task):
+		obj = asyncio.create_task(getattr(Task, task)())
+		Task.running[task] = obj
+	async def cancel_task(task):
+		task.cancel()
+		try:
+			await task
+		except asyncio.CancelledError:
+			pass
 	for category in Channel.__subclasses__():
 		group_name = category.__name__
 		group = Gtk.Box(name=group_name)
@@ -530,7 +536,7 @@ async def main():
 	menubox.add(modules)
 
 
-	vlc_task = Task.vlc() #TODO: Make like the other module tasks
+	vlc_task = Task.VLC() #TODO: Make like the other module tasks
 	GLib.timeout_add(1000, init_motor_pos)
 	# Show window
 	def halt(*a): # We could use a lambda function unless we need IIDPIO
@@ -539,14 +545,10 @@ async def main():
 	main_ui.show_all()
 	# TODO: Have the ability to cancel these tasks (such as when disabled in menu)
 	slider_task = asyncio.create_task(read_analog(stop))
-	obs_task = Task.obs()
-	browser_task = Task.browser()
-	webcam_task = Task.webcamfocus()
+	start_task("OBS")
+	start_task("Browser")
+	start_task("WebcamFocus")
 	await stop.wait()
-	await slider_task
-	await obs_task
-	await browser_task
-	await webcam_task
 	motor_cleanup()
 	os.close(stopper); os.close(stoppew)
 
