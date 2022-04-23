@@ -505,14 +505,15 @@ async def main():
 		if widget.get_active():
 			start_task(toggle_group)
 		else:
-			asyncio.create_task(cancel_task(Task.running[toggle_group])) #TODO: Check each task to make sure it handles cancellation
+			asyncio.create_task(cancel_task(toggle_group)) #TODO: Check each task to make sure it handles cancellation
 	def start_task(task):
 		obj = asyncio.create_task(getattr(Task, task)())
 		Task.running[task] = obj
-	async def cancel_task(task): #TODO: accept a string, IE toggle_group from toggle_menu_item
-		task.cancel() #TODO: Use on shutdown instead of firing stop event
+	async def cancel_task(task):
+		t = Task.running.pop(task)
+		t.cancel() #TODO: Use on shutdown instead of firing stop event
 		try:
-			await task
+			await t
 		except asyncio.CancelledError:
 			pass
 	for category in Channel.__subclasses__():
