@@ -172,11 +172,16 @@ async def webcam(stop):
 					elif cmd == "Error":
 						print("Received error on %s: " %device, value)
 	except asyncio.CancelledError:
-		await cleanup()
+		#await cleanup()
 		raise
 	finally:
 		for cam in list(webcams):
 			webcams[cam].remove()
+		print("Done removing webcams")
+		while Gtk.events_pending(): Gtk.main_iteration()
+		print("Pulse")
+		await cleanup()
+		print("Cleanup done")
 		ssh = None
 
 # OBS
@@ -493,11 +498,17 @@ async def main():
 		Task.running[task] = obj
 	async def cancel_task(task):
 		t = Task.running.pop(task)
+		print("Cancelling", task)
 		t.cancel() #TODO: Use on shutdown instead of firing stop event
+		print(task, "cancelled")
+		while Gtk.events_pending(): Gtk.main_iteration() # Debug: Probe event loop to see if something is stalling the main thread
+		print("Pump")
 		try:
 			await t
 		except asyncio.CancelledError:
 			pass
+		finally:
+			print("Task cancellation complete")
 	for category in Channel.__subclasses__():
 		group_name = category.__name__
 		group = Gtk.Box(name=group_name)
