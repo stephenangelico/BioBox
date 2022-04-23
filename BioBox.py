@@ -74,6 +74,45 @@ def init_motor_pos():
 	else:
 		Analog.goal = 100
 
+# VLC
+async def vlc(stop):
+	try:
+		reader, writer = await asyncio.open_connection(config.host, config.vlc_port)
+		writer.write(b"volume\r\nmuted\r\n") # Ask volume and mute state
+		await writer.drain()
+		vlc_module = VLC(writer)
+		await vlc_buf_read(vlc_module, reader, stop)
+	except ConnectionRefusedError:
+		print("Could not connect to VLC on", config.host + ":" + config.vlc_port, "- is TMV running?")
+	except asyncio.CancelledError:
+		#writer.close() # Not sure what will be needed here but revisit when stop event is removed
+		raise
+	finally:
+		vlc_module.remove()
+		writer.close() # Close connection and remove module
+		await writer.wait_closed()
+
+async def vlc_buf_read(vlc_module, reader, stop):
+	while True:
+		done, pending = await asyncio.wait([reader.readline(), stop.wait()], return_when=asyncio.FIRST_COMPLETED)
+		line = await reader.readline()
+		if not line or stop.is_set():
+			break
+		try:
+			data = next(iter(done)).result()
+		except BaseException as e:
+			print(type(e))
+			print(e)
+			break
+		line = data.decode("utf-8")
+		attr, value = line.split(":", 1)
+		if attr == "volume":
+			vlc_module.refract_value(float(value), "backend")
+		elif attr == "muted":
+			vlc_module.mute.set_active(int(value))
+		else:
+			print("From VLC:", attr, value)
+
 # Webcam
 async def webcam(stop):
 	ssh = None
@@ -315,24 +354,6 @@ class Channel(Gtk.Frame):
 			slider_last_wrote = time.monotonic()
 			print("Slider goal: %s" % Analog.goal)
 
-	async def read_external(self, level_cmd, mute_cmd, device=None):
-		if device:
-			level_cmd = device + " " + level_cmd
-			mute_cmd = device + " " + mute_cmd
-		while True:
-			line = await self.data_source()
-			if not line:
-				break
-			line = line.rstrip().decode("utf-8")
-			attr, value = line.split(":", 1)
-			if attr == level_cmd:
-				self.refract_value(float(value), "backend")
-			elif attr == mute_cmd:
-				self.mute.set_active(int(value))
-			else:
-				print("From", self.channel_name +":", attr, value)
-
-
 	# Fallback function if subclasses don't provide write_external()
 	def write_external(self, value):
 		print(self.channel_name, value)
@@ -361,43 +382,10 @@ class Dummy(Channel):
 
 class VLC(Channel):
 	step = 1.0
-	
-	def __init__(self, stop):
+
+	def __init__(self, writer):
 		super().__init__(name="VLC")
-		self.backend = asyncio.create_task(self.conn(stop))
-
-	async def conn(self, stop):
-		try:
-			self.reader, self.writer = await asyncio.open_connection(config.host, config.vlc_port)
-		except ConnectionRefusedError:
-			self.remove()
-			# TODO: This creates then removes the VLC module. The
-			# scale is given focus on startup, causing the VLC module
-			# to be selected for write_analog. Thus, upon removal, no
-			# module is selected, even though this happens on startup.
-			# I could have it select the next module but that will be
-			# rife with potential problems. The best solution, and the
-			# most consistent one, would be to start the connection
-			# to VLC before attempting to create its module. If we do
-			# that, we should do it properly by having each Channel
-			# subclass also have a backend object to manage its
-			# connection. This would be a significant architectural
-			# change, but will also make on-the-fly module adding
-			# and removing easier.
-		self.writer.write(b"volume\r\nmuted\r\n") # Ask volume and mute state
-		await self.writer.drain()
-		await asyncio.wait([self.read_external("volume", "muted"), stop.wait()], return_when=asyncio.FIRST_COMPLETED)
-		self.writer.close() # If above returns, we're shutting down this module
-		await self.writer.wait_closed()
-		self.remove() # Remove module once we're done
-
-	async def data_source(self):
-		return await self.reader.readline()
-		#TODO: check if protection against missing connection is necessary:
-		#if self.sock:
-		#	...
-		#else:
-		#	return b""
+		self.writer = writer
 
 	def write_external(self, value):
 		self.writer.write(b"volume %d \r\n" %value)
@@ -409,10 +397,6 @@ class VLC(Channel):
 		self.writer.write(b"muted %d \r\n" %mute_state)
 		asyncio.create_task(self.writer.drain())
 		print("VLC Mute status:", mute_state)
-
-	def cancel(self):
-		self.backend.cancel()
-		self.remove()
 
 class WebcamFocus(Channel):
 	mute_labels = ("AF Off", "AF On")
@@ -491,9 +475,7 @@ async def main():
 	class Task():
 		running = {}
 		def VLC():
-			obj = VLC(stop)
-			Task.running["VLC"] = obj
-			return obj
+			return vlc(stop)
 		def WebcamFocus():
 			return webcam(stop)
 		def OBS():
@@ -537,7 +519,6 @@ async def main():
 	menubox.add(modules)
 
 
-	vlc_task = Task.VLC() #TODO: Make like the other module tasks
 	GLib.timeout_add(1000, init_motor_pos)
 	# Show window
 	def halt(*a): # We could use a lambda function unless we need IIDPIO
@@ -546,6 +527,7 @@ async def main():
 	main_ui.show_all()
 	# TODO: Have the ability to cancel these tasks (such as when disabled in menu)
 	slider_task = asyncio.create_task(read_analog(stop))
+	start_task("VLC")
 	start_task("OBS")
 	start_task("Browser")
 	start_task("WebcamFocus")
