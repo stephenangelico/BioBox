@@ -463,7 +463,7 @@ class Browser(Channel):
 
 async def main():
 	stopper, stoppew = os.pipe()
-	stop = asyncio.Event()
+	stop = asyncio.Event() # TODO: morph into 'poke' event
 	loop.add_reader(stopper, stop.set)
 	main_ui = Gtk.Window(title="Bio Box")
 	main_ui.set_resizable(False)
@@ -518,7 +518,7 @@ async def main():
 		ui_items += menuitem
 		menu_entry = ("%s" %group_name, None, group_name, None, None, toggle_menu_item, True) #Last None is callback function, boolean is default state
 		menu_entries.append(menu_entry)
-	#Dummy(stop)
+	Dummy(stop)
 	ui_tree = UI_HEADER + ui_items + UI_FOOTER
 	action_group.add_action(Gtk.Action(name="ModulesMenu", label="Modules"))
 	action_group.add_toggle_actions(menu_entries)
