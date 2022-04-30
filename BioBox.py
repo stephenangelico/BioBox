@@ -12,8 +12,8 @@ import gi
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, Gdk, GLib
 
-import asyncio_glib
-asyncio.set_event_loop_policy(asyncio_glib.GLibEventLoopPolicy())
+import gbulb
+gbulb.install(gtk=True)
 
 try:
 	import Analog
@@ -501,8 +501,8 @@ async def main():
 		print("Cancelling", task)
 		t.cancel() #TODO: Use on shutdown instead of firing stop event
 		print(task, "cancelled")
-		while Gtk.events_pending(): Gtk.main_iteration() # Debug: Probe event loop to see if something is stalling the main thread
-		print("Pump")
+		#while Gtk.events_pending(): Gtk.main_iteration() # Debug: Probe event loop to see if something is stalling the main thread
+		#print("Pump")
 		try:
 			await t
 		except asyncio.CancelledError:
@@ -518,7 +518,7 @@ async def main():
 		ui_items += menuitem
 		menu_entry = ("%s" %group_name, None, group_name, None, None, toggle_menu_item, True) #Last None is callback function, boolean is default state
 		menu_entries.append(menu_entry)
-	Dummy(stop)
+	#Dummy(stop)
 	ui_tree = UI_HEADER + ui_items + UI_FOOTER
 	action_group.add_action(Gtk.Action(name="ModulesMenu", label="Modules"))
 	action_group.add_toggle_actions(menu_entries)
