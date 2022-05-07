@@ -42,11 +42,15 @@ def brake():
 	time.sleep(0.1)
 	stop()
 
+def sleep(state):
+	# Wrapper for standby() to ensure motor is fully stopped
+	speed(0)
+	brake()
+	standby(state)
+
 def speed(duty_cycle):
 	pwm.ChangeDutyCycle(duty_cycle)
 
 def cleanup():
-	brake()
-	speed(0)
-	standby(True)
+	sleep(True)
 	GPIO.cleanup()
