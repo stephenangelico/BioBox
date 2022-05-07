@@ -53,14 +53,14 @@ def report(msg):
 	print(time.time(), msg)
 
 # Slider
-async def read_analog(stop):
+async def read_analog():
 	global slider_last_wrote
 	# Get analog value from Analog.py and write to selected channel's slider
 	while True:
 		if stop.is_set():
 			break
 		else:
-			async for volume in Analog.read_value(stop):
+			async for volume in Analog.read_value():
 				if selected_channel:
 					print("From slider:", volume)
 					# TODO: Scale 0-100% to 0-150%
@@ -481,11 +481,11 @@ async def main():
 	class Task():
 		running = {}
 		def VLC():
-			return vlc()
+			return vlc(stop)
 		def WebcamFocus():
-			return webcam()
+			return webcam(stop)
 		def OBS():
-			return obs_ws()
+			return obs_ws(stop)
 		def Browser():
 			return WebSocket.listen(connected=new_tab, disconnected=closed_tab, volumechanged=tab_volume_changed)
 	def toggle_menu_item(widget):
