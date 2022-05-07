@@ -29,17 +29,14 @@ TOLERANCE = 4
 pot_min = 511
 pot_max = 1023
 goal = None
-Motor.standby(False)
 interp_values = [511, 538, 569, 603, 643, 689, 739, 799, 869, 955, 1023] # 0-100% travel values
 dead_zone_low = 2
 dead_zone_high = 3
 
-async def read_position(stop):
+async def read_position():
 	last_read = 0	# this keeps track of the last potentiometer value
 	while True:
-		done, pending = await asyncio.wait([asyncio.sleep(0.015625), stop.wait()], return_when=asyncio.FIRST_COMPLETED)
-		if stop.is_set():
-			break
+		await asyncio.sleep(0.015625)
 		# we'll assume that the pot didn't move
 		pot_changed = False
 		# read the analog pin
@@ -84,46 +81,54 @@ def interp_shift():
 def bounds_test():
 	# Test the analogue value of 0% travel
 	global pot_min
+	Motor.sleep(False)
 	Motor.backward()
 	Motor.speed(100)
 	span = collections.deque(maxlen=5)
-	while True:
-		span.append((chan0.value // 64))
-		if len(span) == span.maxlen:
-			if max(span) - min(span) < 2:
-				Motor.brake()
-				Motor.speed(0)
-				test_min = span[-1]
-				print("Min:", test_min)
-				pot_min = test_min
-				return test_min
-		time.sleep(0.015625)
+	try:
+		while True:
+			span.append((chan0.value // 64))
+			if len(span) == span.maxlen:
+				if max(span) - min(span) < 2:
+					Motor.brake()
+					Motor.speed(0)
+					test_min = span[-1]
+					print("Min:", test_min)
+					pot_min = test_min
+					return test_min
+			time.sleep(0.015625)
+	finally:
+		motor.sleep(True)
 
-async def read_value(stop): # 'stop' event passed down from BioBox.main
+async def read_value():
 	global goal
+	Motor.sleep(False)
 	last_speed = None
 	last_dir = None
 	goal_completed = 0
 	safety = collections.deque([0] * 2, 5)
-	async for pos in read_position(stop):
-		if stop.is_set():
-			goal = None
-			Motor.speed(0)
-			Motor.brake()
-		else:
+	try:
+		async for pos in read_position():
 			if goal is not None:
 				safety.append(pos)
 				if goal < 0:
 					goal = 0
+					print("Goal set to 0")
 				if goal > 100:
 					goal = 100
+					print("Goal set to 100")
 				if goal > pos:
 					dir = Motor.forward
+					print("Moving forward")
 				elif goal < pos:
 					dir = Motor.backward
+					print("Moving backward")
+				else:
+					print(pos, goal)
 				dist = abs(pos - goal)
 				if dist >= 25:
 					speed = 100
+					print("Desired speed: 100")
 				elif dist >= 1:
 					speed = 80
 				else:
@@ -134,11 +139,11 @@ async def read_value(stop): # 'stop' event passed down from BioBox.main
 					safety.append(-1)
 				if max(safety) - min(safety) < 0.1: # Guard against getting stuck
 					# This does not solve slider fighting, but it should stop the motor wearing out as fast
+					print("Safety brakes engaged")
 					speed = 0
 					dir = Motor.brake
 					goal = None
 					goal_completed = time.monotonic()
-
 				print(dir.__name__, speed, dist)
 				if speed != last_speed:
 					Motor.speed(speed)
@@ -149,9 +154,13 @@ async def read_value(stop): # 'stop' event passed down from BioBox.main
 			else:
 				if time.monotonic() > goal_completed + 0.15:
 					yield(pos)
+	finally:
+		goal = None
+		Motor.sleep(True)
 
 
 def test_slider():
+	Motor.sleep(False)
 	Motor.forward()
 	Motor.speed(10)
 	start = chan0.value
@@ -160,46 +169,53 @@ def test_slider():
 		start = chan0.value
 		time.sleep(1/32)
 	print(chan0.value, chan0.value - start)
-	Motor.stop()
-	Motor.speed(0)
+	Motor.sleep(True)
 
 def time_boundaries_forward():
 	# TODO: Seek to bottom first?
+	Motor.sleep(False)
 	Motor.forward()
 	Motor.speed(100)
 	start = time.time()
 	next = 0
 	safety = collections.deque([0] * 10, 15)
-	while True:
-		cur = chan0.value // 64
-		if cur >= interp_values[next]:
-			print("%3d: %4d --> %.3f\x1b[K" % (next * 10, cur, time.time() - start))
-			next += 1
-			if next >= len(interp_values): break
-		else:
-			print("%3d: %4d ... %.3f\x1b[K" % (next * 10, cur, time.time() - start))
-		safety.append(cur)
-		if max(safety) - min(safety) < 2: break # Guard against getting stuck
-		time.sleep(1 / 1000)
+	try:
+		while True:
+			cur = chan0.value // 64
+			if cur >= interp_values[next]:
+				print("%3d: %4d --> %.3f\x1b[K" % (next * 10, cur, time.time() - start))
+				next += 1
+				if next >= len(interp_values): break
+			else:
+				print("%3d: %4d ... %.3f\x1b[K" % (next * 10, cur, time.time() - start))
+			safety.append(cur)
+			if max(safety) - min(safety) < 2: break # Guard against getting stuck
+			time.sleep(1 / 1000)
+	finally:
+		Motor.sleep(True)
 
 def time_boundaries_backward():
 	# TODO: Seek to top first?
+	Motor.sleep(False)
 	Motor.backward()
 	Motor.speed(100)
 	start = time.time()
 	next = len(interp_values) - 1
 	safety = collections.deque([0] * 10, 15)
-	while True:
-		cur = chan0.value // 64
-		if cur <= interp_values[next]:
-			print("%3d: %4d --> %.3f\x1b[K" % (next * 10, cur, time.time() - start))
-			next -= 1
-			if next < 0: break
-		else:
-			print("%3d: %4d ... %.3f\x1b[K" % (next * 10, cur, time.time() - start))
-		safety.append(cur)
-		if max(safety) - min(safety) < 2: break # Guard against getting stuck
-		time.sleep(1 / 1000)
+	try:
+		while True:
+			cur = chan0.value // 64
+			if cur <= interp_values[next]:
+				print("%3d: %4d --> %.3f\x1b[K" % (next * 10, cur, time.time() - start))
+				next -= 1
+				if next < 0: break
+			else:
+				print("%3d: %4d ... %.3f\x1b[K" % (next * 10, cur, time.time() - start))
+			safety.append(cur)
+			if max(safety) - min(safety) < 2: break # Guard against getting stuck
+			time.sleep(1 / 1000)
+	finally:
+		Motor.sleep(True)
 
 def print_value():
 	last = None
