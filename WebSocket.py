@@ -58,7 +58,7 @@ async def set_volume(tabid, vol):
 async def set_muted(tabid, muted):
 	await send_message(tabid, {"cmd": "setmuted", "muted": bool(muted)})
 
-async def listen(*, stop, connected=None, disconnected=None, volumechanged=None, host="", port=8888):
+async def listen(*, connected=None, disconnected=None, volumechanged=None, host="", port=8888):
 	callbacks.update(connected=connected, disconnected=disconnected, volumechanged=volumechanged)
 	ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
 	try:
@@ -66,9 +66,11 @@ async def listen(*, stop, connected=None, disconnected=None, volumechanged=None,
 	except FileNotFoundError:
 		# No cert found. Not an error, just don't support encryption.
 		ssl_context = None
-	async with websockets.serve(volume, host, port, ssl=ssl_context):
-		print("Websocket listening.")
-		await stop.wait()
+	try:
+		async with websockets.serve(volume, host, port, ssl=ssl_context) as ws_server:
+			print("Websocket listening.")
+			await ws_server.serve_forever()
+	finally:
 		print("Websocket shutting down.") # I don't hate you!
 
 # Non-asyncio entry-point
