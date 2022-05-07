@@ -124,6 +124,7 @@ async def webcam(stop):
 		except asyncio.TimeoutError:
 			ssh.terminate()
 	try:
+		# Begin cancellable section
 		ssh = await asyncio.create_subprocess_exec("ssh", "-oBatchMode=yes", (config.webcam_user + "@" + config.host), "python3", config.webcam_control_path, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
 		# TODO: Handle connection failures
 		# Testing/simulating connection issues is difficult as simply killing
@@ -172,9 +173,6 @@ async def webcam(stop):
 						webcams[device].mute.set_active(int(value))
 					elif cmd == "Error":
 						print("Received error on %s: " %device, value)
-	except asyncio.CancelledError:
-		#await cleanup()
-		raise
 	finally:
 		for cam in list(webcams):
 			webcams[cam].remove()
@@ -189,45 +187,50 @@ async def webcam(stop):
 async def obs_ws(stop):
 	obs_uri = "ws://%s:%d" % (config.host, config.obs_port)
 	global obs
-	async with websockets.connect(obs_uri) as obs:
-		await obs.send(json.dumps({"request-type": "GetCurrentScene", "message-id": "init"}))
-		while True:
-			done, pending = await asyncio.wait([obs.recv(), stop.wait()], return_when=asyncio.FIRST_COMPLETED)
-			if stop.is_set():
-				break
-			try:
-				data = next(iter(done)).result()
-			except websockets.exceptions.ConnectionClosedOK:
-				report("OBS Connection lost")
-				break
-			except BaseException as e:
-				print(type(e))
-				print(e)
-				break
-			msg = json.loads(data)
-			collector = {}
-			if msg.get("update-type") == "SourceVolumeChanged":
-				obs_sources[msg["sourceName"]].refract_value(int(max(msg["volume"], 0) ** 0.5 * 100), "backend")
-			elif msg.get("update-type") == "SourceMuteStateChanged":
-				obs_sources[msg["sourceName"]].mute.set_active(msg["muted"])
-			elif msg.get("update-type") == "SwitchScenes":
-				print(msg["scene-name"])
-				list_scene_sources(msg['sources'], collector)
-				for source in list(obs_sources):
-					if source not in collector:
-						print("Removing", source)
-						obs_sources[source].remove()
-						obs_sources.pop(source, None)
-			elif msg.get("message-id") == "init":
-				obs_sources.clear()
-				list_scene_sources(msg['sources'], collector)
-			elif msg.get("message-id") == "mute":
-				pass # Clean up message
-			elif msg.get("message-id"):
-				print(msg)
-	for source in obs_sources.values():
-		source.remove()
-	obs_sources.clear()
+	try:
+		# Begin cancellable section
+		async with websockets.connect(obs_uri) as obs:
+			await obs.send(json.dumps({"request-type": "GetCurrentScene", "message-id": "init"}))
+			while True:
+				done, pending = await asyncio.wait([obs.recv(), stop.wait()], return_when=asyncio.FIRST_COMPLETED)
+				if stop.is_set():
+					break
+				try:
+					data = next(iter(done)).result()
+				except websockets.exceptions.ConnectionClosedOK:
+					report("OBS Connection lost")
+					break
+				except BaseException as e:
+					print(type(e))
+					print(e)
+					break
+				msg = json.loads(data)
+				collector = {}
+				if msg.get("update-type") == "SourceVolumeChanged":
+					obs_sources[msg["sourceName"]].refract_value(int(max(msg["volume"], 0) ** 0.5 * 100), "backend")
+				elif msg.get("update-type") == "SourceMuteStateChanged":
+					obs_sources[msg["sourceName"]].mute.set_active(msg["muted"])
+				elif msg.get("update-type") == "SwitchScenes":
+					print(msg["scene-name"])
+					list_scene_sources(msg['sources'], collector)
+					for source in list(obs_sources):
+						if source not in collector:
+							print("Removing", source)
+							obs_sources[source].remove()
+							obs_sources.pop(source, None)
+				elif msg.get("message-id") == "init":
+					obs_sources.clear()
+					list_scene_sources(msg['sources'], collector)
+				elif msg.get("message-id") == "mute":
+					pass # Clean up message
+				elif msg.get("message-id"):
+					print(msg)
+	except websockets.exceptions.ConnectionClosedOK:
+		pass # Context manager plus finally section should clean everything up, just catch the exception
+	finally:
+		for source in obs_sources.values():
+			source.remove()
+		obs_sources.clear()
 
 def obs_send(request):
 	asyncio.run_coroutine_threadsafe(obs.send(json.dumps(request)), loop)
