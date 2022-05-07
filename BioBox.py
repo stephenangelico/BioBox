@@ -152,6 +152,7 @@ async def webcam(stop):
 					if attr == "Hi":
 						for cam_name, cam_path in config.webcams.items():
 							webcams[cam_path] = WebcamFocus(cam_name, cam_path, ssh)
+							#TODO: Handle "device not found"
 						await ssh.stdin.drain()
 					elif attr == "Bye":
 						print("camera.py quit")
