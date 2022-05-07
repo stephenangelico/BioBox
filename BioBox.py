@@ -23,9 +23,8 @@ except (ImportError, NotImplementedError): # Provide a dummy for testing
 		pass
 	class Analog():
 		goal = None
-		async def read_value(stop):
-			yield 0
-			await stop.wait() # Yield once and then stop
+		async def read_value():
+			yield 0 # Yield once and then stop
 			# Just as a function is destined to yield once, and then face termination...
 			# TODO: instead of creating dummy function, disable slider task on startup
 
@@ -91,6 +90,7 @@ async def vlc(stop):
 		vlc_module.remove()
 		writer.close() # Close connection and remove module
 		await writer.wait_closed()
+		print("VLC cleanup done")
 
 async def vlc_buf_read(vlc_module, reader, stop):
 	while True:
@@ -177,10 +177,8 @@ async def webcam(stop):
 		for cam in list(webcams):
 			webcams[cam].remove()
 		print("Done removing webcams")
-		while Gtk.events_pending(): Gtk.main_iteration()
-		print("Pulse")
 		await cleanup()
-		print("Cleanup done")
+		print("SSH cleanup done")
 		ssh = None
 
 # OBS
@@ -231,6 +229,7 @@ async def obs_ws(stop):
 		for source in obs_sources.values():
 			source.remove()
 		obs_sources.clear()
+		print("OBS cleanup done")
 
 def obs_send(request):
 	asyncio.run_coroutine_threadsafe(obs.send(json.dumps(request)), loop)
@@ -466,9 +465,7 @@ class Browser(Channel):
 		asyncio.create_task(WebSocket.set_muted(self.tabid, mute_state))
 
 async def main():
-	stopper, stoppew = os.pipe()
-	stop = asyncio.Event() # TODO: morph into 'poke' event
-	loop.add_reader(stopper, stop.set)
+	stop = asyncio.Event() # Hold open until destroy signal triggers this event
 	main_ui = Gtk.Window(title="Bio Box")
 	main_ui.set_resizable(False)
 	action_group = Gtk.ActionGroup(name="biobox_actions")
@@ -484,13 +481,13 @@ async def main():
 	class Task():
 		running = {}
 		def VLC():
-			return vlc(stop)
+			return vlc()
 		def WebcamFocus():
-			return webcam(stop)
+			return webcam()
 		def OBS():
-			return obs_ws(stop)
+			return obs_ws()
 		def Browser():
-			return WebSocket.listen(connected=new_tab, disconnected=closed_tab, volumechanged=tab_volume_changed, stop=stop)
+			return WebSocket.listen(connected=new_tab, disconnected=closed_tab, volumechanged=tab_volume_changed)
 	def toggle_menu_item(widget):
 		toggle_group = widget.get_name()
 		if widget.get_active():
@@ -505,14 +502,17 @@ async def main():
 		print("Cancelling", task)
 		t.cancel() #TODO: Use on shutdown instead of firing stop event
 		print(task, "cancelled")
-		#while Gtk.events_pending(): Gtk.main_iteration() # Debug: Probe event loop to see if something is stalling the main thread
-		#print("Pump")
 		try:
 			await t
 		except asyncio.CancelledError:
 			pass
 		finally:
-			print("Task cancellation complete")
+			print(task, "cancellation complete")
+	async def cancel_all():
+		print("Shutting down - cancelling all tasks")
+		await asyncio.gather(*[cancel_task(t) for t in Task.running])
+		print("All tasks cancelled")
+		stop.set()
 	for category in Channel.__subclasses__():
 		group_name = category.__name__
 		group = Gtk.Box(name=group_name)
@@ -520,9 +520,9 @@ async def main():
 		modules.add(group)
 		menuitem = "<menuitem action='%s' />" %group_name
 		ui_items += menuitem
-		menu_entry = ("%s" %group_name, None, group_name, None, None, toggle_menu_item, True) #Last None is callback function, boolean is default state
+		menu_entry = ("%s" %group_name, None, group_name, None, None, toggle_menu_item, True) #Second last param is callback function, boolean is default state
 		menu_entries.append(menu_entry)
-	#Dummy(stop)
+	#Dummy()
 	ui_tree = UI_HEADER + ui_items + UI_FOOTER
 	action_group.add_action(Gtk.Action(name="ModulesMenu", label="Modules"))
 	action_group.add_toggle_actions(menu_entries)
@@ -537,19 +537,18 @@ async def main():
 	GLib.timeout_add(1000, init_motor_pos)
 	# Show window
 	def halt(*a): # We could use a lambda function unless we need IIDPIO
-		os.write(stoppew, b"*")
+		asyncio.create_task(cancel_all())
 	main_ui.connect("destroy", halt)
 	main_ui.show_all()
 	# TODO: Have the ability to cancel these tasks (such as when disabled in menu)
-	slider_task = asyncio.create_task(read_analog(stop))
+	slider_task = asyncio.create_task(read_analog())
 	start_task("VLC")
 	start_task("OBS")
 	start_task("Browser")
 	start_task("WebcamFocus")
 	await stop.wait()
 	motor_cleanup()
-	os.close(stopper); os.close(stoppew)
-
+	
 if __name__ == "__main__":
 	css = b"""
 		window {-gtk-dpi: 90;}
