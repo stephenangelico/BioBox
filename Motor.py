@@ -45,7 +45,7 @@ def brake():
 def sleep(state):
 	# Wrapper for standby() to ensure motor is fully stopped
 	speed(0)
-	brake()
+	stop()
 	standby(state)
 
 def speed(duty_cycle):
