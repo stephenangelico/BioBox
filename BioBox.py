@@ -56,16 +56,12 @@ def report(msg):
 async def read_analog():
 	global slider_last_wrote
 	# Get analog value from Analog.py and write to selected channel's slider
-	while True:
-		if stop.is_set():
-			break
-		else:
-			async for volume in Analog.read_value():
-				if selected_channel:
-					print("From slider:", volume)
-					# TODO: Scale 0-100% to 0-150%
-					selected_channel.refract_value(volume, "analog")
-					slider_last_wrote = time.monotonic()
+	async for volume in Analog.read_value():
+		if selected_channel:
+			print("From slider:", volume)
+			# TODO: Scale 0-100% to 0-150%
+			selected_channel.refract_value(volume, "analog")
+			slider_last_wrote = time.monotonic()
 
 def init_motor_pos():
 	if selected_channel:
