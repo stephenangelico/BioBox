@@ -279,7 +279,7 @@ class Channel(Gtk.Frame):
 		#box.pack_start(channel_label, False, False, 0)
 		# Slider stuff
 		self.oldvalue = 100.0
-		self.slider = Gtk.Adjustment(value=self.oldvalue, lower=0.0, upper=150.0, step_increment=1.0, page_increment=10.0, page_size=0)
+		self.slider = Gtk.Adjustment(value=self.oldvalue, lower=0.0, upper=150.0, step_increment=1.0, page_increment=1.0, page_size=0)
 		level = Gtk.Scale(orientation=Gtk.Orientation.VERTICAL, adjustment=self.slider, inverted=True, draw_value=False)
 		level.add_mark(value=100, position=Gtk.PositionType.LEFT, markup=None)
 		level.add_mark(value=100, position=Gtk.PositionType.RIGHT, markup=None)
