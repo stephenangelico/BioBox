@@ -217,10 +217,6 @@ async def obs_ws(stop):
 				elif msg.get("message-id") == "init":
 					obs_sources.clear()
 					list_scene_sources(msg['sources'], collector)
-				elif msg.get("message-id") == "mute":
-					pass # Clean up message
-				elif msg.get("message-id"):
-					print(msg)
 	except websockets.exceptions.ConnectionClosedOK:
 		pass # Context manager plus finally section should clean everything up, just catch the exception
 	finally:
