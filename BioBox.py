@@ -62,6 +62,9 @@ async def read_analog():
 			# TODO: Scale 0-100% to 0-150%
 			selected_channel.refract_value(volume, "analog")
 			slider_last_wrote = time.monotonic()
+			# TODO: Investigate desync when quickly scrolling on slider:
+			# Suspect issue is caused by dropping new goals too soon after
+			# setting a previous one, but may require complex queue/expiry system
 
 def init_motor_pos():
 	if selected_channel:
