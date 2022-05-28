@@ -95,11 +95,13 @@ async def vlc(stop):
 async def vlc_buf_read(vlc_module, reader, stop):
 	while True:
 		done, pending = await asyncio.wait([reader.readline(), stop.wait()], return_when=asyncio.FIRST_COMPLETED)
-		line = await reader.readline()
-		if not line or stop.is_set():
+		#line = await reader.readline()
+		if stop.is_set():
 			break
 		try:
 			data = next(iter(done)).result()
+			if not data:
+				break
 		except BaseException as e:
 			print(type(e))
 			print(e)
