@@ -31,7 +31,11 @@ while calm:
 			print("Info: Bye")
 			calm = False
 		elif cmd == "cam_check":
-			fd = os.open(dev, os.O_RDWR | os.O_NONBLOCK)
+			try:
+				fd = os.open(dev, os.O_RDWR | os.O_NONBLOCK)
+			except FileNotFoundError:
+				print("%s:" %dev, "Error: Device not found")
+				continue
 			for id in ctrls:
 				fcntl.ioctl(fd, v4l2raw.VIDIOC_SUBSCRIBE_EVENT, v4l2raw.v4l2_event_subscription(
 					type=v4l2raw.V4L2_EVENT_CTRL,

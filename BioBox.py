@@ -154,7 +154,6 @@ async def webcam(stop):
 					if attr == "Hi":
 						for cam_name, cam_path in config.webcams.items():
 							webcams[cam_path] = WebcamFocus(cam_name, cam_path, ssh)
-							#TODO: Handle "device not found"
 						await ssh.stdin.drain()
 					elif attr == "Bye":
 						print("camera.py quit")
@@ -172,6 +171,9 @@ async def webcam(stop):
 						webcams[device].refract_value(int(value), "backend")
 					elif cmd == "focus_auto":
 						webcams[device].mute.set_active(int(value))
+					elif cmd == "Error" and value == "Device not found":
+						print("Device not found:", device)
+						webcams[device].remove()
 					elif cmd == "Error":
 						print("Received error on %s: " %device, value)
 	finally:
