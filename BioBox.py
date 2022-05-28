@@ -203,7 +203,7 @@ async def obs_ws(stop):
 				msg = json.loads(data)
 				collector = {}
 				if msg.get("update-type") == "SourceVolumeChanged":
-					obs_sources[msg["sourceName"]].refract_value(int(max(msg["volume"], 0) ** 0.5 * 100), "backend")
+					obs_sources[msg["sourceName"]].refract_value(max(msg["volume"], 0) ** 0.5 * 100, "backend")
 				elif msg.get("update-type") == "SourceMuteStateChanged":
 					obs_sources[msg["sourceName"]].mute.set_active(msg["muted"])
 				elif msg.get("update-type") == "SwitchScenes":
