@@ -29,16 +29,6 @@ Pi spends power limited. Command to watch power limiting:
 `throttled=0x50000` means not throttled, and `throttled=0x50005` means power
 throttled.
 
-TODO: use joystick throttle (and buttons?) as alternate analog source - throttle
-is 4th axis (axis 3), also possibly use hat to switch modules?
-```
-import pygame
-pygame.joystick.init()
-pygame.joystick.Joystick(0).init()
-while True:
-	print ("throttle:", pygame.joystick.Joystick(0).get_axis(3), "hat:", pygame.joystick.Joystick(0).get_hat(0), end="\r")
-```
-
 
 Dependencies:
 =============
