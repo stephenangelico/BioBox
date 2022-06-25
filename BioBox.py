@@ -3,6 +3,7 @@ import sys
 import time
 import subprocess
 import asyncio
+from asyncio import create_task
 import WebSocket # Local library for connecting to browser extension
 import websockets # ImportError? pip install websockets
 import json
@@ -93,7 +94,7 @@ async def vlc(stop):
 
 async def vlc_buf_read(vlc_module, reader, stop):
 	while True:
-		done, pending = await asyncio.wait([reader.readline(), stop.wait()], return_when=asyncio.FIRST_COMPLETED)
+		done, pending = await asyncio.wait([create_task(reader.readline()), create_task(stop.wait())], return_when=asyncio.FIRST_COMPLETED)
 		#line = await reader.readline()
 		if stop.is_set():
 			break
@@ -133,7 +134,7 @@ async def webcam(stop):
 		# remaining fully functional, as far as makes sense)
 		while True:
 			try:
-				done, pending = await asyncio.wait([ssh.stdout.readline(), stop.wait(), ssh.wait()], return_when=asyncio.FIRST_COMPLETED)
+				done, pending = await asyncio.wait([create_task(ssh.stdout.readline()), create_task(stop.wait()), create_task(ssh.wait())], return_when=asyncio.FIRST_COMPLETED)
 			except ConnectionResetError:
 				print("SSH connection lost")
 				break
@@ -193,7 +194,7 @@ async def obs_ws(stop):
 		async with websockets.connect(obs_uri) as obs:
 			await obs.send(json.dumps({"request-type": "GetCurrentScene", "message-id": "init"}))
 			while True:
-				done, pending = await asyncio.wait([obs.recv(), stop.wait()], return_when=asyncio.FIRST_COMPLETED)
+				done, pending = await asyncio.wait([create_task(obs.recv()), create_task(stop.wait())], return_when=asyncio.FIRST_COMPLETED)
 				if stop.is_set():
 					break
 				try:
