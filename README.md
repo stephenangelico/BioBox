@@ -11,9 +11,13 @@ audio or analog sources, such as:
 
 - OBS: Mic, desktop capture, other inputs
 - VLC
-- Media in Chrome - see unpacked extension in VolumeSocket
+- Media in Chrome - see unpacked extension in VolumeSocket (deprecated, requires migration to Manifest v3)
 - Webcam focus
 - Pulseaudio - TODO
+
+BioBox can be run on a PC without any kind of analog slider, but its usefulness
+will be limited. You still have the benefit of multiple sources controlled in
+one place, but adjustment is still done by click-dragging or scrolling.
 
 Reference hardware uses a motorized 10kΩ slide potentiometer from [SparkFun](https://www.sparkfun.com/products/retired/10976)
 (discontinued, see also Bourns PSM01-082A-103B2) with the potentiometer attached
@@ -34,7 +38,14 @@ Dependencies:
 =============
 
 - `python3-gi` from your package manager
-- Python packages as per `requirements.txt`
+- Python packages as per `requirements.txt`:
+  - `gbulb` - Required to run main event loop
+  - `adafruit-blinka` and `adafruit-circuitpython-mcp3xxx` - for interfacing with slider
+  - `RPi.GPIO` - for motor driver in Motor.py
+  - `websockets` - for connecting to OBS and browser extension
+  - `v4l2py` - for interfacing with webcams
+- [TellMeVLC](https://github.com/Rosuav/TellMeVLC) for VLC integration
+- [OBS-Websocket](https://github.com/obsproject/obs-websocket) or OBS >= 28
 
 Setup:
 ======
@@ -43,7 +54,13 @@ SPI must be enabled to connect to the ADC. This can be done with `raspi-config`
 (see [here](https://raspberrypi.stackexchange.com/a/47398/134450) for installation
 instructions) or by following [these instructions](https://www.raspberrypi.org/documentation/hardware/raspberrypi/spi/README.md#software).
 
-TODO: finish writing
+1. Install dependencies as required for the modules/features you intend to run
+2. Copy `config_example.py` to `config.py` and change values as required (some values explained below)
+3. For VLC integration, see [TellMeVLC](https://github.com/Rosuav/TellMeVLC)
+4. For OBS integration, if running OBS < 28, install [OBS-Websocket](https://github.com/obsproject/obs-websocket) and set port in config.py (authentication not yet supported)
+
+
+TODO: finish writing (ie webcam)
 
 Wiring:
 =======
