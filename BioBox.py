@@ -128,6 +128,7 @@ async def webcam(stop):
 	try:
 		# Begin cancellable section
 		ssh = await asyncio.create_subprocess_exec("ssh", "-oBatchMode=yes", (config.webcam_user + "@" + config.host), "python3", config.webcam_control_path, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+		# TODO: Deal with authentication if client and host have not set up key auth
 		# TODO: Handle connection failures
 		# Testing/simulating connection issues is difficult as simply killing
 		# the ssh process causes the window contents to stop drawing (while
@@ -188,6 +189,7 @@ async def webcam(stop):
 # OBS
 async def obs_ws(stop):
 	obs_uri = "ws://%s:%d" % (config.host, config.obs_port)
+	# TODO: Support obs-websocket authentication
 	global obs
 	try:
 		# Begin cancellable section
