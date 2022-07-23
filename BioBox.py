@@ -548,7 +548,6 @@ async def main():
 	start_task("OBS")
 	start_task("Browser")
 	start_task("WebcamFocus")
-	# TODO: Investigate hang on shutdown - may be related to removing stop event
 	await stop.wait()
 	motor_cleanup()
 	
