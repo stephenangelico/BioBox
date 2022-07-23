@@ -74,19 +74,16 @@ def init_motor_pos():
 		Analog.goal = 100
 
 # VLC
-async def vlc(stop):
+async def vlc():
 	vlc_module = None
 	try:
 		reader, writer = await asyncio.open_connection(config.host, config.vlc_port)
 		writer.write(b"volume\r\nmuted\r\n") # Ask volume and mute state
 		await writer.drain()
 		vlc_module = VLC(writer)
-		await vlc_buf_read(vlc_module, reader, stop)
+		await vlc_buf_read(vlc_module, reader)
 	except ConnectionRefusedError:
 		print("Could not connect to VLC on %s:%s - is TMV running?" % (config.host, config.vlc_port))
-	except asyncio.CancelledError:
-		#writer.close() # Not sure what will be needed here but revisit when stop event is removed
-		raise
 	finally:
 		if vlc_module:
 			vlc_module.remove()
@@ -94,19 +91,10 @@ async def vlc(stop):
 			await writer.wait_closed()
 		print("VLC cleanup done")
 
-async def vlc_buf_read(vlc_module, reader, stop):
+async def vlc_buf_read(vlc_module, reader):
 	while True:
-		done, pending = await asyncio.wait([create_task(reader.readline()), create_task(stop.wait())], return_when=asyncio.FIRST_COMPLETED)
-		#line = await reader.readline()
-		if stop.is_set():
-			break
-		try:
-			data = next(iter(done)).result()
-			if not data:
-				break
-		except BaseException as e:
-			print(type(e))
-			print(e)
+		data = await reader.readline()
+		if not data:
 			break
 		line = data.decode("utf-8")
 		attr, value = line.split(":", 1)
@@ -488,7 +476,7 @@ async def main():
 	class Task():
 		running = {}
 		def VLC():
-			return vlc(stop)
+			return vlc()
 		def WebcamFocus():
 			return webcam(stop)
 		def OBS():
