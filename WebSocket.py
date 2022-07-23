@@ -70,6 +70,9 @@ async def listen(*, connected=None, disconnected=None, volumechanged=None, host=
 		async with websockets.serve(volume, host, port, ssl=ssl_context) as ws_server:
 			print("Websocket listening.")
 			await ws_server.serve_forever()
+	except OSError as e:
+		if e.errno!=(98): # 98: Address already in use
+			raise # Task should automatically complete on return if it was errno 98
 	finally:
 		print("Websocket shutting down.") # I don't hate you!
 
