@@ -547,7 +547,6 @@ async def main():
 		asyncio.create_task(cancel_all())
 	main_ui.connect("destroy", halt)
 	main_ui.show_all()
-	# TODO: Have the ability to cancel these tasks (such as when disabled in menu)
 	slider_task = asyncio.create_task(read_analog())
 	start_task("VLC")
 	start_task("OBS")
