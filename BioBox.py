@@ -75,6 +75,7 @@ def init_motor_pos():
 
 # VLC
 async def vlc(stop):
+	vlc_module = None
 	try:
 		reader, writer = await asyncio.open_connection(config.host, config.vlc_port)
 		writer.write(b"volume\r\nmuted\r\n") # Ask volume and mute state
@@ -82,14 +83,15 @@ async def vlc(stop):
 		vlc_module = VLC(writer)
 		await vlc_buf_read(vlc_module, reader, stop)
 	except ConnectionRefusedError:
-		print("Could not connect to VLC on", config.host + ":" + config.vlc_port, "- is TMV running?")
+		print("Could not connect to VLC on %s:%s - is TMV running?" % (config.host, config.vlc_port))
 	except asyncio.CancelledError:
 		#writer.close() # Not sure what will be needed here but revisit when stop event is removed
 		raise
 	finally:
-		vlc_module.remove()
-		writer.close() # Close connection and remove module
-		await writer.wait_closed()
+		if vlc_module:
+			vlc_module.remove()
+			writer.close() # Close connection and remove module
+			await writer.wait_closed()
 		print("VLC cleanup done")
 
 async def vlc_buf_read(vlc_module, reader, stop):
@@ -227,6 +229,9 @@ async def obs_ws(stop):
 					list_scene_sources(msg['sources'], collector)
 	except websockets.exceptions.ConnectionClosedOK:
 		pass # Context manager plus finally section should clean everything up, just catch the exception
+	except OSError as e:
+		if e.errno != 111: raise
+		# Ignore connection-refused and just let the module get cleaned up
 	finally:
 		for source in obs_sources.values():
 			source.remove()
