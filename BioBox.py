@@ -177,7 +177,7 @@ async def webcam():
 		ssh = None
 
 # OBS
-async def obs_ws(stop):
+async def obs_ws():
 	obs_uri = "ws://%s:%d" % (config.host, config.obs_port)
 	# TODO: Support obs-websocket authentication
 	global obs
@@ -186,18 +186,7 @@ async def obs_ws(stop):
 		async with websockets.connect(obs_uri) as obs:
 			await obs.send(json.dumps({"request-type": "GetCurrentScene", "message-id": "init"}))
 			while True:
-				done, pending = await asyncio.wait([create_task(obs.recv()), create_task(stop.wait())], return_when=asyncio.FIRST_COMPLETED)
-				if stop.is_set():
-					break
-				try:
-					data = next(iter(done)).result()
-				except websockets.exceptions.ConnectionClosedOK:
-					report("OBS Connection lost")
-					break
-				except BaseException as e:
-					print(type(e))
-					print(e)
-					break
+				data = await obs.recv()
 				msg = json.loads(data)
 				collector = {}
 				if msg.get("update-type") == "SourceVolumeChanged":
@@ -380,7 +369,7 @@ class Channel(Gtk.Frame):
 		self.group.remove(self)
 
 class Dummy(Channel):
-	def __init__(self, stop):
+	def __init__(self):
 		super().__init__(name="Dummy")
 
 class VLC(Channel):
@@ -480,7 +469,7 @@ async def main():
 		def WebcamFocus():
 			return webcam()
 		def OBS():
-			return obs_ws(stop)
+			return obs_ws()
 		def Browser():
 			return WebSocket.listen(connected=new_tab, disconnected=closed_tab, volumechanged=tab_volume_changed)
 	def toggle_menu_item(widget):
