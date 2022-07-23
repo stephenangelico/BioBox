@@ -472,6 +472,9 @@ async def main():
 			return obs_ws()
 		def Browser():
 			return WebSocket.listen(connected=new_tab, disconnected=closed_tab, volumechanged=tab_volume_changed)
+			# TODO: *TEST with Addr In Use handling*
+			# TODO: Investigate hang on shutdown with an active WS connection
+			# TODO: Verify YT Music support
 	def toggle_menu_item(widget):
 		toggle_group = widget.get_name()
 		if widget.get_active():
