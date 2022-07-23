@@ -106,7 +106,7 @@ async def vlc_buf_read(vlc_module, reader):
 			print("From VLC:", attr, value)
 
 # Webcam
-async def webcam(stop):
+async def webcam():
 	ssh = None
 	async def cleanup():
 		# TODO: Revisit this when on-demand modules are working
@@ -125,11 +125,11 @@ async def webcam(stop):
 		# remaining fully functional, as far as makes sense)
 		while True:
 			try:
-				done, pending = await asyncio.wait([create_task(ssh.stdout.readline()), create_task(stop.wait()), create_task(ssh.wait())], return_when=asyncio.FIRST_COMPLETED)
+				done, pending = await asyncio.wait([create_task(ssh.stdout.readline()), create_task(ssh.wait())], return_when=asyncio.FIRST_COMPLETED)
 			except ConnectionResetError:
 				print("SSH connection lost")
 				break
-			if ssh.returncode is not None or stop.is_set():
+			if ssh.returncode is not None:
 				break
 			try:
 				data = next(iter(done)).result()
@@ -478,7 +478,7 @@ async def main():
 		def VLC():
 			return vlc()
 		def WebcamFocus():
-			return webcam(stop)
+			return webcam()
 		def OBS():
 			return obs_ws(stop)
 		def Browser():
