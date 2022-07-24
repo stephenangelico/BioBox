@@ -475,6 +475,7 @@ async def main():
 			# TODO: *TEST with Addr In Use handling*
 			# TODO: Investigate hang on shutdown with an active WS connection
 			# TODO: Verify YT Music support
+			# TODO: Set so_reuseport in WebSocket.py
 	def toggle_menu_item(widget):
 		toggle_group = widget.get_name()
 		if widget.get_active():
