@@ -4,6 +4,7 @@
 	"description": "Bidirectional volume control for YouTube pages",
 	"version": "0.0.2",
 	"content_scripts": [{
+		"exclude_globs": ["https://dashboard.twitch.tv/*"],
 		"matches": ["https://*.youtube.com/*", "file://*", "https://*.twitch.tv/*"],
 		"js": ["volsock.js"]
 	}]
