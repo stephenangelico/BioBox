@@ -368,10 +368,6 @@ class Channel(Gtk.Frame):
 		print("Removing:", self.channel_name)
 		self.group.remove(self)
 
-class Dummy(Channel):
-	def __init__(self):
-		super().__init__(name="Dummy")
-
 class VLC(Channel):
 	step = 1.0
 
@@ -507,7 +503,6 @@ async def main():
 		ui_items += menuitem
 		menu_entry = ("%s" %group_name, None, group_name, None, None, toggle_menu_item, True) #Second last param is callback function, boolean is default state
 		menu_entries.append(menu_entry)
-	#Dummy()
 	ui_tree = UI_HEADER + ui_items + UI_FOOTER
 	action_group.add_action(Gtk.Action(name="ModulesMenu", label="Modules"))
 	action_group.add_toggle_actions(menu_entries)
