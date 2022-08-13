@@ -69,7 +69,7 @@ async def listen(*, connected=None, disconnected=None, volumechanged=None, host=
 	try:
 		async with websockets.serve(volume, host, port, ssl=ssl_context) as ws_server:
 			print("Websocket listening.")
-			await ws_server.serve_forever()
+			await asyncio.Future()
 	except OSError as e:
 		if e.errno!=(98): # 98: Address already in use
 			raise # Task should automatically complete on return if it was errno 98
