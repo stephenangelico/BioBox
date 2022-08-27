@@ -18,6 +18,7 @@ _print = print
 def print(*a, **kw): _print(*a, **kw, flush=True)
 
 print("Info: Hi")
+#print("Info: Dump", os.environ['LANGUAGE'])
 calm = True # If you keep calm, we will carry on.
 while calm:
 	for fd, ev in poll.poll():

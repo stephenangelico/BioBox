@@ -150,6 +150,8 @@ async def webcam():
 					elif attr == "Bye":
 						print("camera.py quit")
 						break
+					else:
+						print(line)
 				else:
 					cmd, sep, value = attr.partition(": ")
 					if not sep:
