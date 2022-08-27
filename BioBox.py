@@ -266,8 +266,6 @@ class Channel(Gtk.Frame):
 		box.set_size_request(50, 300) #TODO: Optimize size and widget scaling for tablet
 		self.add(box)
 		self.channel_name = name
-		#channel_label = Gtk.Label(label=self.channel_name)
-		#box.pack_start(channel_label, False, False, 0)
 		# Slider stuff
 		self.oldvalue = 100.0
 		self.slider = Gtk.Adjustment(value=self.oldvalue, lower=0.0, upper=150.0, step_increment=1.0, page_increment=1.0, page_size=0)
