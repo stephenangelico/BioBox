@@ -109,7 +109,6 @@ async def vlc_buf_read(vlc_module, reader):
 async def webcam():
 	ssh = None
 	async def cleanup():
-		# TODO: Revisit this when on-demand modules are working
 		ssh.stdin.write(b"quit foo\n")
 		try:
 			await asyncio.wait_for(ssh.stdin.drain(), timeout=5)
