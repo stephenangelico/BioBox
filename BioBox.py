@@ -180,7 +180,7 @@ async def webcam():
 # OBS
 async def obs_ws():
 	obs_uri = "ws://%s:%d" % (config.host, config.obs_port)
-	# TODO: Support obs-websocket authentication
+	# TODO: Support obs-websocket v5 - coming in OBS 28
 	global obs
 	try:
 		# Begin cancellable section
