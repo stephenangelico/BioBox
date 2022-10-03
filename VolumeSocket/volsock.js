@@ -12,7 +12,7 @@ function connect()
 	socket.onopen = () => {
 		retry_delay = 0;
 		console.log("VolSock connection established.");
-		socket.send(JSON.stringify({cmd: "init", type: "volume", group: tabid}));
+		socket.send(JSON.stringify({cmd: "init", type: "volume", "host": location.hostname, group: tabid}));
 		document.querySelectorAll("video").forEach(vid =>
 			(vid.onvolumechange = e => socket.send(JSON.stringify({cmd: "setvolume", volume: vid.volume, muted: vid.muted})))()
 		);

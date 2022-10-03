@@ -2,7 +2,7 @@
 	"manifest_version": 3,
 	"name": "WebSocket Volume Control",
 	"description": "Bidirectional volume control for YouTube pages",
-	"version": "0.0.2",
+	"version": "0.0.3",
 	"content_scripts": [{
 		"exclude_globs": ["https://dashboard.twitch.tv/*"],
 		"matches": ["https://*.youtube.com/*", "file://*", "https://*.twitch.tv/*"],
