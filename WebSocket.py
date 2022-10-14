@@ -25,6 +25,8 @@ async def volume(sock, path):
 			if msg["cmd"] == "init":
 				if msg.get("type") != "volume": continue # This is the only socket type currently supported
 				if "group" not in msg: continue
+				# TODO: msg["host"] says eg "music.youtube.com" - decide whether it's
+				# quadratic or linear.
 				tabid = str(msg["group"])
 				if tabid not in sockets:
 					cb = callbacks.get("connected")
