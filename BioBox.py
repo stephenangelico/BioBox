@@ -39,14 +39,18 @@ sites = {
 "music.youtube.com": "YT Music",
 "www.youtube.com": "YouTube",
 "www.twitch.tv": "Twitch",
+"clips.twitch.tv": "Twitch Clips"
 "": "Browser: File",
 }
-# TODO: Check Twitch - currently not responding to BioBox control
 # YouTube only gives a "normalised" value which is different per video. Raising
 # the volume above this value has no aural effect in YouTube but is accepted by
 # the page. With no way to get the raw volume or the max normalised volume, it
 # is impossible to rescale the value to match a 0-100 scale, so the best we can
 # do is to use what we have as is.
+# Twitch VODs and clips viewed at www.twitch.tv/videos/[id] are uncontrollable.
+# The extension runs as expected but never gets a volumechange event. Control
+# still works (though in-player slider does not respond) on livestreams and
+# clips viewed on clips.twitch.tv.
 obs_sources = {}
 source_types = ['browser_source', 'pulse_input_capture', 'pulse_output_capture']
 # TODO: Configure OBS modules within BioBox
