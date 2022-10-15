@@ -39,7 +39,7 @@ sites = {
 "music.youtube.com": "YT Music",
 "www.youtube.com": "YouTube",
 "www.twitch.tv": "Twitch",
-"clips.twitch.tv": "Twitch Clips"
+"clips.twitch.tv": "Twitch Clips",
 "": "Browser: File",
 }
 # YouTube only gives a "normalised" value which is different per video. Raising
