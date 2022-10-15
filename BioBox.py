@@ -443,7 +443,7 @@ class OBS(Channel):
 		obs_send({"request-type": "SetMute", "message-id": "mute", "source": self.name, "mute": mute_state})
 
 class Browser(Channel):
-	def __init__(self, tabid, tabname, quadratic):
+	def __init__(self, tabid, tabname):
 		super().__init__(name=tabname)
 		self.tabid = tabid
 
