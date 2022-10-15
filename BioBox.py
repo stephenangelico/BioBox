@@ -39,7 +39,7 @@ sites = {
 "music.youtube.com": "YT Music",
 "www.youtube.com": "YouTube",
 "www.twitch.tv": "Twitch",
-"": "File",
+"": "Browser: File",
 }
 # TODO: Check Twitch - currently not responding to BioBox control
 # YouTube only gives a "normalised" value which is different per video. Raising
