@@ -36,12 +36,17 @@ slider_last_wrote = time.monotonic() + 0.5
 webcams = {}
 tabs = {}
 sites = {
-"music.youtube.com": {"name": "YT Music", "quadratic": False},
-"www.youtube.com": {"name": "YouTube", "quadratic": True},
-"www.twitch.tv": {"name": "Twitch", "quadratic": False},
-"": {"name": "File", "quadratic": False},
+"music.youtube.com": "YT Music",
+"www.youtube.com": "YouTube",
+"www.twitch.tv": "Twitch",
+"": "File",
 }
 # TODO: Check Twitch - currently not responding to BioBox control
+# YouTube only gives a "normalised" value which is different per video. Raising
+# the volume above this value has no aural effect in YouTube but is accepted by
+# the page. With no way to get the raw volume or the max normalised volume, it
+# is impossible to rescale the value to match a 0-100 scale, so the best we can
+# do is to use what we have as is.
 obs_sources = {}
 source_types = ['browser_source', 'pulse_input_capture', 'pulse_output_capture']
 # TODO: Configure OBS modules within BioBox
@@ -241,17 +246,10 @@ def list_scene_sources(sources, collector):
 
 # Browser
 def new_tab(tabid, host):
-	# TODO: Some browser media, including YouTube, reports volume to
-	# BioBox as 41% when its UI shows 100%. Can the we run multiple
-	# instances of volsock with separate manifests for different
-	# sites in order to separate the ones which require scaling and
-	# the ones which don't?
 	if host in sites:
-		tabname = sites[host]['name']
-		quadratic = sites[host]['quadratic']
+		tabname = sites[host]
 	else:
 		tabname = host
-		quadratic = False
 	print("Creating channel for new tab:", tabid)
 	newtab = Browser(tabid, tabname, quadratic)
 	tabs[tabid] = newtab
@@ -264,10 +262,7 @@ def closed_tab(tabid):
 def tab_volume_changed(tabid, volume, mute_state):
 	print("On", tabid, ": Volume:", volume, "Muted:", bool(mute_state))
 	channel = tabs[tabid]
-	if channel.quadratic:
-		channel.refract_value(float(volume ** 0.5 * 100), "backend")
-	else:
-		channel.refract_value(float(volume * 100), "backend")
+	channel.refract_value(float(volume * 100), "backend")
 	channel.mute.set_active(int(mute_state))
 
 class Channel(Gtk.Frame):
@@ -450,14 +445,10 @@ class OBS(Channel):
 class Browser(Channel):
 	def __init__(self, tabid, tabname, quadratic):
 		super().__init__(name=tabname)
-		self.quadratic = quadratic
 		self.tabid = tabid
 
 	def write_external(self, value):
-		if self.quadratic:
-			asyncio.create_task(WebSocket.set_volume(self.tabid, ((value / 100) ** 2)))
-		else:
-			asyncio.create_task(WebSocket.set_volume(self.tabid, (value / 100)))
+		asyncio.create_task(WebSocket.set_volume(self.tabid, (value / 100)))
 	
 	def muted(self, widget):
 		mute_state = super().muted(widget)
