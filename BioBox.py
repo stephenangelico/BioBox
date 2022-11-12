@@ -19,7 +19,7 @@ gbulb.install(gtk=True)
 try:
 	import Analog
 	from Motor import cleanup as motor_cleanup
-except (ImportError, NotImplementedError): # Provide a dummy for testing
+except (ImportError, NotImplementedError, RuntimeError): # Provide a dummy for testing
 	def motor_cleanup():
 		pass
 	class Analog():
