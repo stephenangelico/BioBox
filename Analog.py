@@ -30,12 +30,7 @@ print('Raw ADC Value: ', chan0.value)
 print('ADC Voltage: ' + str(chan0.voltage) + 'V')
 
 TOLERANCE = 4
-pot_min = 511
-pot_max = 1023
 goal = None
-interp_values = [511, 538, 569, 603, 643, 689, 739, 799, 869, 955, 1023] # 0-100% travel values
-dead_zone_low = 2
-dead_zone_high = 3
 
 async def read_position():
 	last_read = 0	# this keeps track of the last potentiometer value
@@ -56,31 +51,14 @@ async def read_position():
 			yield(pos)
 
 def remap_range(raw):
-	# Convert values from ADC to travel distance 0-100%
-	list_pos = bisect.bisect(interp_values, raw)
-	if list_pos == 0: # Check if in dead zones
-		return 0
-	elif list_pos == len(interp_values):
-		return 100
-	interp_scale = interp_values[list_pos] - interp_values[list_pos -1]
-	delta = raw - interp_values[list_pos -1]
-	pos = delta / interp_scale * 10 + (list_pos -1) * 10
-	return pos
-
-def interp_shift():
-	# Shift all values 0-90% by delta acquired from bounds_test()
-	# Throughout testing, 100% has always been consistent
-	global interp_values
-	shift_values = []
-	test_min = bounds_test()
-	interp_delta = test_min - interp_values[0]
-	for level in interp_values[:-1]:
-		shift_values.append(level + interp_delta)
-	shift_values.append(interp_values[-1]) # Append original 100% value at the end
-	# Add dead zones
-	shift_values[0] += dead_zone_low
-	shift_values[-1] -= dead_zone_high
-	interp_values = shift_values
+	# Bound and invert values from ADC
+	# TODO: Return only 0-1023 here, and scale per-module in BioBox.py
+	if raw >= 1023: # Check if at extremities
+		raw = 1023
+	elif raw <= 0:
+		raw = 0
+	pos = 1023 - raw
+	return pos // 10
 
 def bounds_test():
 	# Test the analogue value of 0% travel
