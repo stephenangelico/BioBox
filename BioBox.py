@@ -168,8 +168,10 @@ async def webcam():
 						continue
 					if cmd == "set_range":
 						min, max, step = map(int, value.split())
-						webcams[device].slider.set_lower(min)
-						webcams[device].slider.set_upper(max)
+						webcams[device].min = min
+						webcams[device].max = max
+						webcams[device].slider.set_lower(webcams[device].min)
+						webcams[device].slider.set_upper(webcams[device].max)
 						webcams[device].slider.set_page_increment(step)
 					elif cmd == "focus_absolute":
 						webcams[device].refract_value(int(value), "backend")
@@ -267,6 +269,8 @@ def tab_volume_changed(tabid, volume, mute_state):
 class Channel(Gtk.Frame):
 	mute_labels = ("Mute", "Muted")
 	step = 0.01
+	max = 150
+	min = 0
 
 	def __init__(self, name):
 		super().__init__(label=name, shadow_type=Gtk.ShadowType.ETCHED_IN)
@@ -278,7 +282,7 @@ class Channel(Gtk.Frame):
 		self.channel_name = name
 		# Slider stuff
 		self.oldvalue = 100.0
-		self.slider = Gtk.Adjustment(value=self.oldvalue, lower=0.0, upper=150.0, step_increment=1.0, page_increment=1.0, page_size=0)
+		self.slider = Gtk.Adjustment(value=self.oldvalue, lower=self.min, upper=self.max, step_increment=1.0, page_increment=1.0, page_size=0)
 		level = Gtk.Scale(orientation=Gtk.Orientation.VERTICAL, adjustment=self.slider, inverted=True, draw_value=False)
 		level.add_mark(value=100, position=Gtk.PositionType.LEFT, markup=None)
 		level.add_mark(value=100, position=Gtk.PositionType.RIGHT, markup=None)
