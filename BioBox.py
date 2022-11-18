@@ -133,11 +133,6 @@ async def webcam():
 	try:
 		# Begin cancellable section
 		ssh = await asyncio.create_subprocess_exec("ssh", "-oBatchMode=yes", (config.webcam_user + "@" + config.host), "python3", config.webcam_control_path, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
-		# TODO: Deal with authentication if client and host have not set up key auth
-		# TODO: Handle connection failures
-		# Testing/simulating connection issues is difficult as simply killing
-		# the ssh process causes the window contents to stop drawing (while
-		# remaining fully functional, as far as makes sense)
 		while True:
 			try:
 				done, pending = await asyncio.wait([create_task(ssh.stdout.readline()), create_task(ssh.wait())], return_when=asyncio.FIRST_COMPLETED)
