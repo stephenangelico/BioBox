@@ -73,11 +73,14 @@ def report(msg):
 async def read_analog():
 	global slider_last_wrote
 	# Get analog value from Analog.py and write to selected channel's slider
-	async for volume in Analog.read_value():
+	async for pos in Analog.read_value():
 		if selected_channel:
-			print("From slider:", volume)
-			# TODO: Scale 0-100% to 0-150%
-			selected_channel.refract_value(volume, "analog")
+			print("From slider:", pos)
+			# So far I have no reason for a module with a non-zero minimum
+			scale_max = selected_channel.max
+			# Scale 0-1023 to scale_max
+			value = pos * scale_max / 1023
+			selected_channel.refract_value(value, "analog")
 			slider_last_wrote = time.monotonic()
 			# TODO: Investigate desync when quickly scrolling on slider:
 			# Suspect issue is caused by dropping new goals too soon after
