@@ -36,8 +36,6 @@ async def read_position():
 	last_read = 0	# this keeps track of the last potentiometer value
 	while True:
 		await asyncio.sleep(0.015625)
-		# we'll assume that the pot didn't move
-		pot_changed = False
 		# read the analog pin
 		# ADC provides a 16-bit value, but the low 5 bits are always floored,
 		# so divide by 64 to get more usable numbers without losing precision.
@@ -58,7 +56,7 @@ def remap_range(raw):
 	elif raw <= 0:
 		raw = 0
 	pos = 1023 - raw
-	return pos // 10
+	return pos
 
 def bounds_test():
 	# Test the analogue value of 0% travel
