@@ -64,7 +64,7 @@ def bounds_test():
 	global pot_min
 	Motor.sleep(False)
 	Motor.backward()
-	Motor.speed(100)
+	Motor.speed(10)
 	span = collections.deque(maxlen=5)
 	try:
 		while True:
@@ -79,7 +79,7 @@ def bounds_test():
 					return test_min
 			time.sleep(0.015625)
 	finally:
-		motor.sleep(True)
+		Motor.sleep(True)
 
 async def read_value():
 	global goal
