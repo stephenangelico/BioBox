@@ -88,9 +88,10 @@ async def read_analog():
 
 def init_motor_pos():
 	if selected_channel:
-		Analog.goal = selected_channel.slider.get_value()
+		scale_max = selected_channel.max
+		Analog.goal = selected_channel.slider.get_value() / scale_max * 1023
 	else:
-		Analog.goal = 100
+		Analog.goal = 1023
 
 # VLC
 async def vlc():
@@ -358,7 +359,7 @@ class Channel(Gtk.Frame):
 	def write_analog(self, value):
 		global slider_last_wrote # TODO: Check whether this is actually needed, now that last_wrote isn't
 		if time.monotonic() > slider_last_wrote + 0.1:
-			Analog.goal = value
+			Analog.goal = value / self.max * 1023
 			slider_last_wrote = time.monotonic()
 			print("Slider goal: %s" % Analog.goal)
 

@@ -73,9 +73,9 @@ async def read_value():
 				if goal < 0:
 					goal = 0
 					print("Goal set to 0")
-				if goal > 100:
-					goal = 100
-					print("Goal set to 100")
+				if goal > 1023:
+					goal = 1023
+					print("Goal set to 1023")
 				if goal > pos:
 					dir = Motor.forward
 					print("Moving forward")
@@ -85,18 +85,19 @@ async def read_value():
 				else:
 					print(pos, goal)
 				dist = abs(pos - goal)
-				if dist >= 25:
+				if dist >= 256:
 					speed = 100
-					print("Desired speed: 100")
-				elif dist >= 1:
+				elif dist >= 16:
 					speed = 80
+				elif dist >= 1:
+					speed = 20
 				else:
 					speed = 0
 					dir = Motor.brake
 					goal = None
 					goal_completed = time.monotonic()
 					safety.append(-1)
-				if max(safety) - min(safety) < 0.1: # Guard against getting stuck
+				if max(safety) - min(safety) < 1: # Guard against getting stuck
 					# This does not solve slider fighting, but it should stop the motor wearing out as fast
 					print("Safety brakes engaged")
 					speed = 0
@@ -105,6 +106,7 @@ async def read_value():
 					goal_completed = time.monotonic()
 				print(dir.__name__, speed, dist)
 				if speed != last_speed:
+					print("Desired speed:", speed)
 					Motor.speed(speed)
 					last_speed = speed
 				if dir is not last_dir:
