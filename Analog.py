@@ -135,7 +135,7 @@ def test_slider():
 def print_value():
 	last = None
 	while True:
-		value = chan0.value // 64
+		value = 1023 - chan0.value // 64
 		if value != last:
 			print(value, end="\x1b[K\r")
 			last = value
