@@ -65,7 +65,7 @@ async def read_value():
 	last_speed = None
 	last_dir = None
 	goal_completed = 0
-	safety = collections.deque([0] * 2, 5)
+	safety = collections.deque([0] * 2, 5) # TODO: check if 5 is enough
 	try:
 		async for pos in read_position():
 			if goal is not None:
@@ -121,8 +121,11 @@ async def read_value():
 
 
 def test_slider():
+	# Test progression of slider with slow movement to tell the difference
+	# between acceleration and getting stuck
+	# Start with slider at *top* of travel, slider will stop close to middle
 	Motor.sleep(False)
-	Motor.forward()
+	Motor.backward()
 	Motor.speed(10)
 	start = chan0.value
 	while chan0.value < 36800:
