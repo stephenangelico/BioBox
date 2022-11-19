@@ -59,28 +59,6 @@ def remap_range(raw):
 	pos = 1023 - raw
 	return pos
 
-def bounds_test():
-	# Test the analogue value of 0% travel
-	global pot_min
-	Motor.sleep(False)
-	Motor.backward()
-	Motor.speed(10)
-	span = collections.deque(maxlen=5)
-	try:
-		while True:
-			span.append((chan0.value // 64))
-			if len(span) == span.maxlen:
-				if max(span) - min(span) < 2:
-					Motor.brake()
-					Motor.speed(0)
-					test_min = span[-1]
-					print("Min:", test_min)
-					pot_min = test_min
-					return test_min
-			time.sleep(0.015625)
-	finally:
-		Motor.sleep(True)
-
 async def read_value():
 	global goal
 	Motor.sleep(False)
