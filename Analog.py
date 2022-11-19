@@ -50,11 +50,12 @@ async def read_position():
 
 def remap_range(raw):
 	# Bound and invert values from ADC
-	# TODO: Return only 0-1023 here, and scale per-module in BioBox.py
 	if raw >= 1023: # Check if at extremities
 		raw = 1023
 	elif raw <= 0:
 		raw = 0
+	# Invert value - by default on this potentiometer, 0 is top. May change
+	# if wires are other way round on 1'/2'/3' or by using 1/2/3.
 	pos = 1023 - raw
 	return pos
 
