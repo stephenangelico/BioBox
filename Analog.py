@@ -65,7 +65,7 @@ async def read_value():
 	last_speed = None
 	last_dir = None
 	goal_completed = 0
-	safety = collections.deque([0] * 2, 5) # TODO: check if 5 is enough
+	safety = collections.deque([0] * 2, 5)
 	try:
 		async for pos in read_position():
 			if goal is not None:
