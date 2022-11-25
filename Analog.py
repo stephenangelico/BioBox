@@ -69,6 +69,7 @@ async def read_value():
 	try:
 		async for pos in read_position():
 			if goal is not None:
+				braked = False
 				safety.append(pos)
 				if goal < 0:
 					goal = 0
@@ -78,12 +79,11 @@ async def read_value():
 					print("Goal set to 1023")
 				if goal > pos:
 					dir = Motor.forward
-					print("Moving forward")
 				elif goal < pos:
 					dir = Motor.backward
-					print("Moving backward")
 				else:
-					print(pos, goal)
+					dir = Motor.stop # If exactly equal, we don't need to move, but in case we *ever* get NaN, don't do weird stuff.
+					# Not strictly necessary becuase distance is checked below but good for logic.
 				dist = abs(pos - goal)
 				if dist >= 256:
 					speed = 100
@@ -92,6 +92,7 @@ async def read_value():
 				elif dist >= 1:
 					speed = 20
 				else:
+					# If dist is NaN for any reason, all above statements will be False and the motor will stop.
 					speed = 0
 					dir = Motor.brake
 					goal = None
@@ -99,14 +100,13 @@ async def read_value():
 					safety.append(-1)
 				if max(safety) - min(safety) < 1: # Guard against getting stuck
 					# This does not solve slider fighting, but it should stop the motor wearing out as fast
-					print("Safety brakes engaged")
+					braked = True
 					speed = 0
 					dir = Motor.brake
 					goal = None
 					goal_completed = time.monotonic()
-				print(dir.__name__, speed, dist)
+				print(dir.__name__, speed, goal, dist, braked * "Brakes engaged", end="\x1b[K\r")
 				if speed != last_speed:
-					print("Desired speed:", speed)
 					Motor.speed(speed)
 					last_speed = speed
 				if dir is not last_dir:
