@@ -1,7 +1,6 @@
 import os
 import asyncio
 import time
-import bisect
 import collections
 import RPi.GPIO as GPIO
 import busio
