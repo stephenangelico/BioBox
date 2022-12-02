@@ -104,7 +104,7 @@ async def read_value():
 					dir = Motor.brake
 					goal = None
 					goal_completed = time.monotonic()
-				print(goal, dist, speed, dir.__name__, braked * "Brakes engaged")
+				print(goal, pos, dist, speed, dir.__name__, braked * "Brakes engaged")
 				if speed != last_speed:
 					Motor.speed(speed)
 					last_speed = speed
