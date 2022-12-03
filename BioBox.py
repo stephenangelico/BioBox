@@ -362,6 +362,8 @@ class Channel(Gtk.Frame):
 			Analog.goal = value / self.max * 1023
 			slider_last_wrote = time.monotonic()
 			print("Slider goal: %s" % Analog.goal)
+		else:
+			print("Slider goal NOT set:", value / self.max * 1023)
 
 	# Fallback function if subclasses don't provide write_external()
 	def write_external(self, value):
