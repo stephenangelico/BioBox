@@ -86,7 +86,7 @@ async def read_analog():
 			# Suspect issue is caused by dropping new goals too soon after
 			# setting a previous one, but may require complex queue/expiry system
 
-def init_motor_pos():
+def init_motor_pos(): # TODO: Revisit selecting a module on startup
 	if selected_channel:
 		scale_max = selected_channel.max
 		Analog.goal = selected_channel.slider.get_value() / scale_max * 1023
