@@ -64,12 +64,12 @@ async def read_value():
 	last_speed = None
 	last_dir = None
 	goal_completed = 0
-	safety = collections.deque([0] * 2, 5)
+	#safety = collections.deque([0] * 2, 5)
 	try:
 		async for pos in read_position():
 			if goal is not None:
 				braked = False
-				safety.append(pos)
+				#safety.append(pos)
 				if goal < 0:
 					goal = 0
 					print("Goal set to 0")
@@ -97,15 +97,15 @@ async def read_value():
 					# TODO: only unset goal if we're stable here - set a flag for next iteration to check or clear if we've overshot.
 					goal = None
 					goal_completed = time.monotonic()
-					safety.append(-1)
-				if max(safety) - min(safety) < 1: # Guard against getting stuck
-					# This does not solve slider fighting, but it should stop the motor wearing out as fast
-					braked = True
-					speed = 0
-					dir = Motor.brake
-					goal = None
-					goal_completed = time.monotonic()
-				print(goal, pos, dist, speed, dir.__name__, braked * "Brakes engaged")
+					#safety.append(-1)
+				#if max(safety) - min(safety) < 1: # Guard against getting stuck
+				#	# This does not solve slider fighting, but it should stop the motor wearing out as fast
+				#	braked = True # Use in print call below like `braked * "Brakes engaged"`
+				#	speed = 0
+				#	dir = Motor.brake
+				#	goal = None
+				#	goal_completed = time.monotonic()
+				print(goal, pos, dist, speed, dir.__name__)
 				if speed != last_speed:
 					Motor.speed(speed)
 					last_speed = speed
