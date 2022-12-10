@@ -71,13 +71,13 @@ async def read_value():
 	#safety = collections.deque([0] * 2, 5)
 	try:
 		async for pos in read_position():
+			if next_goal is not None:
+				if time.monotonic() > next_goal_time:
+					goal = next_goal
+					next_goal = None
+					next_goal_time = time.monotonic() + 0.1
+				# Else wait until the next iteration, eventually it will be.
 			if goal is not None:
-				if next_goal is not None:
-					if time.monotonic() > next_goal_time:
-						goal = next_goal
-						next_goal = None
-						next_goal_time = time.monotonic() + 0.1
-					# Else wait until the next iteration, eventually it will be.
 				braked = False
 				#safety.append(pos)
 				if goal < 0:
