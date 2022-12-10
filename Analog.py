@@ -30,6 +30,8 @@ print('ADC Voltage: ' + str(chan0.voltage) + 'V')
 
 TOLERANCE = 4
 goal = None
+next_goal = None
+next_goal_time = time.monotonic() + 0.5 # TODO: Experiment with startup delay
 
 async def read_position():
 	last_read = 0	# this keeps track of the last potentiometer value
@@ -60,6 +62,8 @@ def remap_range(raw):
 
 async def read_value():
 	global goal
+	global next_goal
+	global next_goal_time
 	Motor.sleep(False)
 	last_speed = None
 	last_dir = None
@@ -68,6 +72,12 @@ async def read_value():
 	try:
 		async for pos in read_position():
 			if goal is not None:
+				if next_goal is not None:
+					if time.monotonic() > next_goal_time:
+						goal = next_goal
+						next_goal = None
+						next_goal_time = time.monotonic() + 0.1
+					# Else wait until the next iteration, eventually it will be.
 				braked = False
 				#safety.append(pos)
 				if goal < 0:

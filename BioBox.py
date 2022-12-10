@@ -24,6 +24,7 @@ except (ImportError, NotImplementedError, RuntimeError): # Provide a dummy for t
 		pass
 	class Analog():
 		goal = None
+		next_goal_time = 0
 		async def read_value():
 			yield 0 # Yield once and then stop
 			# Just as a function is destined to yield once, and then face termination...
@@ -32,7 +33,6 @@ except (ImportError, NotImplementedError, RuntimeError): # Provide a dummy for t
 import config # ImportError? See config_example.py
 
 selected_channel = None
-slider_last_wrote = time.monotonic() + 0.5
 webcams = {}
 tabs = {}
 sites = {
@@ -71,7 +71,6 @@ def report(msg):
 
 # Slider
 async def read_analog():
-	global slider_last_wrote
 	# Get analog value from Analog.py and write to selected channel's slider
 	async for pos in Analog.read_value():
 		if selected_channel:
@@ -81,10 +80,7 @@ async def read_analog():
 			# Scale 0-1023 to scale_max
 			value = pos * scale_max / 1023
 			selected_channel.refract_value(value, "analog")
-			slider_last_wrote = time.monotonic()
-			# TODO: Investigate desync when quickly scrolling on slider:
-			# Suspect issue is caused by dropping new goals too soon after
-			# setting a previous one, but may require complex queue/expiry system
+			Analog.next_goal_time = time.monotonic() + 0.1
 
 def init_motor_pos(): # TODO: Revisit selecting a module on startup
 	if selected_channel:
@@ -357,13 +353,9 @@ class Channel(Gtk.Frame):
 			self.oldvalue = value
 
 	def write_analog(self, value):
-		global slider_last_wrote
-		if time.monotonic() > slider_last_wrote + 0.1:
-			Analog.goal = value / self.max * 1023
-			slider_last_wrote = time.monotonic()
-			print("Slider goal: %s" % Analog.goal)
-		else:
-			print("Slider goal NOT set:", value / self.max * 1023)
+		Analog.next_goal = value / self.max * 1023
+		Analog.next_goal_time = time.monotonic() + 0.1
+		print("Slider goal: %s" % Analog.next_goal)
 
 	# Fallback function if subclasses don't provide write_external()
 	def write_external(self, value):
