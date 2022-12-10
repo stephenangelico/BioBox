@@ -36,11 +36,11 @@ slider_last_wrote = time.monotonic() + 0.5
 webcams = {}
 tabs = {}
 sites = {
-"music.youtube.com": "YT Music",
-"www.youtube.com": "YouTube",
-"www.twitch.tv": "Twitch",
-"clips.twitch.tv": "Twitch Clips",
-"": "Browser: File",
+	"music.youtube.com": "YT Music",
+	"www.youtube.com": "YouTube",
+	"www.twitch.tv": "Twitch",
+	"clips.twitch.tv": "Twitch Clips",
+	"": "Browser: File",
 }
 # YouTube only gives a "normalised" value which is different per video. Raising
 # the volume above this value has no aural effect in YouTube but is accepted by
