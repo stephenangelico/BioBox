@@ -105,7 +105,7 @@ async def read_value():
 				else:
 					# If dist is NaN for any reason, all above statements will be False and the motor will stop.
 					speed = 0
-					dir = Motor.brake
+					dir = Motor.stop
 					# TODO: only unset goal if we're stable here - set a flag for next iteration to check or clear if we've overshot.
 					goal = None
 					goal_completed = time.monotonic()
