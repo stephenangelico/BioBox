@@ -80,7 +80,7 @@ async def read_analog():
 			# Scale 0-1023 to scale_max
 			value = pos * scale_max / 1023
 			selected_channel.refract_value(value, "analog")
-			Analog.next_goal_time = time.monotonic() + 0.1
+			Analog.next_goal_time = time.monotonic() + 0.15
 
 def init_motor_pos(): # TODO: Revisit selecting a module on startup
 	if selected_channel:

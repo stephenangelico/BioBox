@@ -76,7 +76,7 @@ async def read_value():
 					print("Accepting goal:", next_goal)
 					goal = next_goal
 					next_goal = None
-					next_goal_time = time.monotonic() + 0.1
+					next_goal_time = time.monotonic() + 0.15
 				# Else wait until the next iteration, eventually it will be.
 			if goal is not None:
 				braked = False
@@ -125,7 +125,7 @@ async def read_value():
 					dir()
 					last_dir = dir
 			else:
-				if time.monotonic() > goal_completed + 0.15:
+				if not next_goal and time.monotonic() > goal_completed + 0.15:
 					yield(pos)
 	finally:
 		goal = None
