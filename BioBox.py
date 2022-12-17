@@ -341,7 +341,7 @@ class Channel(Gtk.Frame):
 	def refract_value(self, value, source):
 		# Send value to multiple places, keeping track of sent value to
 		# avoid bounce or slider fighting.
-		if value != self.oldvalue:
+		if abs(value - self.oldvalue) > 1: # Prevent feedback loop when moving slider
 			#print(self.channel_name, source, value)
 			if source != "gtk":
 				self.update_position(value)
