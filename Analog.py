@@ -28,7 +28,7 @@ chan0 = AnalogIn(mcp, MCP.P0)
 print('Raw ADC Value: ', chan0.value)
 print('ADC Voltage: ' + str(chan0.voltage) + 'V')
 
-TOLERANCE = 4
+TOLERANCE = 1
 goal = None
 next_goal = None
 next_goal_time = time.monotonic() + 0.5 # TODO: Experiment with startup delay
