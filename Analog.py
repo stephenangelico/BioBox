@@ -73,6 +73,7 @@ async def read_value():
 		async for pos in read_position():
 			if next_goal is not None:
 				if time.monotonic() > next_goal_time:
+					print("Accepting goal:", next_goal)
 					goal = next_goal
 					next_goal = None
 					next_goal_time = time.monotonic() + 0.1
