@@ -43,7 +43,7 @@ async def read_position():
 		pot = chan0.value // 64
 		# how much has it changed since the last read?
 		pot_adjust = abs(pot - last_read)
-		if pot_adjust > TOLERANCE or goal is not None:
+		if pot_adjust > TOLERANCE or next_goal is not None or goal is not None:
 			pos = remap_range(pot)
 			# save the potentiometer reading for the next loop
 			last_read = pot
