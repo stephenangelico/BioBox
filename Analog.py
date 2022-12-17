@@ -101,6 +101,7 @@ async def read_value():
 					speed = 80
 				elif dist >= 1:
 					speed = 20
+					# TODO: Prevent changing speed by more that ±20% per tick
 				else:
 					# If dist is NaN for any reason, all above statements will be False and the motor will stop.
 					speed = 0
