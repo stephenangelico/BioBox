@@ -15,15 +15,17 @@ except RuntimeError:
 		def backward(self): self.dir = 1
 		def stop(self): self.dir = 0
 		def speed(self, spd): self.spd = spd
+		def sleep(self, state): pass
+		def cleanup(self): pass
 	Motor = Motor()
 	def hack():
-		chan0.value += Motor.spd * Motor.dir * 4
+		chan0.value += Motor.spd * Motor.dir * 32
 goal = None
 ACCEL_LIMIT = 10
 
 def randomly_change_goal():
 	global goal
-	new_goal = random.randrange(1024 * 64 * 4) # On average, change the goal every 4 seconds
+	new_goal = random.randrange(1024 * 64 * 1) # On average, change the goal every 1 second
 	if new_goal < 1024:
 		print("SETTING A NEW GOAL:", new_goal)
 		goal = new_goal
@@ -89,4 +91,8 @@ async def move_slider():
 if __name__ == "__main__":
 	loop = asyncio.new_event_loop()
 	asyncio.set_event_loop(loop)
-	loop.run_until_complete(move_slider())
+	try:
+		Motor.sleep(False)
+		loop.run_until_complete(move_slider())
+	finally:
+		Motor.cleanup()
