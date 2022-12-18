@@ -21,15 +21,16 @@ except RuntimeError:
 	def hack():
 		chan0.value += Motor.spd * Motor.dir * 32
 goal = None
-goal_time = 0
+goal_set = 0
+current_tick = 0
 ACCEL_LIMIT = 10
 
 def randomly_change_goal():
-	global goal, goal_time
-	new_goal = random.randrange(1024 * 64 * 1) # On average, change the goal every 1 second
+	global goal, goal_set
+	new_goal = random.randrange(1024 * 64 * 4) # On average, change the goal every 1 second
 	if new_goal < 1024:
 		print("SETTING A NEW GOAL:", new_goal)
-		goal_time = 0
+		goal_set = current_tick
 		goal = new_goal
 
 def remap_range(raw): # could be imported from Analog if on the Pi
@@ -46,11 +47,12 @@ async def read_position():
 		yield remap_range(pot)
 
 async def move_slider():
-	global goal, goal_time
+	global goal, current_tick
 	last_speed = 0 # Assume we start out not moving
 	last_pos = 0
+	overshoot = 0
 	async for pos in read_position():
-		goal_time += 1
+		current_tick += 1
 		randomly_change_goal() # Simulate external signals that change the goal
 		if goal is None: continue
 		# Note that all values here are *signed*, but the limits are on their magnitudes.
@@ -71,6 +73,9 @@ async def move_slider():
 			speed = 100
 		if goal < pos: speed = -speed
 
+		if (speed > 0 and last_speed < 0) or (speed < 0 and last_speed > 0):
+			if overshoot < goal_set:
+				overshoot = current_tick
 		accel = speed - last_speed # Desired acceleration
 		accel = max(-ACCEL_LIMIT, min(accel, ACCEL_LIMIT)) # Actual acceleration
 		last_speed = speed = last_speed + accel # Actual speed
@@ -91,7 +96,10 @@ async def move_slider():
 			# this doesn't count as reaching the goal.
 			if dist < 1:
 				goal = None
-				print("GOAL REACHED in", goal_time)
+				print("GOAL REACHED in", current_tick - goal_set)
+				if overshoot >= goal_set:
+					print("Overshoot", current_tick - overshoot)
+					# Note that spurious overshoots can be reported if a goal is overwritten.
 				continue
 		Motor.speed(abs(speed)) # Is it okay to set speed to zero? If not, move this into both the conditions above.
 		print(f"[{time.time():12f}] {pos=:4d} {speed=:4d} {accel=:3d} {dist=:4d} dpos={pos-last_pos}")
