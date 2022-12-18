@@ -21,13 +21,15 @@ except RuntimeError:
 	def hack():
 		chan0.value += Motor.spd * Motor.dir * 32
 goal = None
+goal_time = 0
 ACCEL_LIMIT = 10
 
 def randomly_change_goal():
-	global goal
+	global goal, goal_time
 	new_goal = random.randrange(1024 * 64 * 1) # On average, change the goal every 1 second
 	if new_goal < 1024:
 		print("SETTING A NEW GOAL:", new_goal)
+		goal_time = 0
 		goal = new_goal
 
 def remap_range(raw): # could be imported from Analog if on the Pi
@@ -44,23 +46,29 @@ async def read_position():
 		yield remap_range(pot)
 
 async def move_slider():
-	global goal
+	global goal, goal_time
 	last_speed = 0 # Assume we start out not moving
+	last_pos = 0
 	async for pos in read_position():
+		goal_time += 1
 		randomly_change_goal() # Simulate external signals that change the goal
 		if goal is None: continue
 		# Note that all values here are *signed*, but the limits are on their magnitudes.
 		dist = abs(pos - goal)
-		if dist >= 256:
-			speed = 100
-		elif dist >= 16:
-			speed = 40
-		elif dist >= 5:
-			speed = 20
-		elif dist >= 1:
-			speed = 10
-		else:
+		if dist < 1:
 			speed = 0
+		elif dist < 4:
+			speed = 10
+		elif dist < 16:
+			speed = 20
+		elif dist < 64:
+			speed = 40
+		elif dist < 256:
+			speed = 60
+		elif dist < 512:
+			speed = 80
+		else:
+			speed = 100
 		if goal < pos: speed = -speed
 
 		accel = speed - last_speed # Desired acceleration
@@ -83,10 +91,11 @@ async def move_slider():
 			# this doesn't count as reaching the goal.
 			if dist < 1:
 				goal = None
-				print("GOAL REACHED")
+				print("GOAL REACHED in", goal_time)
 				continue
 		Motor.speed(abs(speed)) # Is it okay to set speed to zero? If not, move this into both the conditions above.
-		print(f"[{time.time():12f}] {pos=:4d} {speed=:4d} {accel=:3d}")
+		print(f"[{time.time():12f}] {pos=:4d} {speed=:4d} {accel=:3d} {dist=:4d} dpos={pos-last_pos}")
+		last_pos = pos
 
 if __name__ == "__main__":
 	loop = asyncio.new_event_loop()
