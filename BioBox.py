@@ -7,6 +7,8 @@ from asyncio import create_task
 import WebSocket # Local library for connecting to browser extension
 import websockets # ImportError? pip install websockets
 import json
+import hashlib
+import base64
 
 
 import gi
@@ -195,29 +197,46 @@ async def obs_ws():
 	obs_uri = "ws://%s:%d" % (config.host, config.obs_port)
 	# TODO: Support obs-websocket v5 - coming in OBS 28
 	global obs
+	auth_key = ""
+	rpc_version = 1
 	try:
 		# Begin cancellable section
 		async with websockets.connect(obs_uri) as obs:
-			await obs.send(json.dumps({"request-type": "GetCurrentScene", "message-id": "init"}))
 			while True:
 				data = await obs.recv()
 				msg = json.loads(data)
 				collector = {}
-				if msg.get("update-type") == "SourceVolumeChanged":
-					obs_sources[msg["sourceName"]].refract_value(max(msg["volume"], 0) ** 0.5 * 100, "backend")
-				elif msg.get("update-type") == "SourceMuteStateChanged":
-					obs_sources[msg["sourceName"]].mute.set_active(msg["muted"])
-				elif msg.get("update-type") == "SwitchScenes":
-					print(msg["scene-name"])
-					list_scene_sources(msg['sources'], collector)
-					for source in list(obs_sources):
-						if source not in collector:
-							print("Removing", source)
-							obs_sources[source].remove()
-							obs_sources.pop(source, None)
-				elif msg.get("message-id") == "init":
-					obs_sources.clear()
-					list_scene_sources(msg['sources'], collector)
+				if msg.get("op") == 0: # Hello
+					if msg.get("d")["rpcVersion"] != rpc_version: # Warn if RPC version is ever bumped
+						print("Warning: OBS-Websocket version", msg.get("d")["obsWebSocketVersion"], "has RPC version", msg.get("d")["rpcVersion"])
+					if msg.get("d")["authentication"]:
+						challenge = msg.get("d")["authentication"]["challenge"].encode("utf-8")
+						salt = msg.get("d")["authentication"]["salt"].encode("utf-8")
+						auth_key = base64.b64encode(hashlib.sha256(base64.b64encode(hashlib.sha256(config.obs_password + salt).digest()) + challenge).digest())
+					ident = {"op": 1, "d": {"rpcVersion": rpc_version, "authentication": auth_key.decode("utf-8"), "eventSubscriptions": 13}}
+					# Subscriptions: General (1), Scenes (4), Inputs (8)
+					await obs.send(json.dumps(ident))
+				elif msg.get("op") == 2: # Identified
+					if msg.get("d")["negotiatedRpcVersion"] != rpc_version: # Warn if RPC version is ever bumped
+						print("Warning: negotiated RPC version:", msg.get("d")["rpcVersion"])
+					#await obs.send(json.dumps({"request-type": "GetCurrentScene", "message-id": "init"}))
+					# Now needs to become GetCurrentProgramScene followed by GetSceneItemList
+				elif msg.get("op") == 5: # Event
+					if msg.get("d")["eventType"] == "SourceVolumeChanged":
+						obs_sources[msg["sourceName"]].refract_value(max(msg["volume"], 0) ** 0.5 * 100, "backend")
+					elif msg.get("d")["eventType"] == "SourceMuteStateChanged":
+						obs_sources[msg["sourceName"]].mute.set_active(msg["muted"])
+					elif msg.get("d")["eventType"] == "CurrentProgramSceneChanged":
+						print(msg["sceneName"])
+						list_scene_sources(msg['sources'], collector) # Now need separate request GetSceneItemList
+						for source in list(obs_sources):
+							if source not in collector:
+								print("Removing", source)
+								obs_sources[source].remove()
+								obs_sources.pop(source, None)
+					elif msg.get("message-id") == "init":
+						obs_sources.clear()
+						list_scene_sources(msg['sources'], collector)
 	except websockets.exceptions.ConnectionClosedOK:
 		pass # Context manager plus finally section should clean everything up, just catch the exception
 	except OSError as e:
