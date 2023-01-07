@@ -219,7 +219,7 @@ async def obs_ws():
 				elif msg.get("op") == 2: # Identified
 					if msg.get("d")["negotiatedRpcVersion"] != rpc_version: # Warn if RPC version is ever bumped
 						print("Warning: negotiated RPC version:", msg.get("d")["rpcVersion"])
-					#await obs.send(json.dumps({"request-type": "GetCurrentScene", "message-id": "init"}))
+					await obs.send(json.dumps({"op": 6, "d": {"requestType": "GetCurrentProgramScene", "requestId": "init"}}))
 					# Now needs to become GetCurrentProgramScene followed by GetSceneItemList
 				elif msg.get("op") == 5: # Event
 					if msg.get("d")["eventType"] == "SourceVolumeChanged":
@@ -227,16 +227,34 @@ async def obs_ws():
 					elif msg.get("d")["eventType"] == "SourceMuteStateChanged":
 						obs_sources[msg["sourceName"]].mute.set_active(msg["muted"])
 					elif msg.get("d")["eventType"] == "CurrentProgramSceneChanged":
-						print(msg["sceneName"])
+						print(msg["d"]["eventData"]["sceneName"])
 						list_scene_sources(msg['sources'], collector) # Now need separate request GetSceneItemList
 						for source in list(obs_sources):
 							if source not in collector:
 								print("Removing", source)
 								obs_sources[source].remove()
 								obs_sources.pop(source, None)
-					elif msg.get("message-id") == "init":
+				elif msg.get("op") == 7: # RequestResponse
+					if msg.get("d")["requestId"] == "init":
+						scene_name = msg.get("d")["responseData"]["currentProgramSceneName"]
+						await obs.send(json.dumps({"op": 6, "d": {"requestType": "GetSceneItemList", "requestId": "init2", "requestData": {"sceneName": scene_name}}}))
+					elif msg.get("d")["requestId"] == "init2":
 						obs_sources.clear()
-						list_scene_sources(msg['sources'], collector)
+						sources = msg["d"]["responseData"]["sceneItems"]
+						sources_request = {"op": 8, "d": {"requestId": scene_name, "requests": {}}}
+						for source in sources:
+							if source['inputKind'] in source_types:
+								sources_request["d"]["requests"].append({"requestType": "GetInputVolume", "requestId": source["sourceName"], "requestData": {source["sourceName"]}})
+								sources_request["d"]["requests"].append({"requestType": "GetInputMute", "requestId": source["sourceName"], "requestData": {source["sourceName"]}})
+						await obs.send(json.dumps(sources_request))
+				elif msg.get("op") == 9: # RequestBatchResponse
+					if msg["d"]["requestId"] == scene_name:
+						for response in msg["d"]["results"]:
+							# Get volume then mute state per source and add as attributes to source
+						# Once each source has its volume and mute state:
+							if source['name'] not in obs_sources:
+								obs_sources[source['name']] = OBS(source)
+
 	except websockets.exceptions.ConnectionClosedOK:
 		pass # Context manager plus finally section should clean everything up, just catch the exception
 	except OSError as e:
@@ -253,16 +271,18 @@ def obs_send(request):
 
 def list_scene_sources(sources, collector):
 	for source in sources:
-		if source['type'] in source_types:
-			print(source['id'], source['name'], source['volume'], "Muted:", source['muted'])
+		if source['inputKind'] in source_types:
+			#await obs.send(json.dumps({"op": 6, "d": {}))
+			print(source['sourceName'], source['volume'], "Muted:", source['muted'])
 			collector[source['name']] = source
 			if source['name'] not in obs_sources:
 				obs_sources[source['name']] = OBS(source)
-		elif source['type'] == 'group':
-			list_scene_sources(source['groupChildren'], collector)
-		elif source['type'] == 'scene':
-			#TODO: get this scene's sources and recurse
-			pass
+		#elif source['type'] == 'group':
+		#	list_scene_sources(source['groupChildren'], collector)
+		# Groups are fiddly and/or broken
+		#elif source['type'] == 'scene':
+		#	pass
+		# Scenes and groups may end up being done the same way
 
 # Browser
 def new_tab(tabid, host):
