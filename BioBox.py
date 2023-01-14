@@ -241,11 +241,11 @@ async def obs_ws():
 					elif msg.get("d")["requestId"] == "init2":
 						obs_sources.clear()
 						sources = msg["d"]["responseData"]["sceneItems"]
-						sources_request = {"op": 8, "d": {"requestId": scene_name, "requests": {}}}
+						sources_request = {"op": 8, "d": {"requestId": scene_name, "requests": []}}
 						for source in sources:
 							if source['inputKind'] in source_types:
-								sources_request["d"]["requests"].append({"requestType": "GetInputVolume", "requestId": source["sourceName"], "requestData": {source["sourceName"]}})
-								sources_request["d"]["requests"].append({"requestType": "GetInputMute", "requestId": source["sourceName"], "requestData": {source["sourceName"]}})
+								sources_request["d"]["requests"].append({"requestType": "GetInputVolume", "requestId": source["sourceName"], "requestData": {"inputName": source["sourceName"]}})
+								sources_request["d"]["requests"].append({"requestType": "GetInputMute", "requestId": source["sourceName"], "requestData": {"inputName": source["sourceName"]}})
 						await obs.send(json.dumps(sources_request))
 				elif msg.get("op") == 9: # RequestBatchResponse
 					if msg["d"]["requestId"] == scene_name:
