@@ -92,9 +92,6 @@ async def obs_ws():
 		obs_sources.clear()
 		print("OBS cleanup done")
 
-def obs_send(request):
-	asyncio.run_coroutine_threadsafe(obs.send(json.dumps(request)), loop)
-
 def list_scene_sources(sources, collector):
 	for source in sources:
 		if source['inputType'] in source_types:
