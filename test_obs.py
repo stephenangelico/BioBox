@@ -15,6 +15,9 @@ pending_requests = {}
 
 async def obs_logic():
 	print(await send_request("GetVersion"))
+class OBSError(Exception):
+	pass
+
 
 async def send_request(request_type, request_data={}):
 	request_id = str(next(request_id_source))
@@ -74,7 +77,10 @@ async def obs_ws():
 						#obs_sources.clear()
 						#list_scene_sources(msg["d"]["responseData"]["sceneItems"], collector)
 					future = pending_requests.pop(msg["d"]["requestId"])
-					future.set_result(msg["d"]["responseData"])
+					if msg["d"]["requestStatus"]["result"]:
+						future.set_result(msg["d"]["responseData"])
+					else:
+						future.set_exception(OBSError(msg["d"]["requestStatus"]["comment"]))
 	except websockets.exceptions.ConnectionClosedOK:
 		pass # Context manager plus finally section should clean everything up, just catch the exception
 	except OSError as e:
