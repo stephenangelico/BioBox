@@ -13,11 +13,31 @@ request_id_source = itertools.count()
 
 pending_requests = {}
 
-async def obs_logic():
-	print(await send_request("GetVersion"))
+events_seen = []
+
 class OBSError(Exception):
 	pass
 
+class OBSEvents:
+	async def Identified(ev):
+		scene_name = (await send_request("GetCurrentProgramScene"))["currentProgramSceneName"]
+		await list_scene_sources(scene_name)
+
+	async def InputVolumeChanged(ev):
+		obs_sources[ev["inputName"]].refract_value(max(ev["inputVolumeMul"], 0) ** 0.5 * 100, "backend") # FIXME: make this work from a separate file
+
+	async def InputMuteStateChanged(ev):
+		obs_sources[ev["inputName"]].mute.set_active(ev["inputMuted"])
+
+	async def CurrentProgramSceneChanged(ev):
+		print(ev["sceneName"])
+		await list_scene_sources(ev["sceneName"])
+
+	async def UnknownEvent(ev):
+		global events_seen
+		if event["eventType"] not in events_seen:
+			events_seen.append(event["eventType"])
+			print(event)
 
 async def send_request(request_type, request_data={}):
 	request_id = str(next(request_id_source))
@@ -25,6 +45,13 @@ async def send_request(request_type, request_data={}):
 	request = {"op": 6, "d": {"requestType": request_type, "requestId": request_id, "requestData": request_data}}
 	await obs.send(json.dumps(request))
 	return(await future)
+
+async def event_handler(event):
+	method = getattr(OBSEvents, event["eventType"], None)
+	if not method:
+		await OBSEvents.UnknownEvent(event)
+	else:
+		await method(event["eventData"])
 
 async def obs_ws():
 	obs_uri = "ws://%s:%d" % (config.host, config.obs_port)
@@ -52,22 +79,9 @@ async def obs_ws():
 				elif msg.get("op") == 2: # Identified
 					if msg.get("d")["negotiatedRpcVersion"] != rpc_version: # Warn if RPC version is ever bumped
 						print("Warning: negotiated RPC version:", msg.get("d")["rpcVersion"])
-					asyncio.create_task(obs_logic())
-					#await obs.send(json.dumps({"op": 6, "d": {"requestType": "GetCurrentProgramScene", "requestId": "init"}}))
-					# Now needs to become GetCurrentProgramScene followed by GetSceneItemList
+					asyncio.create_task(OBSEvents.Identified(msg)) # Hack to put the handling all in OBSEvents
 				elif msg.get("op") == 5: # Event
-					if msg.get("d")["eventType"] == "SourceVolumeChanged":
-						obs_sources[msg["sourceName"]].refract_value(max(msg["volume"], 0) ** 0.5 * 100, "backend")
-					elif msg.get("d")["eventType"] == "SourceMuteStateChanged":
-						obs_sources[msg["sourceName"]].mute.set_active(msg["muted"])
-					elif msg.get("d")["eventType"] == "CurrentProgramSceneChanged":
-						print(msg["d"]["eventData"]["sceneName"])
-						list_scene_sources(msg['sources'], collector) # Now need separate request GetSceneItemList
-						for source in list(obs_sources):
-							if source not in collector:
-								print("Removing", source)
-								obs_sources[source].remove()
-								obs_sources.pop(source, None)
+					asyncio.create_task(event_handler(msg["d"]))
 				elif msg.get("op") == 7: # RequestResponse
 					#if msg.get("d")["requestId"] == "init":
 						#scene_name = msg.get("d")["responseData"]["currentProgramSceneName"]
@@ -92,9 +106,12 @@ async def obs_ws():
 		obs_sources.clear()
 		print("OBS cleanup done")
 
-def list_scene_sources(sources, collector):
+async def list_scene_sources(scene_name):
+	sources = await send_request("GetSceneItemList", request_data={"sceneName": scene_name})
+	# TODO: filter to just source names
+	collector = {}
 	for source in sources:
-		if source['inputType'] in source_types:
+		if source['inputType'] in source_types: # TODO: get volume and mute state from source name
 			print(source['id'], source['name'], source['volume'], "Muted:", source['muted'])
 			collector[source['name']] = source
 			if source['name'] not in obs_sources:
@@ -104,6 +121,11 @@ def list_scene_sources(sources, collector):
 		elif source['type'] == 'scene':
 			#TODO: get this scene's sources and recurse
 			pass
+	for source in list(obs_sources):
+		if source not in collector:
+			print("Removing", source)
+			obs_sources[source].remove()
+			obs_sources.pop(source, None)
 
 if __name__ == "__main__":
 	loop = asyncio.new_event_loop()
