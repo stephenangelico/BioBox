@@ -19,7 +19,7 @@ async def obs_logic():
 async def send_request(request_type, request_data={}):
 	request_id = str(next(request_id_source))
 	future = pending_requests[request_id] = asyncio.Future()
-	request = {"op": 6, "d": {"requestType": request_type, "requestId": request_id}}
+	request = {"op": 6, "d": {"requestType": request_type, "requestId": request_id, "requestData": request_data}}
 	await obs.send(json.dumps(request))
 	return(await future)
 
