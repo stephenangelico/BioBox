@@ -111,11 +111,13 @@ async def list_scene_sources(scene_name):
 	# TODO: filter to just source names
 	collector = {}
 	for source in sources:
-		if source['inputType'] in source_types: # TODO: get volume and mute state from source name
-			print(source['id'], source['name'], source['volume'], "Muted:", source['muted'])
-			collector[source['name']] = source
-			if source['name'] not in obs_sources:
-				obs_sources[source['name']] = OBS(source)
+		if source['inputKind'] in source_types: # TODO: get volume and mute state from source name
+			vol = max((await send_request("GetInputVolume", request_data={"inputName": source['sourceName']}))["inputVolumeMul"], 0) ** 0.5 * 100
+			mute = (await send_request("GetInputMute", request_data={"inputName": source['sourceName']}))["inputMuted"]
+			print(source['sourceName'], vol, "Muted:", mute)
+			collector[source['sourceName']] = source
+			if source['sourceName'] not in obs_sources:
+				obs_sources[source['sourceName']] = OBS(source)
 		elif source['type'] == 'group':
 			list_scene_sources(source['groupChildren'], collector)
 		elif source['type'] == 'scene':
