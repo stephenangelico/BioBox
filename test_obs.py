@@ -57,7 +57,7 @@ async def send_request(request_type, request_data={}):
 	request_id = str(next(request_id_source))
 	future = pending_requests[request_id] = asyncio.Future()
 	request = {"op": 6, "d": {"requestType": request_type, "requestId": request_id, "requestData": request_data}}
-	await obs.send(json.dumps(request))
+	await conn.send(json.dumps(request))
 	return(await future)
 
 async def event_handler(event):
@@ -75,9 +75,9 @@ async def obs_ws():
 	rpc_version = 1
 	try:
 		# Begin cancellable section
-		async with websockets.connect(obs_uri) as obs:
+		async with websockets.connect(obs_uri) as conn:
 			while True:
-				data = await obs.recv()
+				data = await conn.recv()
 				msg = json.loads(data)
 				collector = {}
 				if msg.get("op") == 0: # Hello
@@ -89,7 +89,7 @@ async def obs_ws():
 						auth_key = base64.b64encode(hashlib.sha256(base64.b64encode(hashlib.sha256(config.obs_password + salt).digest()) + challenge).digest())
 					ident = {"op": 1, "d": {"rpcVersion": rpc_version, "authentication": auth_key.decode("utf-8"), "eventSubscriptions": 13}}
 					# Subscriptions: General (1), Scenes (4), Inputs (8)
-					await obs.send(json.dumps(ident))
+					await conn.send(json.dumps(ident))
 				elif msg.get("op") == 2: # Identified
 					if msg.get("d")["negotiatedRpcVersion"] != rpc_version: # Warn if RPC version is ever bumped
 						print("Warning: negotiated RPC version:", msg.get("d")["rpcVersion"])
