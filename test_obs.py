@@ -35,9 +35,9 @@ class OBSEvents:
 
 	async def UnknownEvent(ev):
 		global events_seen
-		if event["eventType"] not in events_seen:
-			events_seen.append(event["eventType"])
-			print(event)
+		if ev["eventType"] not in events_seen:
+			events_seen.append(ev["eventType"])
+			print(ev)
 
 async def send_request(request_type, request_data={}):
 	request_id = str(next(request_id_source))
