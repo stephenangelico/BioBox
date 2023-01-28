@@ -107,7 +107,7 @@ async def obs_ws():
 		print("OBS cleanup done")
 
 async def list_scene_sources(scene_name):
-	sources = await send_request("GetSceneItemList", request_data={"sceneName": scene_name})
+	sources = (await send_request("GetSceneItemList", request_data={"sceneName": scene_name}))["sceneItems"]
 	# TODO: filter to just source names
 	collector = {}
 	for source in sources:
