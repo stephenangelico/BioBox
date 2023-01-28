@@ -310,6 +310,12 @@ class Channel(Gtk.Frame):
 	step = 0.01
 	max = 150
 	min = 0
+	channel_types = []
+
+	def __init_subclass__(cls, **kwargs):
+		cls.channel_types.append(cls)
+		print(cls.channel_types)
+		super().__init_subclass__(**kwargs)
 
 	def __init__(self, name):
 		super().__init__(label=name, shadow_type=Gtk.ShadowType.ETCHED_IN)
@@ -416,6 +422,8 @@ class Channel(Gtk.Frame):
 			selected_channel = None # Because it doesn't make sense to select another module
 		print("Removing:", self.channel_name)
 		self.group.remove(self)
+
+import builtins; builtins.Channel = Channel; import test_obs
 
 class VLC(Channel):
 	step = 1.0
