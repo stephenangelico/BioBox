@@ -15,6 +15,20 @@ pending_requests = {}
 
 events_seen = []
 
+class OBSModule(Channel):
+	def __init__(self, source_name, vol, mute):
+		self.name = source_name
+		super().__init__(name=self.name)
+		self.refract_value(vol, "backend")
+		self.mute.set_active(mute)
+
+	def write_external(self, value):
+		obs_send({"request-type": "SetVolume", "message-id": "volume", "source": self.name, "volume": ((value / 100) ** 2)})
+
+	def muted(self, widget):
+		mute_state = super().muted(widget)
+		obs_send({"request-type": "SetMute", "message-id": "mute", "source": self.name, "mute": mute_state})
+
 class OBSError(Exception):
 	pass
 
@@ -117,7 +131,7 @@ async def list_scene_sources(scene_name):
 			print(source['sourceName'], vol, "Muted:", mute)
 			collector[source['sourceName']] = source
 			if source['sourceName'] not in obs_sources:
-				obs_sources[source['sourceName']] = OBS(source)
+				obs_sources[source['sourceName']] = OBSModule(source)
 		elif source['type'] == 'group':
 			list_scene_sources(source['groupChildren'], collector)
 		elif source['type'] == 'scene':
