@@ -53,9 +53,6 @@ sites = {
 # The extension runs as expected but never gets a volumechange event. Control
 # still works (though in-player slider does not respond) on livestreams and
 # clips viewed on clips.twitch.tv.
-obs_sources = {}
-source_types = ['browser_source', 'pulse_input_capture', 'pulse_output_capture']
-# TODO: Configure OBS modules within BioBox
 
 UI_HEADER = """
 <ui>
@@ -191,98 +188,6 @@ async def webcam():
 		await cleanup()
 		print("SSH cleanup done")
 		ssh = None
-
-# OBS
-async def obs_ws():
-	obs_uri = "ws://%s:%d" % (config.host, config.obs_port)
-	# TODO: Support obs-websocket v5 - coming in OBS 28
-	global obs
-	auth_key = ""
-	rpc_version = 1
-	try:
-		# Begin cancellable section
-		async with websockets.connect(obs_uri) as obs:
-			while True:
-				data = await obs.recv()
-				msg = json.loads(data)
-				collector = {}
-				if msg.get("op") == 0: # Hello
-					if msg.get("d")["rpcVersion"] != rpc_version: # Warn if RPC version is ever bumped
-						print("Warning: OBS-Websocket version", msg.get("d")["obsWebSocketVersion"], "has RPC version", msg.get("d")["rpcVersion"])
-					if msg.get("d")["authentication"]:
-						challenge = msg.get("d")["authentication"]["challenge"].encode("utf-8")
-						salt = msg.get("d")["authentication"]["salt"].encode("utf-8")
-						auth_key = base64.b64encode(hashlib.sha256(base64.b64encode(hashlib.sha256(config.obs_password + salt).digest()) + challenge).digest())
-					ident = {"op": 1, "d": {"rpcVersion": rpc_version, "authentication": auth_key.decode("utf-8"), "eventSubscriptions": 13}}
-					# Subscriptions: General (1), Scenes (4), Inputs (8)
-					await obs.send(json.dumps(ident))
-				elif msg.get("op") == 2: # Identified
-					if msg.get("d")["negotiatedRpcVersion"] != rpc_version: # Warn if RPC version is ever bumped
-						print("Warning: negotiated RPC version:", msg.get("d")["rpcVersion"])
-					await obs.send(json.dumps({"op": 6, "d": {"requestType": "GetCurrentProgramScene", "requestId": "init"}}))
-					# Now needs to become GetCurrentProgramScene followed by GetSceneItemList
-				elif msg.get("op") == 5: # Event
-					if msg.get("d")["eventType"] == "SourceVolumeChanged":
-						obs_sources[msg["sourceName"]].refract_value(max(msg["volume"], 0) ** 0.5 * 100, "backend")
-					elif msg.get("d")["eventType"] == "SourceMuteStateChanged":
-						obs_sources[msg["sourceName"]].mute.set_active(msg["muted"])
-					elif msg.get("d")["eventType"] == "CurrentProgramSceneChanged":
-						print(msg["d"]["eventData"]["sceneName"])
-						list_scene_sources(msg['sources'], collector) # Now need separate request GetSceneItemList
-						for source in list(obs_sources):
-							if source not in collector:
-								print("Removing", source)
-								obs_sources[source].remove()
-								obs_sources.pop(source, None)
-				elif msg.get("op") == 7: # RequestResponse
-					if msg.get("d")["requestId"] == "init":
-						scene_name = msg.get("d")["responseData"]["currentProgramSceneName"]
-						await obs.send(json.dumps({"op": 6, "d": {"requestType": "GetSceneItemList", "requestId": "init2", "requestData": {"sceneName": scene_name}}}))
-					elif msg.get("d")["requestId"] == "init2":
-						obs_sources.clear()
-						sources = msg["d"]["responseData"]["sceneItems"]
-						sources_request = {"op": 8, "d": {"requestId": scene_name, "requests": []}}
-						for source in sources:
-							if source['inputKind'] in source_types:
-								sources_request["d"]["requests"].append({"requestType": "GetInputVolume", "requestId": source["sourceName"], "requestData": {"inputName": source["sourceName"]}})
-								sources_request["d"]["requests"].append({"requestType": "GetInputMute", "requestId": source["sourceName"], "requestData": {"inputName": source["sourceName"]}})
-						await obs.send(json.dumps(sources_request))
-				elif msg.get("op") == 9: # RequestBatchResponse
-					if msg["d"]["requestId"] == scene_name:
-						for response in msg["d"]["results"]:
-							# Get volume then mute state per source and add as attributes to source
-						# Once each source has its volume and mute state:
-							if source['name'] not in obs_sources:
-								obs_sources[source['name']] = OBS(source)
-
-	except websockets.exceptions.ConnectionClosedOK:
-		pass # Context manager plus finally section should clean everything up, just catch the exception
-	except OSError as e:
-		if e.errno != 111: raise
-		# Ignore connection-refused and just let the module get cleaned up
-	finally:
-		for source in obs_sources.values():
-			source.remove()
-		obs_sources.clear()
-		print("OBS cleanup done")
-
-def obs_send(request):
-	asyncio.run_coroutine_threadsafe(obs.send(json.dumps(request)), loop)
-
-def list_scene_sources(sources, collector):
-	for source in sources:
-		if source['inputKind'] in source_types:
-			#await obs.send(json.dumps({"op": 6, "d": {}))
-			print(source['sourceName'], source['volume'], "Muted:", source['muted'])
-			collector[source['name']] = source
-			if source['name'] not in obs_sources:
-				obs_sources[source['name']] = OBS(source)
-		#elif source['type'] == 'group':
-		#	list_scene_sources(source['groupChildren'], collector)
-		# Groups are fiddly and/or broken
-		#elif source['type'] == 'scene':
-		#	pass
-		# Scenes and groups may end up being done the same way
 
 # Browser
 def new_tab(tabid, host):
@@ -423,7 +328,7 @@ class Channel(Gtk.Frame):
 		print("Removing:", self.channel_name)
 		self.group.remove(self)
 
-import builtins; builtins.Channel = Channel; import obs
+import builtins; builtins.Channel = Channel
 
 class VLC(Channel):
 	group_name = "VLC"
@@ -477,21 +382,7 @@ class WebcamFocus(Channel):
 		asyncio.create_task(self.ssh.stdin.drain())
 		print("%s Autofocus " %self.device_name + ("Dis", "En")[mute_state] + "abled")
 
-class OBS(Channel):
-	group_name = "OBS (deprecated)"
-	
-	def __init__(self, source):
-		self.name = source['name']
-		super().__init__(name=self.name)
-		self.refract_value(max(source['volume'], 0) ** 0.5 * 100, "backend")
-		self.mute.set_active(source['muted'])
-
-	def write_external(self, value):
-		obs_send({"request-type": "SetVolume", "message-id": "volume", "source": self.name, "volume": ((value / 100) ** 2)})
-
-	def muted(self, widget):
-		mute_state = super().muted(widget)
-		obs_send({"request-type": "SetMute", "message-id": "mute", "source": self.name, "mute": mute_state})
+import obs
 
 class Browser(Channel):
 	group_name = "Browser"
