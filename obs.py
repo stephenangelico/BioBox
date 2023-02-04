@@ -133,10 +133,9 @@ async def list_scene_sources(scene_name):
 			print(source['sourceName'], vol, "Muted:", mute)
 			collector[source['sourceName']] = source
 			if source['sourceName'] not in obs_sources:
-				obs_sources[source['sourceName']] = OBSModule(source)
-		elif source['type'] == 'group':
-			list_scene_sources(source['groupChildren'], collector)
-		elif source['type'] == 'scene':
+				obs_sources[source['sourceName']] = OBSModule(source['sourceName'], vol, mute)
+		elif source['inputKind'] == None and source['sourceType'] == 'OBS_SOURCE_TYPE_SCENE':
+			# Catches scenes and groups, though groups are deprecated
 			#TODO: get this scene's sources and recurse
 			pass
 	for source in list(obs_sources):
