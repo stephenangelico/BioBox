@@ -72,7 +72,7 @@ async def event_handler(event):
 async def obs_ws():
 	obs_uri = "ws://%s:%d" % (config.host, config.obs_port)
 	# TODO: Support obs-websocket v5 - coming in OBS 28
-	global obs
+	global conn
 	auth_key = ""
 	rpc_version = 1
 	try:
