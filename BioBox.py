@@ -528,7 +528,7 @@ async def main():
 		def WebcamFocus():
 			return webcam()
 		def OBS():
-			return obs_ws()
+			return obs.obs_ws()
 		def Browser():
 			return WebSocket.listen(connected=new_tab, disconnected=closed_tab, volumechanged=tab_volume_changed)
 	def toggle_menu_item(widget):
