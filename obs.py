@@ -25,11 +25,11 @@ class OBSModule(Channel):
 		self.mute.set_active(mute)
 
 	def write_external(self, value):
-		obs_send({"request-type": "SetVolume", "message-id": "volume", "source": self.name, "volume": ((value / 100) ** 2)})
+		asyncio.create_task(send_request("SetInputVolume", {"inputName": self.name, "inputVolumeMul": ((value / 100) ** 2)}))
 
 	def muted(self, widget):
 		mute_state = super().muted(widget)
-		obs_send({"request-type": "SetMute", "message-id": "mute", "source": self.name, "mute": mute_state})
+		asyncio.create_task(send_request("SetInputMute", {"inputName": self.name, "inputMuted": mute_state}))
 
 class OBSError(Exception):
 	pass
