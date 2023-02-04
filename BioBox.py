@@ -313,8 +313,8 @@ class Channel(Gtk.Frame):
 	channel_types = []
 
 	def __init_subclass__(cls, **kwargs):
+		# This ensures that subclasses defined elsewhere are counted for menus
 		cls.channel_types.append(cls)
-		print(cls.channel_types)
 		super().__init_subclass__(**kwargs)
 
 	def __init__(self, name):
