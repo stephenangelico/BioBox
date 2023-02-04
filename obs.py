@@ -108,7 +108,10 @@ async def obs_ws():
 						#list_scene_sources(msg["d"]["responseData"]["sceneItems"], collector)
 					future = pending_requests.pop(msg["d"]["requestId"])
 					if msg["d"]["requestStatus"]["result"]:
-						future.set_result(msg["d"]["responseData"])
+						if "responseData" in msg["d"]:
+							future.set_result(msg["d"]["responseData"])
+						else:
+							future.set_result({})
 					else:
 						future.set_exception(OBSError(msg["d"]["requestStatus"]["comment"]))
 	except websockets.exceptions.ConnectionClosedOK:
