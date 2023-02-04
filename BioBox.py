@@ -423,9 +423,10 @@ class Channel(Gtk.Frame):
 		print("Removing:", self.channel_name)
 		self.group.remove(self)
 
-import builtins; builtins.Channel = Channel; import test_obs
+import builtins; builtins.Channel = Channel; import obs
 
 class VLC(Channel):
+	group_name = "VLC"
 	step = 1.0
 
 	def __init__(self, writer):
@@ -444,6 +445,7 @@ class VLC(Channel):
 		print("VLC Mute status:", mute_state)
 
 class WebcamFocus(Channel):
+	group_name = "Webcams"
 	mute_labels = ("AF Off", "AF On")
 	step = 1.0 # Cameras have different steps but v4l2 will round any value to the step for the camera in question
 
@@ -476,6 +478,8 @@ class WebcamFocus(Channel):
 		print("%s Autofocus " %self.device_name + ("Dis", "En")[mute_state] + "abled")
 
 class OBS(Channel):
+	group_name = "OBS (deprecated)"
+	
 	def __init__(self, source):
 		self.name = source['name']
 		super().__init__(name=self.name)
@@ -490,6 +494,8 @@ class OBS(Channel):
 		obs_send({"request-type": "SetMute", "message-id": "mute", "source": self.name, "mute": mute_state})
 
 class Browser(Channel):
+	group_name = "Browser"
+	
 	def __init__(self, tabid, tabname):
 		super().__init__(name=tabname)
 		self.tabid = tabid
@@ -551,13 +557,15 @@ async def main():
 		print("All tasks cancelled")
 		stop.set()
 	for category in Channel.__subclasses__():
-		group_name = category.__name__
+		category_ref = category.__name__
+		group_name = category.group_name
 		group = Gtk.Box(name=group_name)
 		category.group = group
 		modules.add(group)
-		menuitem = "<menuitem action='%s' />" %group_name
+		menuitem = "<menuitem action='%s' />" %category_ref
 		ui_items += menuitem
-		menu_entry = ("%s" %group_name, None, group_name, None, None, toggle_menu_item, True) #Second last param is callback function, boolean is default state
+		menu_entry = (category_ref, None, group_name, None, None, toggle_menu_item, True)
+			    # Action name   ID	  Label	      Accel Tooltip Callback func   Default state
 		menu_entries.append(menu_entry)
 	ui_tree = UI_HEADER + ui_items + UI_FOOTER
 	action_group.add_action(Gtk.Action(name="ModulesMenu", label="Modules"))
