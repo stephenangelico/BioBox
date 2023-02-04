@@ -71,7 +71,6 @@ async def event_handler(event):
 
 async def obs_ws():
 	obs_uri = "ws://%s:%d" % (config.host, config.obs_port)
-	# TODO: Support obs-websocket v5 - coming in OBS 28
 	global conn
 	auth_key = ""
 	rpc_version = 1
@@ -99,13 +98,6 @@ async def obs_ws():
 				elif msg.get("op") == 5: # Event
 					asyncio.create_task(event_handler(msg["d"]))
 				elif msg.get("op") == 7: # RequestResponse
-					#if msg.get("d")["requestId"] == "init":
-						#scene_name = msg.get("d")["responseData"]["currentProgramSceneName"]
-						#await obs.send(json.dumps({"op": 6, "d": {"requestType": "GetSceneItemList", "requestId": "init2", "requestData": {"sceneName": scene_name}}}))
-					#elif msg.get("d")["requestId"] == "init2":
-						#print(msg)
-						#obs_sources.clear()
-						#list_scene_sources(msg["d"]["responseData"]["sceneItems"], collector)
 					future = pending_requests.pop(msg["d"]["requestId"])
 					if msg["d"]["requestStatus"]["result"]:
 						if "responseData" in msg["d"]:
@@ -130,7 +122,7 @@ async def list_scene_sources(scene_name):
 	# TODO: filter to just source names
 	collector = {}
 	for source in sources:
-		if source['inputKind'] in source_types: # TODO: get volume and mute state from source name
+		if source['inputKind'] in source_types:
 			vol = max((await send_request("GetInputVolume", request_data={"inputName": source['sourceName']}))["inputVolumeMul"], 0) ** 0.5 * 100
 			mute = (await send_request("GetInputMute", request_data={"inputName": source['sourceName']}))["inputMuted"]
 			print(source['sourceName'], vol, "Muted:", mute)
