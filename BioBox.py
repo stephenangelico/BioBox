@@ -353,6 +353,7 @@ class WebcamFocus(Channel):
 	group_name = "Webcams"
 	mute_labels = ("AF Off", "AF On")
 	step = 1.0 # Cameras have different steps but v4l2 will round any value to the step for the camera in question
+	# TODO: Add Exposure? Same as Focus, with mute labels AE On/Off. Scale might be 0-2048 with 250 a median value.
 
 	def __init__(self, cam_name, cam_path, ssh):
 		self.device_name = cam_name
