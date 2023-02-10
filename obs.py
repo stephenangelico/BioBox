@@ -16,7 +16,7 @@ pending_requests = {}
 events_seen = []
 
 class OBSModule(Channel):
-	group_name = "OBS (new)"
+	group_name = "OBS"
 	
 	def __init__(self, source_name, vol, mute):
 		self.name = source_name
