@@ -2,7 +2,7 @@ import os
 import time
 import subprocess
 import asyncio
-from asyncio import create_task
+from asyncio import create_task # TODO: Tidy up usage of this or get rid of it
 import WebSocket # Local library for connecting to browser extension
 
 
