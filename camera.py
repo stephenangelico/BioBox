@@ -7,6 +7,8 @@ poll.register(0, select.POLLIN)
 ctrls = {
 	v4l2raw.V4L2_CID_FOCUS_ABSOLUTE: "focus_absolute",
 	v4l2raw.V4L2_CID_FOCUS_AUTO: "focus_auto",
+	v4l2raw.V4L2_CID_EXPOSURE_ABSOLUTE: "exposure_absolute",
+	v4l2raw.V4L2_CID_EXPOSURE_AUTO: "exposure_auto",
 }
 cmds = dict(zip(ctrls.values(), ctrls))
 devices = { }
@@ -45,7 +47,7 @@ while calm:
 				))
 			r = v4l2raw.v4l2_queryctrl(id=v4l2raw.V4L2_CID_FOCUS_ABSOLUTE)
 			fcntl.ioctl(fd, v4l2raw.VIDIOC_QUERYCTRL, r)
-			print("%s: set_range: %d %d %d" % (dev, r.minimum, r.maximum, r.step))
+			print("%s: set_range: focus: %d %d %d" % (dev, r.minimum, r.maximum, r.step))
 			devices[fd] = dev # Retain the device ID for the client
 			fds[dev] = fd # And the file descriptor for us
 			poll.register(fd, select.POLLPRI) # Events come through as urgent flags

@@ -154,7 +154,8 @@ async def webcam():
 				elif device == "Info":
 					if attr == "Hi":
 						for cam_name, cam_path in config.webcams.items():
-							webcams[cam_path] = WebcamFocus(cam_name, cam_path, ssh)
+							webcams[cam_path + "focus"] = WebcamFocus(cam_name, cam_path, ssh)
+							#webcams[cam_path + "exposure"] = WebcamFocus(cam_name, cam_path, ssh)
 						await ssh.stdin.drain()
 					elif attr == "Bye":
 						print("camera.py quit")
@@ -166,19 +167,22 @@ async def webcam():
 					if not sep:
 						continue
 					if cmd == "set_range":
-						min, max, step = map(int, value.split())
-						webcams[device].min = min
-						webcams[device].max = max
-						webcams[device].slider.set_lower(webcams[device].min)
-						webcams[device].slider.set_upper(webcams[device].max)
-						webcams[device].slider.set_page_increment(step)
+						mode, sep, params = value.partition(": ")
+						channel = webcams[device + mode]
+						min, max, step = map(int, params.split())
+						channel.min = min
+						channel.max = max
+						channel.slider.set_lower(channel.min)
+						channel.slider.set_upper(channel.max)
+						channel.slider.set_page_increment(step)
 					elif cmd == "focus_absolute":
-						webcams[device].refract_value(int(value), "backend")
+						webcams[device + "focus"].refract_value(int(value), "backend")
 					elif cmd == "focus_auto":
-						webcams[device].mute.set_active(int(value))
+						webcams[device + "focus"].mute.set_active(int(value))
 					elif cmd == "Error" and value == "Device not found":
 						print("Device not found:", device)
-						webcams[device].remove()
+						webcams[device + "focus"].remove()
+						#webcams[device + "exposure"].remove()
 					elif cmd == "Error":
 						print("Received error on %s: " %device, value)
 	finally:
