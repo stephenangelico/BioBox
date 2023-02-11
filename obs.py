@@ -3,7 +3,7 @@ import itertools
 import json
 import base64
 import hashlib
-import websockets
+import websockets # ImportError? pip install websockets
 import config
 
 obs_sources = {}

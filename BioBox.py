@@ -1,14 +1,9 @@
 import os
-import sys
 import time
 import subprocess
 import asyncio
 from asyncio import create_task
 import WebSocket # Local library for connecting to browser extension
-import websockets # ImportError? pip install websockets
-import json
-import hashlib
-import base64
 
 
 import gi
