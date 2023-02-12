@@ -135,17 +135,11 @@ async def webcam():
 		ssh = await asyncio.create_subprocess_exec("ssh", "-oBatchMode=yes", (config.webcam_user + "@" + config.host), "python3", config.webcam_control_path, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
 		while True:
 			try:
-				done, pending = await asyncio.wait([asyncio.create_task(ssh.stdout.readline()), asyncio.create_task(ssh.wait())], return_when=asyncio.FIRST_COMPLETED)
+				data = await ssh.stdout.readline()
 			except ConnectionResetError:
 				print("SSH connection lost")
 				break
-			if ssh.returncode is not None:
-				break
-			try:
-				data = next(iter(done)).result()
-			except BaseException as e:
-				print(type(e))
-				print(e)
+			if ssh.returncode is not None or not data:
 				break
 			line = data.decode("utf-8")
 			device, sep, attr = line.rstrip().partition(": ")
