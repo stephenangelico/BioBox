@@ -64,7 +64,7 @@ def report(msg):
 
 def handle_errors(task):
 	exc = task.exception() # Also marks that the exception has been handled
-	if exc: traceback.print_exception(exc)
+	if exc: traceback.print_exception(type(exc), exc, exc.__traceback__)
 
 all_tasks = [] # kinda like threading.all_threads()
 def task_done(task):
@@ -136,6 +136,7 @@ async def webcam():
 		ssh.stdin.write(b"quit foo\n")
 		try:
 			await asyncio.wait_for(ssh.stdin.drain(), timeout=5)
+			# TODO: Handle ConnectionResetError here
 		except asyncio.TimeoutError:
 			ssh.terminate()
 	try:
