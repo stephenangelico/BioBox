@@ -63,8 +63,11 @@ def report(msg):
 	print(time.time(), msg)
 
 def handle_errors(task):
-	exc = task.exception() # Also marks that the exception has been handled
-	if exc: traceback.print_exception(type(exc), exc, exc.__traceback__)
+	try:
+		exc = task.exception() # Also marks that the exception has been handled
+		if exc: traceback.print_exception(type(exc), exc, exc.__traceback__)
+	except asyncio.exceptions.CancelledError:
+		pass
 
 all_tasks = [] # kinda like threading.all_threads()
 def task_done(task):
