@@ -78,7 +78,7 @@ async def listen(*, connected=None, disconnected=None, volumechanged=None, host=
 		print("Websocket shutting down.") # I don't hate you!
 
 # Non-asyncio entry-point
-def run(**kw): asyncio.run(listen(stop=asyncio.Event(), **kw))
+def run(**kw): asyncio.run(listen(**kw))
 if __name__ == "__main__":
 	try:
 		run()
