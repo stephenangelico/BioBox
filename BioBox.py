@@ -1,6 +1,7 @@
 import os
 import time
 import subprocess
+import traceback
 import asyncio
 import WebSocket # Local library for connecting to browser extension
 
@@ -61,12 +62,19 @@ UI_FOOTER = """
 def report(msg):
 	print(time.time(), msg)
 
+def handle_errors(task):
+	exc = task.exception() # Also marks that the exception has been handled
+	if exc: traceback.print_exception(exc)
+
 all_tasks = [] # kinda like threading.all_threads()
+def task_done(task):
+	all_tasks.remove(task)
+	handle_errors(task)
 def spawn(awaitable):
 	"""Spawn an awaitable as a stand-alone task"""
 	task = asyncio.create_task(awaitable)
 	all_tasks.append(task)
-	task.add_done_callback(all_tasks.remove)
+	task.add_done_callback(task_done)
 	return task
 
 # Slider
@@ -437,6 +445,7 @@ async def main():
 	def start_task(task):
 		obj = asyncio.create_task(getattr(Task, task)())
 		Task.running[task] = obj
+		obj.add_done_callback(handle_errors)
 	async def cancel_task(task):
 		t = Task.running.pop(task)
 		print("Cancelling", task)
@@ -446,6 +455,10 @@ async def main():
 			await t
 		except asyncio.CancelledError:
 			pass
+		except:
+			# Will only happen if the task raises during finalization
+			print(task, "raised an exception")
+			traceback.print_exc()
 		finally:
 			print(task, "cancellation complete")
 	async def cancel_all():
@@ -510,3 +523,4 @@ if __name__ == "__main__":
 	loop = asyncio.new_event_loop()
 	asyncio.set_event_loop(loop)
 	loop.run_until_complete(main())
+	print("Unfinished tasks:", all_tasks) # Should always be empty.
