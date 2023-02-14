@@ -151,7 +151,8 @@ async def webcam():
 			except ConnectionResetError:
 				print("SSH connection lost")
 				break
-			if ssh.returncode is not None or not data:
+			if not data:
+				ssh = None
 				break
 			line = data.decode("utf-8")
 			device, sep, attr = line.rstrip().partition(": ")
@@ -196,9 +197,9 @@ async def webcam():
 		for cam in list(webcams):
 			webcams[cam].remove()
 		print("Done removing webcams")
-		await cleanup()
-		print("SSH cleanup done")
-		ssh = None
+		if ssh:
+			await cleanup()
+			print("SSH cleanup done")
 
 # Browser
 def new_tab(tabid, host):
