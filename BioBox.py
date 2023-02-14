@@ -2,9 +2,7 @@ import os
 import time
 import subprocess
 import asyncio
-from asyncio import create_task # TODO: Tidy up usage of this or get rid of it
 import WebSocket # Local library for connecting to browser extension
-
 
 import gi
 gi.require_version("Gtk", "3.0")
@@ -62,6 +60,14 @@ UI_FOOTER = """
 
 def report(msg):
 	print(time.time(), msg)
+
+all_tasks = [] # kinda like threading.all_threads()
+def spawn(awaitable):
+	"""Spawn an awaitable as a stand-alone task"""
+	task = asyncio.create_task(awaitable)
+	all_tasks.append(task)
+	task.add_done_callback(all_tasks.remove)
+	return task
 
 # Slider
 async def read_analog():
@@ -129,7 +135,7 @@ async def webcam():
 		ssh = await asyncio.create_subprocess_exec("ssh", "-oBatchMode=yes", (config.webcam_user + "@" + config.host), "python3", config.webcam_control_path, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
 		while True:
 			try:
-				done, pending = await asyncio.wait([create_task(ssh.stdout.readline()), create_task(ssh.wait())], return_when=asyncio.FIRST_COMPLETED)
+				done, pending = await asyncio.wait([asyncio.create_task(ssh.stdout.readline()), asyncio.create_task(ssh.wait())], return_when=asyncio.FIRST_COMPLETED)
 			except ConnectionResetError:
 				print("SSH connection lost")
 				break
@@ -339,13 +345,13 @@ class VLC(Channel):
 
 	def write_external(self, value):
 		self.writer.write(b"volume %d \r\n" %value)
-		asyncio.create_task(self.writer.drain())
+		spawn(self.writer.drain())
 		print("To VLC: ", value)
 
 	def muted(self, widget):
 		mute_state = super().muted(widget)
 		self.writer.write(b"muted %d \r\n" %mute_state)
-		asyncio.create_task(self.writer.drain())
+		spawn(self.writer.drain())
 		print("VLC Mute status:", mute_state)
 
 class WebcamFocus(Channel):
@@ -368,7 +374,7 @@ class WebcamFocus(Channel):
 		# Feedback continues when AF is on, so theoretically value should be correct.
 		if not self.mute.get_active():
 			self.ssh.stdin.write(("focus_absolute %d %s\n" % (value, self.device)).encode("utf-8"))
-			asyncio.create_task(self.write_ssh())
+			spawn(self.write_ssh())
 
 	async def write_ssh(self):
 		try:
@@ -379,7 +385,7 @@ class WebcamFocus(Channel):
 	def muted(self, widget):
 		mute_state = super().muted(widget)
 		self.ssh.stdin.write(("focus_auto %d %s\n" % (mute_state, self.device)).encode("utf-8"))
-		asyncio.create_task(self.ssh.stdin.drain())
+		spawn(self.ssh.stdin.drain())
 		print("%s Autofocus " %self.device_name + ("Dis", "En")[mute_state] + "abled")
 
 import obs
@@ -392,11 +398,11 @@ class Browser(Channel):
 		self.tabid = tabid
 
 	def write_external(self, value):
-		asyncio.create_task(WebSocket.set_volume(self.tabid, (value / 100)))
+		spawn(WebSocket.set_volume(self.tabid, (value / 100)))
 	
 	def muted(self, widget):
 		mute_state = super().muted(widget)
-		asyncio.create_task(WebSocket.set_muted(self.tabid, mute_state))
+		spawn(WebSocket.set_muted(self.tabid, mute_state))
 
 async def main():
 	stop = asyncio.Event() # Hold open until destroy signal triggers this event
@@ -427,7 +433,7 @@ async def main():
 		if widget.get_active():
 			start_task(toggle_group)
 		else:
-			asyncio.create_task(cancel_task(toggle_group))
+			spawn(cancel_task(toggle_group))
 	def start_task(task):
 		obj = asyncio.create_task(getattr(Task, task)())
 		Task.running[task] = obj
@@ -472,7 +478,7 @@ async def main():
 	GLib.timeout_add(1000, init_motor_pos)
 	# Show window
 	def halt(*a): # We could use a lambda function unless we need IIDPIO
-		asyncio.create_task(cancel_all())
+		spawn(cancel_all())
 	main_ui.connect("destroy", halt)
 	main_ui.show_all()
 	slider_task = asyncio.create_task(read_analog())
