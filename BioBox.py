@@ -1,6 +1,7 @@
 import os
 import time
 import subprocess
+import builtins
 import traceback
 import asyncio
 import WebSocket # Local library for connecting to browser extension
@@ -29,7 +30,6 @@ except (ImportError, NotImplementedError, RuntimeError): # Provide a dummy for t
 import config # ImportError? See config_example.py
 
 selected_channel = None
-webcams = {}
 tabs = {}
 sites = {
 	"music.youtube.com": "YT Music",
@@ -58,6 +58,9 @@ UI_FOOTER = """
 	</menubar>
 </ui>
 """
+def export(f):
+	setattr(builtins, f.__name__, f)
+	return f
 
 def report(msg):
 	print(time.time(), msg)
@@ -70,9 +73,12 @@ def handle_errors(task):
 		pass
 
 all_tasks = [] # kinda like threading.all_threads()
+
 def task_done(task):
 	all_tasks.remove(task)
 	handle_errors(task)
+
+@export
 def spawn(awaitable):
 	"""Spawn an awaitable as a stand-alone task"""
 	task = asyncio.create_task(awaitable)
@@ -132,75 +138,6 @@ async def vlc_buf_read(vlc_module, reader):
 		else:
 			print("From VLC:", attr, value)
 
-# Webcam
-async def webcam():
-	ssh = None
-	async def cleanup():
-		ssh.stdin.write(b"quit foo\n")
-		try:
-			await asyncio.wait_for(ssh.stdin.drain(), timeout=5)
-			# TODO: Handle ConnectionResetError here
-		except asyncio.TimeoutError:
-			ssh.terminate()
-	try:
-		# Begin cancellable section
-		ssh = await asyncio.create_subprocess_exec("ssh", "-oBatchMode=yes", (config.webcam_user + "@" + config.host), "python3", config.webcam_control_path, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
-		while True:
-			try:
-				data = await ssh.stdout.readline()
-			except ConnectionResetError:
-				print("SSH connection lost")
-				break
-			if not data:
-				ssh = None
-				break
-			line = data.decode("utf-8")
-			device, sep, attr = line.rstrip().partition(": ")
-			if sep:
-				if device == "Unknown command":
-					print(line)
-				elif device == "Info":
-					if attr == "Hi":
-						for cam_name, cam_path in config.webcams.items():
-							webcams[cam_path + "focus"] = WebcamFocus(cam_name, cam_path, ssh)
-							#webcams[cam_path + "exposure"] = WebcamFocus(cam_name, cam_path, ssh)
-						await ssh.stdin.drain()
-					elif attr == "Bye":
-						print("camera.py quit")
-						break
-					else:
-						print(line)
-				else:
-					cmd, sep, value = attr.partition(": ")
-					if not sep:
-						continue
-					if cmd == "set_range":
-						mode, sep, params = value.partition(": ")
-						channel = webcams[device + mode]
-						min, max, step = map(int, params.split())
-						channel.min = min
-						channel.max = max
-						channel.slider.set_lower(channel.min)
-						channel.slider.set_upper(channel.max)
-						channel.slider.set_page_increment(step)
-					elif cmd == "focus_absolute":
-						webcams[device + "focus"].refract_value(int(value), "backend")
-					elif cmd == "focus_auto":
-						webcams[device + "focus"].mute.set_active(int(value))
-					elif cmd == "Error" and value == "Device not found":
-						print("Device not found:", device)
-						webcams[device + "focus"].remove()
-						#webcams[device + "exposure"].remove()
-					elif cmd == "Error":
-						print("Received error on %s: " %device, value)
-	finally:
-		for cam in list(webcams):
-			webcams[cam].remove()
-		print("Done removing webcams")
-		if ssh:
-			await cleanup()
-			print("SSH cleanup done")
-
 # Browser
 def new_tab(tabid, host):
 	if host in sites:
@@ -222,6 +159,7 @@ def tab_volume_changed(tabid, volume, mute_state):
 	channel.refract_value(float(volume * 100), "backend")
 	channel.mute.set_active(int(mute_state))
 
+@export
 class Channel(Gtk.Frame):
 	mute_labels = ("Mute", "Muted")
 	step = 0.01
@@ -340,7 +278,6 @@ class Channel(Gtk.Frame):
 		print("Removing:", self.channel_name)
 		self.group.remove(self)
 
-import builtins; builtins.Channel = Channel
 
 class VLC(Channel):
 	group_name = "VLC"
@@ -361,40 +298,7 @@ class VLC(Channel):
 		spawn(self.writer.drain())
 		print("VLC Mute status:", mute_state)
 
-class WebcamFocus(Channel):
-	group_name = "Webcams"
-	mute_labels = ("AF Off", "AF On")
-	step = 1.0 # Cameras have different steps but v4l2 will round any value to the step for the camera in question
-	# TODO: Add Exposure? Same as Focus, with mute labels AE On/Off. Scale might be 0-2048 with 250 a median value.
-
-	def __init__(self, cam_name, cam_path, ssh):
-		self.device_name = cam_name
-		super().__init__(name=self.device_name)
-		self.device = cam_path
-		self.ssh = ssh
-		self.ssh.stdin.write(("cam_check %s \n" %self.device).encode("utf-8"))
-		# Drain done at backend after starting all webcam modules
-
-	def write_external(self, value):
-		# v4l2-ctl throws an error if focus_absolute is changed while AF is on.
-		# Therefore, if AF is on, quietly do nothing.
-		# Feedback continues when AF is on, so theoretically value should be correct.
-		if not self.mute.get_active():
-			self.ssh.stdin.write(("focus_absolute %d %s\n" % (value, self.device)).encode("utf-8"))
-			spawn(self.write_ssh())
-
-	async def write_ssh(self):
-		try:
-			await self.ssh.stdin.drain()
-		except ConnectionResetError as e:
-			print("SSH connection lost")
-
-	def muted(self, widget):
-		mute_state = super().muted(widget)
-		self.ssh.stdin.write(("focus_auto %d %s\n" % (mute_state, self.device)).encode("utf-8"))
-		spawn(self.ssh.stdin.drain())
-		print("%s Autofocus " %self.device_name + ("Dis", "En")[mute_state] + "abled")
-
+import webcam
 import obs
 
 class Browser(Channel):
@@ -429,8 +333,8 @@ async def main():
 		running = {}
 		def VLC():
 			return vlc()
-		def WebcamFocus():
-			return webcam()
+		def Webcam():
+			return webcam.webcam()
 		def OBS():
 			return obs.obs_ws()
 		def Browser():
@@ -497,7 +401,7 @@ async def main():
 	start_task("VLC")
 	start_task("OBS")
 	start_task("Browser")
-	start_task("WebcamFocus")
+	start_task("Webcam")
 	await stop.wait()
 	motor_cleanup()
 	

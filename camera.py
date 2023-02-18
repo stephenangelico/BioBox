@@ -48,6 +48,9 @@ while calm:
 			r = v4l2raw.v4l2_queryctrl(id=v4l2raw.V4L2_CID_FOCUS_ABSOLUTE)
 			fcntl.ioctl(fd, v4l2raw.VIDIOC_QUERYCTRL, r)
 			print("%s: set_range: focus: %d %d %d" % (dev, r.minimum, r.maximum, r.step))
+			r = v4l2raw.v4l2_queryctrl(id=v4l2raw.V4L2_CID_EXPOSURE_ABSOLUTE)
+			fcntl.ioctl(fd, v4l2raw.VIDIOC_QUERYCTRL, r)
+			print("%s: set_range: exposure: %d %d %d" % (dev, r.minimum, r.maximum, r.step))
 			devices[fd] = dev # Retain the device ID for the client
 			fds[dev] = fd # And the file descriptor for us
 			poll.register(fd, select.POLLPRI) # Events come through as urgent flags
