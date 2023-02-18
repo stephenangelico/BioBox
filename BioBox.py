@@ -89,6 +89,7 @@ def spawn(awaitable):
 # Slider
 async def read_analog():
 	# Get analog value from Analog.py and write to selected channel's slider
+	# TODO: Turn the above line and other similar comments into docstrings
 	async for pos in Analog.read_value():
 		if selected_channel:
 			print("From slider:", pos)
@@ -346,7 +347,7 @@ async def main():
 		else:
 			spawn(cancel_task(toggle_group))
 	def start_task(task):
-		obj = asyncio.create_task(getattr(Task, task)())
+		obj = asyncio.create_task(getattr(Task, task)()) # TODO: check if this cam become spawn()
 		Task.running[task] = obj
 		obj.add_done_callback(handle_errors)
 	async def cancel_task(task):
