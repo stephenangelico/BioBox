@@ -94,6 +94,7 @@ async def read_analog():
 		if selected_channel:
 			print("From slider:", pos)
 			# So far I have no reason for a module with a non-zero minimum
+			# TODO: Yes I do now - Webcam exposure can be 3-2048
 			scale_max = selected_channel.max
 			# Scale 0-1023 to scale_max
 			value = pos * scale_max / 1023
