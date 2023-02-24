@@ -320,6 +320,7 @@ async def main():
 	stop = asyncio.Event() # Hold open until destroy signal triggers this event
 	main_ui = Gtk.Window(title="Bio Box")
 	main_ui.set_resizable(False)
+	main_ui.move(0,0)
 	action_group = Gtk.ActionGroup(name="biobox_actions")
 
 	menubox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
@@ -382,6 +383,7 @@ async def main():
 			    # Action name   ID	  Label	      Accel Tooltip Callback func   Default state
 		menu_entries.append(menu_entry)
 	ui_tree = UI_HEADER + ui_items + UI_FOOTER
+	print(ui_tree)
 	action_group.add_action(Gtk.Action(name="ModulesMenu", label="Modules"))
 	action_group.add_toggle_actions(menu_entries)
 	ui_manager = Gtk.UIManager()
