@@ -323,7 +323,7 @@ class Browser(Channel):
 
 async def main():
 	stop = asyncio.Event() # Hold open until destroy signal triggers this event
-	main_ui = Gtk.Window(title="Bio Box")
+	main_ui = Gtk.Window(title="Bio Box") # TODO: Add icon from /usr/share/icons/mate/48x48/categories/preferences-desktop.png
 	main_ui.set_resizable(False)
 	main_ui.move(0,0)
 	action_group = Gtk.ActionGroup(name="biobox_actions")
