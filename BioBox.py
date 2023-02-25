@@ -181,9 +181,10 @@ class Channel(Gtk.Frame):
 	def __init__(self, name):
 		super().__init__(label=name, shadow_type=Gtk.ShadowType.ETCHED_IN)
 		super().set_label_align(0.5,0)
+		self.set_border_width(5)
 		# Box stuff
 		box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=5)
-		box.set_size_request(50, 300) #TODO: Optimize size and widget scaling for tablet
+		box.set_size_request(125, 300) #TODO: Optimize size and widget scaling for tablet
 		self.add(box)
 		self.channel_name = name
 		# Slider stuff
@@ -324,14 +325,14 @@ class Browser(Channel):
 async def main():
 	stop = asyncio.Event() # Hold open until destroy signal triggers this event
 	main_ui = Gtk.Window(title="Bio Box") # TODO: Add icon from /usr/share/icons/mate/48x48/categories/preferences-desktop.png
-	main_ui.set_resizable(False)
+	#main_ui.set_resizable(False)
 	main_ui.move(0,0)
 	action_group = Gtk.ActionGroup(name="biobox_actions")
 
 	menubox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
 	main_ui.add(menubox)
 	modules = Gtk.Box()
-	modules.set_border_width(10)
+	modules.set_border_width(4)
 	global chan_select
 	chan_select = Gtk.RadioButton()
 	menuitems = ""
@@ -400,7 +401,10 @@ async def main():
 	menubox.pack_start(menubar, False, False, 0)
 	toolbar = ui_manager.get_widget("/ToolBar")
 	menubox.pack_start(toolbar, False, False, 0)
-	menubox.add(modules)
+	scrollbar = Gtk.ScrolledWindow()
+	scrollbar.set_size_request(955, 355)
+	menubox.add(scrollbar)
+	scrollbar.add(modules)
 
 
 	GLib.timeout_add(1000, init_motor_pos)
