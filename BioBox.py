@@ -53,9 +53,13 @@ UI_HEADER = """
 	<menubar name='MenuBar'>
 		<menu action='ModulesMenu'>
 """
-UI_FOOTER = """
+UI_MIDDLE = """
 		</menu>
 	</menubar>
+	<toolbar name ='ToolBar'>
+"""
+UI_FOOTER = """
+	</toolbar>
 </ui>
 """
 def export(f):
@@ -330,7 +334,8 @@ async def main():
 	modules.set_border_width(10)
 	global chan_select
 	chan_select = Gtk.RadioButton()
-	ui_items = ""
+	menuitems = ""
+	toolitems = ""
 	menu_entries = []
 	class Task():
 		running = {}
@@ -379,12 +384,13 @@ async def main():
 		category.group = group
 		modules.add(group)
 		menuitem = "<menuitem action='%s' />" %category_ref
-		ui_items += menuitem
+		menuitems += menuitem
+		toolitem = "<toolitem action='%s' />" %category_ref
+		toolitems += toolitem
 		menu_entry = (category_ref, None, group_name, None, None, toggle_menu_item, True)
 			    # Action name   ID	  Label	      Accel Tooltip Callback func   Default state
 		menu_entries.append(menu_entry)
-	ui_tree = UI_HEADER + ui_items + UI_FOOTER
-	print(ui_tree)
+	ui_tree = UI_HEADER + menuitems + UI_MIDDLE + toolitems + UI_FOOTER
 	action_group.add_action(Gtk.Action(name="ModulesMenu", label="Modules"))
 	action_group.add_toggle_actions(menu_entries)
 	ui_manager = Gtk.UIManager()
@@ -392,6 +398,8 @@ async def main():
 	ui_manager.insert_action_group(action_group)
 	menubar = ui_manager.get_widget("/MenuBar")
 	menubox.pack_start(menubar, False, False, 0)
+	toolbar = ui_manager.get_widget("/ToolBar")
+	menubox.pack_start(toolbar, False, False, 0)
 	menubox.add(modules)
 
 
