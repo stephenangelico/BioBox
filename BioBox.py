@@ -343,7 +343,7 @@ async def main():
 			return vlc()
 		def Webcam():
 			return webcam.webcam()
-		def OBS():
+		def OBSModule():
 			return obs.obs_ws()
 		def Browser():
 			return WebSocket.listen(connected=new_tab, disconnected=closed_tab, volumechanged=tab_volume_changed)
@@ -411,7 +411,7 @@ async def main():
 	main_ui.show_all()
 	slider_task = asyncio.create_task(read_analog())
 	start_task("VLC")
-	start_task("OBS")
+	start_task("OBSModule")
 	start_task("Browser")
 	start_task("Webcam")
 	await stop.wait()
