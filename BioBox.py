@@ -43,6 +43,8 @@ sites = {
 # the page. With no way to get the raw volume or the max normalised volume, it
 # is impossible to rescale the value to match a 0-100 scale, so the best we can
 # do is to use what we have as is.
+# TODO: Explore interactively setting YouTube tab to "100%" and scaling normalised
+# to 100%
 # Twitch VODs and clips viewed at www.twitch.tv/videos/[id] are uncontrollable.
 # The extension runs as expected but never gets a volumechange event. Control
 # still works (though in-player slider does not respond) on livestreams and
