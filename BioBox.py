@@ -403,7 +403,7 @@ async def main():
 	menubox.pack_start(menubar, False, False, 0)
 	toolbar = ui_manager.get_widget("/ToolBar")
 	menubox.pack_start(toolbar, False, False, 0)
-	scrollbar = Gtk.ScrolledWindow()
+	scrollbar = Gtk.ScrolledWindow(overlay_scrolling=False)
 	scrollbar.set_size_request(955, 355)
 	menubox.add(scrollbar)
 	scrollbar.add(modules)
