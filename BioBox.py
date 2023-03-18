@@ -216,6 +216,7 @@ class Channel(Gtk.Frame):
 		# Add self to group
 		self.group.pack_start(self, True, True, 0)
 		self.group.show_all()
+		print("Modules allocation:", modules.get_allocation().width, modules.get_allocation().height)
 
 	def focus_delay(self, widget, direction):
 		GLib.idle_add(self.focus_select, widget)
@@ -286,6 +287,7 @@ class Channel(Gtk.Frame):
 			selected_channel = None # Because it doesn't make sense to select another module
 		print("Removing:", self.channel_name)
 		self.group.remove(self)
+		print("Modules allocation:", modules.get_allocation().width, modules.get_allocation().height)
 
 
 class VLC(Channel):
@@ -333,6 +335,7 @@ async def main():
 
 	menubox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
 	main_ui.add(menubox)
+	global modules
 	modules = Gtk.Box()
 	modules.set_border_width(4)
 	global chan_select
@@ -403,15 +406,34 @@ async def main():
 	menubox.pack_start(menubar, False, False, 0)
 	toolbar = ui_manager.get_widget("/ToolBar")
 	menubox.pack_start(toolbar, False, False, 0)
-	scrollbar = Gtk.ScrolledWindow(overlay_scrolling=False)
-	scrollbar.set_size_request(955, 355)
+	global scrollbar
+	scrollbar = Gtk.ScrolledWindow(overlay_scrolling=False, propagate_natural_height=True, propagate_natural_width=True)
+	scrollbar.set_size_request(0, 355)
 	menubox.add(scrollbar)
 	scrollbar.add(modules)
-
+	def get_screen_size(display):
+		mon_geoms = [
+			display.get_monitor(i).get_geometry()
+			for i in range(display.get_n_monitors())
+		]
+		x0 = min(r.x            for r in mon_geoms)
+		y0 = min(r.y            for r in mon_geoms)
+		x1 = max(r.x + r.width  for r in mon_geoms)
+		y1 = max(r.y + r.height for r in mon_geoms)
+		return x1 - x0, y1 - y0
+	# TODO: Fit to screen size or minimum size to fit all channels without scrolling, whichever is smaller
+	# It's easy to ask the allocated size of the modules box (scrollbar's only child). This would need to
+	# be queried every time a channel is added or removed, by appending Channel.__init__ and Channel.remove.
+	# The current problem is that this currently returns after addition/removal is requested but before
+	# allocation has been updated. Find a way to delay checking until allocation is updated, then either set
+	# size request on scrollbar, or set content width and see if propagate_natural_width actually does anything.
+	# Height may be set statically, but when the scrollbar disappears, modules is allocated some vertical space.
+	# See also if the size-allocate signal makes everything easier.
 
 	GLib.timeout_add(1000, init_motor_pos)
 	# Show window
 	def halt(*a): # We could use a lambda function unless we need IIDPIO
+		print("Modules allocation:", modules.get_allocation().width, modules.get_allocation().height)
 		spawn(cancel_all())
 	main_ui.connect("destroy", halt)
 	main_ui.show_all()
