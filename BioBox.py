@@ -92,6 +92,18 @@ def spawn(awaitable):
 	task.add_done_callback(task_done)
 	return task
 
+def get_screen_size(display):
+	mon_geoms = [
+		display.get_monitor(i).get_geometry()
+		for i in range(display.get_n_monitors())
+	]
+	x0 = min(r.x            for r in mon_geoms)
+	y0 = min(r.y            for r in mon_geoms)
+	x1 = max(r.x + r.width  for r in mon_geoms)
+	y1 = max(r.y + r.height for r in mon_geoms)
+	return x1 - x0, y1 - y0
+
+
 # Slider
 async def read_analog():
 	# Get analog value from Analog.py and write to selected channel's slider
@@ -408,27 +420,22 @@ async def main():
 	menubox.pack_start(toolbar, False, False, 0)
 	global scrollbar
 	scrollbar = Gtk.ScrolledWindow(overlay_scrolling=False, propagate_natural_height=True, propagate_natural_width=True)
+	scrollbar.set_policy(Gtk.PolicyType.ALWAYS, Gtk.PolicyType.NEVER)
 	scrollbar.set_size_request(0, 355)
 	menubox.add(scrollbar)
 	scrollbar.add(modules)
-	def get_screen_size(display):
-		mon_geoms = [
-			display.get_monitor(i).get_geometry()
-			for i in range(display.get_n_monitors())
-		]
-		x0 = min(r.x            for r in mon_geoms)
-		y0 = min(r.y            for r in mon_geoms)
-		x1 = max(r.x + r.width  for r in mon_geoms)
-		y1 = max(r.y + r.height for r in mon_geoms)
-		return x1 - x0, y1 - y0
-	# TODO: Fit to screen size or minimum size to fit all channels without scrolling, whichever is smaller
-	# It's easy to ask the allocated size of the modules box (scrollbar's only child). This would need to
-	# be queried every time a channel is added or removed, by appending Channel.__init__ and Channel.remove.
-	# The current problem is that this currently returns after addition/removal is requested but before
-	# allocation has been updated. Find a way to delay checking until allocation is updated, then either set
-	# size request on scrollbar, or set content width and see if propagate_natural_width actually does anything.
-	# Height may be set statically, but when the scrollbar disappears, modules is allocated some vertical space.
-	# See also if the size-allocate signal makes everything easier.
+	def auto_resize(widget, alloc):
+		print("Modules content size:", alloc.width, alloc.height)
+		screen_width, screen_height = get_screen_size(Gdk.Display.get_default())
+		print("Pre-resize")
+		main_ui.resize(min(alloc.width + 10, screen_width), main_ui.get_size().height)
+		# The addition of 10 pixels here is for the window border. For some reason, adding exactly 10 pixels causes the window to draw at minimum size (from scrollbar's
+		# height and toolbar's width). However, adding more than 10 pixels causes the window to automatically expand to fit the first two modules (TBC), then snap to the
+		# correct size on the next signal. Adding more than 10 pixels also causes the window to grow each signal. The signal can fire on interaction with or focus on some
+		# widgets in each channel.
+		print("Post-resize")
+		print(main_ui.get_size().height)
+	modules.connect("size-allocate", auto_resize)
 
 	GLib.timeout_add(1000, init_motor_pos)
 	# Show window
