@@ -100,18 +100,6 @@ def spawn(awaitable):
 	task.add_done_callback(task_done)
 	return task
 
-def get_screen_size(display):
-	mon_geoms = [
-		display.get_monitor(i).get_geometry()
-		for i in range(display.get_n_monitors())
-	]
-	x0 = min(r.x            for r in mon_geoms)
-	y0 = min(r.y            for r in mon_geoms)
-	x1 = max(r.x + r.width  for r in mon_geoms)
-	y1 = max(r.y + r.height for r in mon_geoms)
-	return x1 - x0, y1 - y0
-
-
 # Slider
 async def read_analog():
 	# Get analog value from Analog.py and write to selected channel's slider
@@ -236,7 +224,6 @@ class Channel(Gtk.Frame):
 		# Add self to group
 		self.group.pack_start(self, True, True, 0)
 		self.group.show_all()
-		print("Modules allocation:", modules.get_allocation().width, modules.get_allocation().height)
 
 	def focus_delay(self, widget, direction):
 		GLib.idle_add(self.focus_select, widget)
@@ -307,7 +294,6 @@ class Channel(Gtk.Frame):
 			selected_channel = None # Because it doesn't make sense to select another module
 		print("Removing:", self.channel_name)
 		self.group.remove(self)
-		print("Modules allocation:", modules.get_allocation().width, modules.get_allocation().height)
 
 
 class VLC(Channel):
@@ -426,24 +412,11 @@ async def main():
 	menubox.pack_start(menubar, False, False, 0)
 	toolbar = ui_manager.get_widget("/ToolBar")
 	menubox.pack_start(toolbar, False, False, 0)
-	global scrollbar
-	scrollbar = Gtk.ScrolledWindow(overlay_scrolling=False, propagate_natural_height=True, propagate_natural_width=True)
-	scrollbar.set_policy(Gtk.PolicyType.ALWAYS, Gtk.PolicyType.NEVER)
+	scrollbar = Gtk.ScrolledWindow(overlay_scrolling=False)
+	scrollbar.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.NEVER)
 	scrollbar.set_size_request(0, 355)
 	menubox.add(scrollbar)
 	scrollbar.add(modules)
-	def auto_resize(widget, alloc):
-		print("Modules content size:", alloc.width, alloc.height)
-		screen_width, screen_height = get_screen_size(Gdk.Display.get_default())
-		print("Pre-resize")
-		main_ui.resize(min(alloc.width + 10, screen_width), main_ui.get_size().height)
-		# The addition of 10 pixels here is for the window border. For some reason, adding exactly 10 pixels causes the window to draw at minimum size (from scrollbar's
-		# height and toolbar's width). However, adding more than 10 pixels causes the window to automatically expand to fit the first two modules (TBC), then snap to the
-		# correct size on the next signal. Adding more than 10 pixels also causes the window to grow each signal. The signal can fire on interaction with or focus on some
-		# widgets in each channel.
-		print("Post-resize")
-		print(main_ui.get_size().height)
-	modules.connect("size-allocate", auto_resize)
 
 	GLib.timeout_add(1000, init_motor_pos)
 	# Show window
@@ -457,7 +430,6 @@ async def main():
 			json.dump(winconfig, f)
 	main_ui.connect("delete_event", save_win_pos)
 	def halt(*a): # We could use a lambda function unless we need IIDPIO
-		print("Modules allocation:", modules.get_allocation().width, modules.get_allocation().height)
 		spawn(cancel_all())
 	main_ui.connect("destroy", halt)
 	main_ui.show_all()
