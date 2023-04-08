@@ -102,10 +102,11 @@ async def webcam():
 					elif cmd == "exposure_absolute":
 						webcams[device + "exposure"].refract_value(int(value), "backend")
 					elif cmd == "exposure_auto":
-						if value == 1:
+						if value == "1":
 							muted = False # 1 is Manual
 						else:
 							muted = True # 0, 2 and 3 are all Auto modes
+						print("Exposure:", value, muted)
 						webcams[device + "exposure"].mute.set_active(muted)
 					elif cmd == "Error" and value == "Device not found":
 						print("Device not found:", device)
