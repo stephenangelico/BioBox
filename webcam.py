@@ -102,7 +102,7 @@ async def webcam():
 					elif cmd == "exposure_absolute":
 						webcams[device + "exposure"].refract_value(int(value), "backend")
 					elif cmd == "exposure_auto":
-						if value == 1:
+						if value == "1":
 							muted = False # 1 is Manual
 						else:
 							muted = True # 0, 2 and 3 are all Auto modes
