@@ -1,5 +1,6 @@
 import os
 import time
+import json
 import subprocess
 import builtins
 import traceback
@@ -28,6 +29,13 @@ except (ImportError, NotImplementedError, RuntimeError): # Provide a dummy for t
 			# TODO: instead of creating dummy function, disable slider task on startup
 
 import config # ImportError? See config_example.py
+
+winconfig = {}
+try:
+	with open('window.json', 'r') as f:
+		winconfig = json.load(f)
+except FileNotFoundError:
+	pass # Later references to winconfig should already handle no data
 
 selected_channel = None
 tabs = {}
@@ -439,11 +447,22 @@ async def main():
 
 	GLib.timeout_add(1000, init_motor_pos)
 	# Show window
+	def save_win_pos(*a):
+		global winconfig
+		winconfig['width'] = main_ui.get_size().width
+		winconfig['height'] = main_ui.get_size().height
+		# TODO: Keep last unmaximized size
+		winconfig['maximized'] = main_ui.is_maximized()
+		with open('window.json', 'w') as f:
+			json.dump(winconfig, f)
+	main_ui.connect("delete_event", save_win_pos)
 	def halt(*a): # We could use a lambda function unless we need IIDPIO
 		print("Modules allocation:", modules.get_allocation().width, modules.get_allocation().height)
 		spawn(cancel_all())
 	main_ui.connect("destroy", halt)
 	main_ui.show_all()
+	if 'width' in winconfig and 'height' in winconfig: main_ui.resize(winconfig['width'], winconfig['height'])
+	if winconfig.get('maximized'): main_ui.maximize()
 	slider_task = asyncio.create_task(read_analog())
 	start_task("VLC")
 	start_task("OBSModule")
