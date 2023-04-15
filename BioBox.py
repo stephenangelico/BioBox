@@ -334,8 +334,11 @@ class Browser(Channel):
 
 async def main():
 	stop = asyncio.Event() # Hold open until destroy signal triggers this event
-	main_ui = Gtk.Window(title="Bio Box") # TODO: Add icon from /usr/share/icons/mate/48x48/categories/preferences-desktop.png
-	#main_ui.set_resizable(False)
+	main_ui = Gtk.Window(title="Bio Box")
+	try:
+		main_ui.set_icon_from_file("/usr/share/icons/mate/48x48/categories/preferences-desktop.png")
+	except gi.repository.GLib.Error:
+		pass # No icon
 	main_ui.move(0,0)
 	action_group = Gtk.ActionGroup(name="biobox_actions")
 
@@ -366,7 +369,7 @@ async def main():
 		else:
 			spawn(cancel_task(toggle_group))
 	def start_task(task):
-		obj = asyncio.create_task(getattr(Task, task)()) # TODO: check if this cam become spawn()
+		obj = asyncio.create_task(getattr(Task, task)()) # TODO: check if this can become spawn()
 		Task.running[task] = obj
 		obj.add_done_callback(handle_errors)
 	async def cancel_task(task):
