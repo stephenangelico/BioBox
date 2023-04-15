@@ -422,19 +422,26 @@ async def main():
 	# Show window
 	def save_win_pos(*a):
 		global winconfig
-		winconfig['width'] = main_ui.get_size().width
-		winconfig['height'] = main_ui.get_size().height
-		# TODO: Keep last unmaximized size
+		# Width and height are set in win_ch to prevent overwrite from a maximized state
 		winconfig['maximized'] = main_ui.is_maximized()
 		with open('window.json', 'w') as f:
 			json.dump(winconfig, f)
 	main_ui.connect("delete_event", save_win_pos)
+
+	def win_ch(widget, *a):
+		if not widget.is_maximized():
+			winconfig['width'] = widget.get_size().width
+			winconfig['height'] = widget.get_size().height
+	main_ui.connect("check_resize", win_ch) # Fires not just on resize but also on mouseover and interaction with some widgets
+
 	def halt(*a): # We could use a lambda function unless we need IIDPIO
 		spawn(cancel_all())
 	main_ui.connect("destroy", halt)
-	main_ui.show_all()
+
 	if 'width' in winconfig and 'height' in winconfig: main_ui.resize(winconfig['width'], winconfig['height'])
 	if winconfig.get('maximized'): main_ui.maximize()
+	main_ui.show_all()
+
 	slider_task = asyncio.create_task(read_analog())
 	start_task("VLC")
 	start_task("OBSModule")
