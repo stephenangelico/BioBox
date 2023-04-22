@@ -115,7 +115,14 @@ async def read_analog():
 			selected_channel.refract_value(value, "analog")
 			Analog.next_goal_time = time.monotonic() + 0.15
 
-def init_motor_pos(): # TODO: Revisit selecting a module on startup
+def init_motor_pos():
+	for module in modules.get_children():
+		for channel in module.get_children():
+			channel.selector.set_active(True)
+			channel.mute.grab_focus()
+			break
+		if selected_channel:
+			break
 	if selected_channel:
 		scale_max = selected_channel.max
 		Analog.goal = selected_channel.slider.get_value() / scale_max * 1023
