@@ -347,6 +347,7 @@ class Browser(Channel):
 async def main():
 	stop = asyncio.Event() # Hold open until destroy signal triggers this event
 	main_ui = Gtk.Window(title="Bio Box")
+	# TODO: Figure out why the window doesn't pull focus on launch on Pi, instead only requesting attention
 	try:
 		main_ui.set_icon_from_file("/usr/share/icons/mate/48x48/categories/preferences-desktop.png")
 	except gi.repository.GLib.Error:
