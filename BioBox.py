@@ -299,7 +299,7 @@ class Channel(Gtk.Frame):
 		print("Removing:", self.channel_name)
 		self.group.remove(self)
 
-
+# TODO: Break out into separate file
 class VLC(Channel):
 	group_name = "VLC"
 	step = 1.0
@@ -322,6 +322,7 @@ class VLC(Channel):
 import webcam
 import obs
 
+# TODO: Break out into separate file
 class Browser(Channel):
 	group_name = "Browser"
 	
@@ -449,7 +450,7 @@ async def main():
 	if winconfig.get('maximized'): main_ui.maximize()
 	main_ui.show_all()
 
-	slider_task = asyncio.create_task(read_analog())
+	slider_task = asyncio.create_task(read_analog()) # TODO: Use spawn()?
 	start_task("VLC")
 	start_task("OBSModule")
 	start_task("Browser")
