@@ -209,7 +209,7 @@ class Channel(Gtk.Frame):
 		# Spinner
 		spinvalue = Gtk.SpinButton(adjustment=self.slider, digits=2)
 		box.pack_start(spinvalue, False, False, 0)
-		spinvalue.connect("focus", self.focus_delay) # TODO: get signal for +/- presses
+		spinvalue.connect("focus", self.focus_delay)
 		# Mute button
 		self.mute = Gtk.ToggleButton(label=self.mute_labels[0])
 		box.pack_start(self.mute, False, False, 0)
@@ -238,7 +238,6 @@ class Channel(Gtk.Frame):
 
 	def click_anywhere(self, widget, event):
 		if "BUTTON" in event.get_event_type().value_name:
-			# TODO: Get scroll wheel changing Gtk.Scale
 			self.selector.set_active(True)
 			return False
 		elif event.get_event_type().value_name != "GDK_MOTION_NOTIFY":
@@ -254,11 +253,16 @@ class Channel(Gtk.Frame):
 	def adjustment_changed(self, widget):
 		value = widget.get_value()
 		self.refract_value(value, "gtk")
+		self.selector.set_active(True)
+		# Gtk.Adjustment::value-changed appears to only emit when the
+		# value has been changed by user interaction, not when the slider
+		# is moved or the backend emits a change. Thus, we can use this
+		# to select the radio button.
 
 	def refract_value(self, value, source):
 		# Send value to multiple places, keeping track of sent value to
 		# avoid bounce or slider fighting.
-		if abs(value - self.oldvalue) > 1: # Prevent feedback loop when moving slider
+		if abs(value - self.oldvalue) >= 1: # Prevent feedback loop when moving slider
 			#print(self.channel_name, source, value)
 			if source != "gtk":
 				self.update_position(value)
