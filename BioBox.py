@@ -5,6 +5,7 @@ import subprocess
 import builtins
 import traceback
 import asyncio
+import aiomonitor
 import WebSocket # Local library for connecting to browser extension
 
 import gi
@@ -463,7 +464,8 @@ async def main():
 	start_task("OBSModule")
 	start_task("Browser")
 	start_task("Webcam")
-	await stop.wait()
+	with aiomonitor.start_monitor(loop):
+		await stop.wait()
 	motor_cleanup()
 	
 if __name__ == "__main__":
