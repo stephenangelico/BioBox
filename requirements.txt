@@ -4,4 +4,4 @@ RPi.GPIO
 websockets>=10
 gbulb
 v4l2py
-aiomonitor-ng
+aiomonitor>=0.5.0a1
