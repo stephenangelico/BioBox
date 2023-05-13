@@ -17,4 +17,5 @@ webcam_control_path = "/home/biobox/BioBox/camera.py"
 webcams = {"Webcam #1": "/dev/video0", "Webcam #2": "/dev/video1"}
 
 # Port to connect to OBS WebSocket server
-obs_port = 4444
+obs_port = 4455
+obs_password = b"password"
