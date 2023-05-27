@@ -19,15 +19,22 @@ BioBox can be run on a PC without any kind of analog slider, but its usefulness
 will be limited. You still have the benefit of multiple sources controlled in
 one place, but adjustment is still done by click-dragging or scrolling.
 
-Reference hardware uses a [Bourns PSM01-082A-103B2](https://www.mouser.com/ProductDetail/Bourns/PSM01-082A-103B2?qs=MAZTpT1IVl8rvdecO07rRA%3D%3D)
-motorized 10kΩ slide potentiometer attached to a MCP3008 analog-to-digital
-converter (ADC), and the motor connected to a TB6612FNG motor controller. See
-[Wiring](#wiring) for details.
-
 
 Dependencies:
 =============
 
+Hardware:
+- Raspberry Pi B2, B3, B3+, B4 or 400 (tested on B4 only)
+- Bourns PSM01-082A-103B2 motorized slide potentiometer 10kΩ
+- MCP3008 analog-to-digital converter (ADC)
+- TB6612FNG motor controller board
+- Breadboard or breadboard layout PCB - 20 rows minimum
+- Prototyping plug-to-socket wires
+- Short wires for links on breadboard
+- JST connectors and sockets for permanent installation
+
+Software:
+- Modern GNU/Linux system with GUI
 - `python3-gi` from your package manager
 - Python packages as per `requirements.txt`:
   - `gbulb` - Required to run main event loop
@@ -59,7 +66,7 @@ Wiring:
 ![Breadboard diagram](Diagrams/breadboard.png)
 ![Schematic view](Diagrams/schematic.png)
 
-TODO: Update for new slider and include Fritzing image(s)
+TODO: Explain
 
 - Analogue input
 	- MCP3008 connections:
