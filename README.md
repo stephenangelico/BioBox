@@ -56,53 +56,54 @@ TODO: finish writing (ie webcam)
 Wiring:
 =======
 
+![Breadboard diagram](Diagrams/breadboard.png)
+![Schematic view](Diagrams/schematic.png)
+
 TODO: Update for new slider and include Fritzing image(s)
 
 - Analogue input
 	- MCP3008 connections:
-		- VDD -> 3.3V (pin 17)
-		- VREF -> 3.3V (pin 17)
-		- AGND -> GND (pin 25)
-		- CLK -> SCLK (pin 23)
-		- DOUT -> MISO (pin 21)
-		- DIN -> MOSI (pin 19)
-		- CS -> GPIO #22 (pin 15)
-		- DGND -> GND (pin 25)
+		- CH0  -> Slider 2'
+		- CH1  -> Slider 1', GND
+		- CH2  unused
+		- CH3  unused
+		- CH4  unused
+		- CH5  unused
+		- CH6  unused
+		- CH7  unused
+		- DGND -> Pi GND  (pin 25)
+		- CS   -> Pi GP22 (pin 15)
+		- DIN  -> Pi MOSI (pin 19)
+		- DOUT -> Pi MISO (pin 21)
+		- CLK  -> Pi SCLK (pin 23)
+		- AGND -> Pi GND  (pin 25)
+		- VREF -> Pi 3.3V (pin 17)
+		- VDD  -> Pi 3.3V (pin 17)
 	- Slider connections:
-		- L1 -> R3 ("bragging wire")
-		- L2 NC
-		- L3 unused
-		- L4 unused
-		- R1 -> CH0 (MCP pin 1)
-		- R2 -> 3.3V (MCP pin 16)
-		- R3 -> L1 ("bragging wire")
-		- R4 -> GND (MCP pin 9)
+		- 3 unused
+		- 2 unused
+		- 1 unused
+		- T unused
+		- 1' -> MCP CH1 (pin 2)
+		- 2' -> MCP CH0 (pin 1)
+		- 3' -> MCP VDD (pin 16)
 
-The "bragging wire" tells you how great the range of the potentiometer is. The
-reason this is necessary for this slider is because the MCP3008 needs the full
-range of resistance to be present between +3.3V and GND. For most 3-pin
-potentiometers, this is simply done by wiring the outside pins to +3.3v and GND,
-and the middle pin to a channel. With this slider, there are two independent
-2-pin scales which work in opposite directions. When added together, the scales
-always add up to the full range, irrespective of the position of the slider.
-Therefore, by linking the opposite scales and measuring one of them, we can
-emulate a single 3-pin potentiometer to the MCP3008.
 
 - Motor control
 	- TB6612FNG connections:
-		- VM -> +5V (pin 2)
-		- VCC -> +5V (pin 2)
-		- GND 1 unused
-		- A01 -> Motor yellow
-		- A02 -> Motor green
-		- B02 unused
-		- B01 unused
-		- GND 2 -> GND (pin 9)
-		- PWMA -> GPIO 17 (pin 11)
-		- AIN2 -> GPIO 27 (pin 13)
-		- AIN1 -> GPIO 18 (pin 12)
-		- STBY -> GPIO 23 (pin 16)
-		- BIN1 unused
-		- BIN2 unused
+		- VM   -> Pi +5V  (pin 2)
+		- VCC  -> Pi +5V  (pin 2)
+		- GND1 unused
+		- A01  -> Slider B (black)
+		- A02  -> Slider A (red)
+		- B02  unused
+		- B01  unused
+		- GND2 -> Pi GND  (pin 9)
+		- GND3 unused
 		- PWMB unused
-		- GND 3 unused
+		- BIN2 unused
+		- BIN1 unused
+		- STBY -> Pi GP23 (pin 16)
+		- AIN1 -> Pi GP18 (pin 12)
+		- AIN2 -> Pi GP27 (pin 13)
+		- PWMA -> Pi GP17 (pin 11)
