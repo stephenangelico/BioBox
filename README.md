@@ -32,6 +32,8 @@ Hardware:
 - Prototyping plug-to-socket wires
 - Short wires for links on breadboard
 - JST connectors and sockets for permanent installation
+Alternative hardware may be used at the user's discretion, however all low-level
+software is based on this implementation.
 
 Software:
 - Modern GNU/Linux system with GUI
@@ -66,51 +68,72 @@ Wiring:
 ![Breadboard diagram](Diagrams/breadboard.png)
 ![Schematic view](Diagrams/schematic.png)
 
+The slider cannot simply connect directly to the Pi for two main reasons. First,
+the slider is an analogue component, but the Pi has no analogue inputs. Second,
+Pi GPIO pins cannot deliver sufficient power to connect the motor directly to
+two GPIO pins - the motor may function, but the speed will be painfully slow.
+
+The solutions to these problems are to add two chips in between the slider and
+the Pi - the ADC for the slider, and the motor controller for the motor.
+
+The MCP3008 uses the SPI interface to connect to a controller (see Setup to make
+sure SPI is enabled on the Pi). The ADC will need power, ground and four SPI
+connections to the Pi, and three* to the slider. You can cross-reference the
+connection list below with the [MCP3008 datasheet](https://cdn-shop.adafruit.com/datasheets/MCP3008.pdf).
+
+* The ADC really needs only one connection to the slider, but the slider also
+needs power and ground, which may be convenient to connect to the board from the
+ADC.
+
+The motor controller uses two pins to determine direction, a PWM pin to control
+speed, and a standby pin to enable or disable the motor entirely, in addition to
+power and ground, each for itself and the motor.
+
 TODO: Explain
 
-- Analogue input
-	- MCP3008 connections:
-		- CH0  -> Slider 2'
-		- CH1  -> Slider 1', GND
-		- CH2  unused
-		- CH3  unused
-		- CH4  unused
-		- CH5  unused
-		- CH6  unused
-		- CH7  unused
-		- DGND -> Pi GND  (pin 25)
-		- CS   -> Pi GP22 (pin 15)
-		- DIN  -> Pi MOSI (pin 19)
-		- DOUT -> Pi MISO (pin 21)
-		- CLK  -> Pi SCLK (pin 23)
-		- AGND -> Pi GND  (pin 25)
-		- VREF -> Pi 3.3V (pin 17)
-		- VDD  -> Pi 3.3V (pin 17)
-	- Slider connections:
-		- 3 unused
-		- 2 unused
-		- 1 unused
-		- T unused
-		- 1' -> MCP CH1 (pin 2)
-		- 2' -> MCP CH0 (pin 1)
-		- 3' -> MCP VDD (pin 16)
+- MCP3008 connections:
+	- CH0  -> Slider 2'
+	- CH1  -> Slider 1', GND
+	- CH2  unused
+	- CH3  unused
+	- CH4  unused
+	- CH5  unused
+	- CH6  unused
+	- CH7  unused
+	- DGND -> Pi GND  (pin 25)
+	- CS   -> Pi GP22 (pin 15)
+	- DIN  -> Pi MOSI (pin 19)
+	- DOUT -> Pi MISO (pin 21)
+	- CLK  -> Pi SCLK (pin 23)
+	- AGND -> Pi GND  (pin 25)
+	- VREF -> Pi 3.3V (pin 17)
+	- VDD  -> Pi 3.3V (pin 17)
 
+- Slider connections:
+	- A  -> TB6 A02
+	- B  -> TB6 A01
+	- 3 unused
+	- 2 unused
+	- 1 unused
+	- T unused
+	- 1' -> MCP CH1 (pin 2)
+	- 2' -> MCP CH0 (pin 1)
+	- 3' -> MCP VDD (pin 16)
 
-- Motor control
-	- TB6612FNG connections:
-		- VM   -> Pi +5V  (pin 2)
-		- VCC  -> Pi +5V  (pin 2)
-		- GND1 unused
-		- A01  -> Slider B (black)
-		- A02  -> Slider A (red)
-		- B02  unused
-		- B01  unused
-		- GND2 -> Pi GND  (pin 9)
-		- GND3 unused
-		- PWMB unused
-		- BIN2 unused
-		- BIN1 unused
-		- STBY -> Pi GP23 (pin 16)
-		- AIN1 -> Pi GP18 (pin 12)
-		- AIN2 -> Pi GP27 (pin 13)
-		- PWMA -> Pi GP17 (pin 11)
+- TB6612FNG connections:
+	- VM   -> Pi +5V  (pin 2)
+	- VCC  -> Pi +5V  (pin 2)
+	- GND1 unused
+	- A01  -> Slider B (black)
+	- A02  -> Slider A (red)
+	- B02  unused
+	- B01  unused
+	- GND2 -> Pi GND  (pin 9)
+	- GND3 unused
+	- PWMB unused
+	- BIN2 unused
+	- BIN1 unused
+	- STBY -> Pi GP23 (pin 16)
+	- AIN1 -> Pi GP18 (pin 12)
+	- AIN2 -> Pi GP27 (pin 13)
+	- PWMA -> Pi GP17 (pin 11)
