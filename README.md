@@ -32,6 +32,7 @@ Hardware:
 - Prototyping plug-to-socket wires
 - Short wires for links on breadboard
 - JST connectors and sockets for permanent installation
+
 Alternative hardware may be used at the user's discretion, however all low-level
 software is based on this implementation.
 
