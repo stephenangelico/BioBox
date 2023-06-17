@@ -28,7 +28,7 @@ Hardware:
 - Bourns PSM01-082A-103B2 motorized slide potentiometer 10kΩ
 - MCP3008 analog-to-digital converter (ADC)
 - TB6612FNG motor controller board
-- Breadboard or breadboard layout PCB - 20 rows minimum
+- Breadboard or breadboard layout PCB - 25 rows minimum
 - Prototyping plug-to-socket wires
 - Short wires for links on breadboard
 - JST connectors and sockets for permanent installation
@@ -90,7 +90,51 @@ The motor controller uses two pins to determine direction, a PWM pin to control
 speed, and a standby pin to enable or disable the motor entirely, in addition to
 power and ground, each for itself and the motor.
 
-TODO: Explain
+If you have never used an electronics breadboard before, see [SparkFun's tutorial](https://learn.sparkfun.com/tutorials/how-to-use-a-breadboard/all).
+
+With the board oriented such that the ravine and rails point away from you,
+insert the MCP3008 into the board across the centre ravine, with the notch or
+dot pointing towards the top of the board, leaving at least one free row above
+(ie from row 2 to row 9).
+
+Connect 3.3V power and ground from the Pi (pins 17 and 25 respectively) to the
+right power rail. Add links from the 3.3V rail to row 3 (connecting to VREF),
+then from row 3 to row 2 (VDD), then from row 2 to row 1, then finally across
+the ravine in row 1.
+
+Connect 1', 2', and 3' on the slider to rows 1, 2, and 3 on the left side of the
+board. Add links on the left side of the board from row 3 to row 10, then across
+the ravine in row 10, then from row 10 to row 9 (DGND), and finally from row 9
+to the ground rail. Add a link from ground also to row 4 (AGND).
+
+Connect rows 5 to 8 to the Pi GPIO 22, SPI MOSI, SPI MISO, and SPI SCLK (pins
+15, 19, 21 and 23 respectively).
+
+Insert the motor controller across the ravine below the MCP by 5 rows including
+the link in row 10 (ie insert from row 15 to row 22). Because the motor
+controller is 7 pins wide, insert into the board in column D and column H - this
+will provide sufficient clearance for the necessary wires and links on both
+sides.
+
+Connect 5V power and ground from the Pi (pins 2 and 9 respectively) to the left
+power rail. Add links from the 5V rail to row 15 (connecting to VM), then from
+row 15 to row 16 (VCC), and finally from row 22 (GND2) to the ground rail.
+
+Connect A and B on the slider to rows 18 and 19 on the left side (A02 and A01).
+
+Connect rows 15 to 18 on the right side to the Pi GPIO 17, 27, 18 and 23 (pins
+11, 13, 12 and 16 respectively).
+
+You should now be able to test the slider's functionality. Run `python3 analog.py`
+from the BioBox directory and move the slider. You should see the value change
+between 0 and 1023. Press Ctrl-C to complete the test.
+
+TODO: Write motor test
+
+Once testing is completed, you can consider a more permanent installation by
+soldering the chips to a circuit board and using JST connectors to connect to
+the slider and Pi. This is optional but may be necessary if you have problems
+with slider drift or incomplete range.
 
 - MCP3008 connections:
 	- CH0  -> Slider 2'
