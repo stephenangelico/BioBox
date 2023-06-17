@@ -79,10 +79,10 @@ the Pi - the ADC for the slider, and the motor controller for the motor.
 
 The MCP3008 uses the SPI interface to connect to a controller (see Setup to make
 sure SPI is enabled on the Pi). The ADC will need power, ground and four SPI
-connections to the Pi, and three* to the slider. You can cross-reference the
+connections to the Pi, and three[^1] to the slider. You can cross-reference the
 connection list below with the [MCP3008 datasheet](https://cdn-shop.adafruit.com/datasheets/MCP3008.pdf).
 
-* The ADC really needs only one connection to the slider, but the slider also
+[^1]: The ADC really needs only one connection to the slider, but the slider also
 needs power and ground, which may be convenient to connect to the board from the
 ADC.
 
