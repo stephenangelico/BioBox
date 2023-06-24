@@ -12,6 +12,36 @@ import websockets # ImportError? pip install websockets
 
 sockets = { }
 callbacks = { }
+tabs = {}
+sites = {
+	"music.youtube.com": "YT Music",
+	"www.youtube.com": "YouTube",
+	"www.twitch.tv": "Twitch",
+	"clips.twitch.tv": "Twitch Clips",
+	"": "Browser: File",
+}
+
+# YouTube only gives a "normalised" value which is different per video. Raising
+# the volume above this value has no aural effect in YouTube but is accepted by
+# the page. With no way to get the raw volume or the max normalised volume, it
+# is impossible to rescale the value to match a 0-100 scale, so the best we can
+# do is to use what we have as is.
+# TODO: Explore interactively setting YouTube tab to "100%" and scaling normalised
+# to 100%
+
+class BrowserTab(Channel):
+	group_name = "Browser"
+	
+	def __init__(self, tabid, tabname):
+		super().__init__(name=tabname)
+		self.tabid = tabid
+
+	def write_external(self, value):
+		spawn(WebSocket.set_volume(self.tabid, (value / 100)))
+	
+	def muted(self, widget):
+		mute_state = super().muted(widget)
+		spawn(WebSocket.set_muted(self.tabid, mute_state))
 
 async def volume(sock, path):
 	if path != "/ws": return # Can we send back a 404 or something?
@@ -59,8 +89,8 @@ async def set_volume(tabid, vol):
 async def set_muted(tabid, muted):
 	await send_message(tabid, {"cmd": "setmuted", "muted": bool(muted)})
 
-async def listen(*, connected=None, disconnected=None, volumechanged=None, host="", port=8888):
-	callbacks.update(connected=connected, disconnected=disconnected, volumechanged=volumechanged)
+async def listen(*, host="", port=8888):
+	callbacks.update(connected=new_tab, disconnected=closed_tab, volumechanged=tab_volume_changed)
 	ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
 	try:
 		ssl_context.load_cert_chain("fullchain.pem", "privkey.pem")
@@ -76,6 +106,27 @@ async def listen(*, connected=None, disconnected=None, volumechanged=None, host=
 			raise # Task should automatically complete on return if it was errno 98
 	finally:
 		print("Websocket shutting down.") # I don't hate you!
+
+# Channel management
+def new_tab(tabid, host):
+	if host in sites:
+		tabname = sites[host]
+	else:
+		tabname = host
+	print("Creating channel for new tab:", tabid)
+	newtab = Browser(tabid, tabname)
+	tabs[tabid] = newtab
+
+def closed_tab(tabid):
+	print("Destroying channel for closed tab:", tabid)
+	tabs[tabid].remove()
+	tabs.pop(tabid, None)
+
+def tab_volume_changed(tabid, volume, mute_state):
+	print("On", tabid, ": Volume:", volume, "Muted:", bool(mute_state))
+	channel = tabs[tabid]
+	channel.refract_value(float(volume * 100), "backend")
+	channel.mute.set_active(int(mute_state))
 
 # Non-asyncio entry-point
 def run(**kw): asyncio.run(listen(**kw))

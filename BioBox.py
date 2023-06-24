@@ -3,7 +3,6 @@ import json
 import builtins
 import traceback
 import asyncio
-import WebSocket # Local library for connecting to browser extension
 
 import gi
 gi.require_version("Gtk", "3.0")
@@ -36,25 +35,6 @@ except FileNotFoundError:
 	pass # Later references to winconfig should already handle no data
 
 selected_channel = None
-tabs = {}
-sites = {
-	"music.youtube.com": "YT Music",
-	"www.youtube.com": "YouTube",
-	"www.twitch.tv": "Twitch",
-	"clips.twitch.tv": "Twitch Clips",
-	"": "Browser: File",
-}
-# YouTube only gives a "normalised" value which is different per video. Raising
-# the volume above this value has no aural effect in YouTube but is accepted by
-# the page. With no way to get the raw volume or the max normalised volume, it
-# is impossible to rescale the value to match a 0-100 scale, so the best we can
-# do is to use what we have as is.
-# TODO: Explore interactively setting YouTube tab to "100%" and scaling normalised
-# to 100%
-# Twitch VODs and clips viewed at www.twitch.tv/videos/[id] are uncontrollable.
-# The extension runs as expected but never gets a volumechange event. Control
-# still works (though in-player slider does not respond) on livestreams and
-# clips viewed on clips.twitch.tv.
 
 UI_HEADER = """
 <ui>
@@ -126,27 +106,6 @@ def init_motor_pos():
 		Analog.goal = selected_channel.slider.get_value() / scale_max * 1023
 	else:
 		Analog.goal = 1023
-
-# Browser
-def new_tab(tabid, host):
-	if host in sites:
-		tabname = sites[host]
-	else:
-		tabname = host
-	print("Creating channel for new tab:", tabid)
-	newtab = Browser(tabid, tabname)
-	tabs[tabid] = newtab
-
-def closed_tab(tabid):
-	print("Destroying channel for closed tab:", tabid)
-	tabs[tabid].remove()
-	tabs.pop(tabid, None)
-
-def tab_volume_changed(tabid, volume, mute_state):
-	print("On", tabid, ": Volume:", volume, "Muted:", bool(mute_state))
-	channel = tabs[tabid]
-	channel.refract_value(float(volume * 100), "backend")
-	channel.mute.set_active(int(mute_state))
 
 @export
 class Channel(Gtk.Frame):
@@ -275,21 +234,7 @@ class Channel(Gtk.Frame):
 import vlc
 import webcam
 import obs
-
-# TODO: Break out into separate file
-class Browser(Channel):
-	group_name = "Browser"
-	
-	def __init__(self, tabid, tabname):
-		super().__init__(name=tabname)
-		self.tabid = tabid
-
-	def write_external(self, value):
-		spawn(WebSocket.set_volume(self.tabid, (value / 100)))
-	
-	def muted(self, widget):
-		mute_state = super().muted(widget)
-		spawn(WebSocket.set_muted(self.tabid, mute_state))
+import WebSocket
 
 async def main():
 	stop = asyncio.Event() # Hold open until destroy signal triggers this event
@@ -321,7 +266,7 @@ async def main():
 		def OBSModule():
 			return obs.obs_ws()
 		def Browser():
-			return WebSocket.listen(connected=new_tab, disconnected=closed_tab, volumechanged=tab_volume_changed)
+			return WebSocket.listen()
 	def toggle_menu_item(widget):
 		toggle_group = widget.get_name()
 		if widget.get_active():
