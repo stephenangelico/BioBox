@@ -29,7 +29,7 @@ sites = {
 # TODO: Explore interactively setting YouTube tab to "100%" and scaling normalised
 # to 100%
 
-class BrowserTab(Channel):
+class Browser(Channel):
 	group_name = "Browser"
 	
 	def __init__(self, tabid, tabname):
@@ -114,7 +114,7 @@ def new_tab(tabid, host):
 	else:
 		tabname = host
 	print("Creating channel for new tab:", tabid)
-	newtab = BrowserTab(tabid, tabname)
+	newtab = Browser(tabid, tabname)
 	tabs[tabid] = newtab
 
 def closed_tab(tabid):
