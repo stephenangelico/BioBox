@@ -234,7 +234,7 @@ class Channel(Gtk.Frame):
 import vlc
 import webcam
 import obs
-import WebSocket
+import browser
 
 async def main():
 	stop = asyncio.Event() # Hold open until destroy signal triggers this event
@@ -266,7 +266,7 @@ async def main():
 		def OBSModule():
 			return obs.obs_ws()
 		def Browser():
-			return WebSocket.listen()
+			return browser.listen()
 	def toggle_menu_item(widget):
 		toggle_group = widget.get_name()
 		if widget.get_active():
