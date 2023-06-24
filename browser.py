@@ -114,7 +114,7 @@ def new_tab(tabid, host):
 	else:
 		tabname = host
 	print("Creating channel for new tab:", tabid)
-	newtab = Browser(tabid, tabname)
+	newtab = BrowserTab(tabid, tabname)
 	tabs[tabid] = newtab
 
 def closed_tab(tabid):
