@@ -274,7 +274,7 @@ async def main():
 		else:
 			spawn(cancel_task(toggle_group))
 	def start_task(task):
-		obj = asyncio.create_task(getattr(Task, task)()) # TODO: check if this can become spawn()
+		obj = spawn(getattr(Task, task)())
 		Task.running[task] = obj
 		obj.add_done_callback(handle_errors)
 	async def cancel_task(task):
