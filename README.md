@@ -38,6 +38,7 @@ software is based on this implementation.
 
 Software:
 - Modern GNU/Linux system with GUI
+- Python 3.8+
 - `python3-gi` from your package manager
 - Python packages as per `requirements.txt`:
   - `gbulb` - Required to run main event loop
