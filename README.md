@@ -58,10 +58,20 @@ instructions) or by following [these instructions](https://www.raspberrypi.org/d
 1. Install dependencies as required for the modules/features you intend to run
 2. Copy `config_example.py` to `config.py` and change values as required (some values explained below)
 3. For VLC integration, see [TellMeVLC](https://github.com/Rosuav/TellMeVLC)
-4. For OBS integration, OBS -> Tools -> WebSocket Server Settings -> Enable WebSocket server, copy port number and password (if applicable) into config.py
+4. For OBS integration, OBS -> Tools -> WebSocket Server Settings -> Enable WebSocket server, copy port number and password (if applicable) into `config.py`
 
+Webcam control setup:
 
-TODO: finish writing (ie webcam)
+1. Install `v4l2py` on the server (ie the system with the cameras)
+2. Download BioBox or just `camera.py` on the server and note the absolute path to `camera.py`
+3. If you do not want BioBox to have access to your main user account on the server, create a new user and add it to the `video` group
+4. Enable SSH server and passwordless authentication on the server (See [this guide](https://www.redhat.com/sysadmin/passwordless-ssh) for a tutorial)
+5. Set `config.py` with the following:
+   - `webcam_user` with the user to login to the server as
+   - `webcam_control_path` with the path to `camera.py`
+   - `webcams` with the names and device paths of your webcams in `config.py`
+
+TODO: Add browser extension setup (pending rewrite of browser module)
 
 Wiring:
 =======
