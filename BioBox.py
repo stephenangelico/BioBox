@@ -267,6 +267,8 @@ async def main():
 			return obs.obs_ws()
 		def Browser():
 			return browser.listen()
+		def Slider():
+			return read_analog()
 	def toggle_menu_item(widget):
 		toggle_group = widget.get_name()
 		if widget.get_active():
@@ -350,11 +352,11 @@ async def main():
 	if winconfig.get('maximized'): main_ui.maximize()
 	main_ui.show_all()
 
-	slider_task = asyncio.create_task(read_analog()) # TODO: Use spawn()?
 	start_task("VLC")
 	start_task("OBSModule")
 	start_task("Browser")
 	start_task("Webcam")
+	start_task("Slider")
 	await stop.wait()
 	motor_cleanup()
 	
