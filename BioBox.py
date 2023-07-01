@@ -94,6 +94,9 @@ async def read_analog():
 			Analog.next_goal_time = time.monotonic() + 0.15
 
 def init_motor_pos():
+	# TODO: Why does this sometimes not select anything?
+	# Selecting a channel, in normal state, already sets position to its
+	# value. Do we need to set it again?
 	for module in modules.get_children():
 		for channel in module.get_children():
 			channel.selector.set_active(True)
