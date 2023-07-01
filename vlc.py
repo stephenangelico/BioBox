@@ -2,6 +2,25 @@ import asyncio
 import config # ImportError? See config_example.py
 
 
+class VLC(Channel):
+	group_name = "VLC"
+	step = 1.0
+
+	def __init__(self, writer):
+		super().__init__(name="VLC")
+		self.writer = writer
+
+	def write_external(self, value):
+		self.writer.write(b"volume %d \r\n" %value)
+		spawn(self.writer.drain())
+		print("To VLC: ", value)
+
+	def muted(self, widget):
+		mute_state = super().muted(widget)
+		self.writer.write(b"muted %d \r\n" %mute_state)
+		spawn(self.writer.drain())
+		print("VLC Mute status:", mute_state)
+
 async def vlc():
 	vlc_module = None
 	try:
@@ -32,23 +51,3 @@ async def vlc_buf_read(vlc_module, reader):
 			vlc_module.mute.set_active(int(value))
 		else:
 			print("From VLC:", attr, value)
-
-
-class VLC(Channel):
-	group_name = "VLC"
-	step = 1.0
-
-	def __init__(self, writer):
-		super().__init__(name="VLC")
-		self.writer = writer
-
-	def write_external(self, value):
-		self.writer.write(b"volume %d \r\n" %value)
-		spawn(self.writer.drain())
-		print("To VLC: ", value)
-
-	def muted(self, widget):
-		mute_state = super().muted(widget)
-		self.writer.write(b"muted %d \r\n" %mute_state)
-		spawn(self.writer.drain())
-		print("VLC Mute status:", mute_state)
