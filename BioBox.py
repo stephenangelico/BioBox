@@ -19,6 +19,7 @@ except (ImportError, NotImplementedError, RuntimeError): # Provide a dummy for t
 		pass
 	class Analog():
 		goal = None
+		next_goal = None
 		next_goal_time = 0
 		async def read_value():
 			yield 0 # Yield once and then stop
@@ -106,9 +107,9 @@ def init_motor_pos():
 			break
 	if selected_channel:
 		scale_max = selected_channel.max
-		Analog.goal = selected_channel.slider.get_value() / scale_max * 1023
+		Analog.next_goal = selected_channel.slider.get_value() / scale_max * 1023
 	else:
-		Analog.goal = 1023
+		Analog.next_goal = 1023
 
 @export
 class Channel(Gtk.Frame):
