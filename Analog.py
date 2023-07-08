@@ -2,12 +2,12 @@ import os
 import asyncio
 import time
 import collections
+import busio # ImportError? python3 -m pip install -r requirements.txt
+import digitalio # ImportError? python3 -m pip install -r requirements.txt
 
 no_slider = False
 try:
 	import RPi.GPIO as GPIO
-	import busio
-	import digitalio
 	import board
 	import adafruit_mcp3xxx.mcp3008 as MCP
 	from adafruit_mcp3xxx.analog_in import AnalogIn
