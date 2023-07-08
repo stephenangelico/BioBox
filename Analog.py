@@ -47,7 +47,7 @@ class Slider:
 			pot = self.chan0.value // 64
 			# how much has it changed since the last read?
 			pot_adjust = abs(pot - last_read)
-			if pot_adjust > TOLERANCE or next_goal is not None or goal is not None:
+			if pot_adjust > TOLERANCE or self.next_goal is not None or self.goal is not None:
 				pos = remap_range(pot)
 				# save the potentiometer reading for the next loop
 				last_read = pot
@@ -65,9 +65,6 @@ class Slider:
 		return pos
 
 	async def read_value(self):
-		global goal
-		global next_goal
-		global next_goal_time
 		Motor.sleep(False)
 		last_speed = None
 		last_dir = None
@@ -75,30 +72,30 @@ class Slider:
 		#safety = collections.deque([0] * 2, 5)
 		try:
 			async for pos in read_position():
-				if next_goal is not None:
-					if time.monotonic() > next_goal_time:
-						print("Accepting goal:", next_goal)
-						goal = next_goal
-						next_goal = None
-						next_goal_time = time.monotonic() + 0.15
+				if self.next_goal is not None:
+					if time.monotonic() > self.next_goal_time:
+						print("Accepting goal:", self.next_goal)
+						self.goal = self.next_goal
+						self.next_goal = None
+						self.next_goal_time = time.monotonic() + 0.15
 					# Else wait until the next iteration, eventually it will be.
-				if goal is not None:
+				if self.goal is not None:
 					braked = False
 					#safety.append(pos)
-					if goal < 0:
-						goal = 0
+					if self.goal < 0:
+						self.goal = 0
 						print("Goal set to 0")
-					if goal > 1023:
-						goal = 1023
+					if self.goal > 1023:
+						self.goal = 1023
 						print("Goal set to 1023")
-					if goal > pos:
+					if self.goal > pos:
 						dir = Motor.forward
-					elif goal < pos:
+					elif self.goal < pos:
 						dir = Motor.backward
 					else:
 						dir = Motor.stop # If exactly equal, we don't need to move, but in case we *ever* get NaN, don't do weird stuff.
 						# Not strictly necessary becuase distance is checked below but good for logic.
-					dist = abs(pos - goal)
+					dist = abs(pos - self.goal)
 					if dist >= 256:
 						speed = 100
 					elif dist >= 16:
@@ -111,7 +108,7 @@ class Slider:
 						speed = 0
 						dir = Motor.stop
 						# TODO: only unset goal if we're stable here - set a flag for next iteration to check or clear if we've overshot.
-						goal = None
+						self.goal = None
 						goal_completed = time.monotonic()
 						#safety.append(-1)
 					#if max(safety) - min(safety) < 1: # Guard against getting stuck
@@ -119,9 +116,9 @@ class Slider:
 					#	braked = True # Use in print call below like `braked * "Brakes engaged"`
 					#	speed = 0
 					#	dir = Motor.brake
-					#	goal = None
+					#	self.goal = None
 					#	goal_completed = time.monotonic()
-					print(goal, pos, dist, speed, dir.__name__)
+					print(self.goal, pos, dist, speed, dir.__name__)
 					if speed != last_speed:
 						Motor.speed(speed)
 						last_speed = speed
@@ -129,10 +126,10 @@ class Slider:
 						dir()
 						last_dir = dir
 				else:
-					if not next_goal and time.monotonic() > goal_completed + 0.15:
+					if not self.next_goal and time.monotonic() > goal_completed + 0.15:
 						yield(pos)
 		finally:
-			goal = None
+			self.goal = None
 			Motor.sleep(True)
 
 
