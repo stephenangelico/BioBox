@@ -38,6 +38,7 @@ class Slider:
 			Motor.init()
 
 	async def read_position(self):
+		# TODO: Should this be behind `if not no_slider`?
 		last_read = 0	# this keeps track of the last potentiometer value
 		while True:
 			await asyncio.sleep(0.015625)
@@ -65,6 +66,8 @@ class Slider:
 		return pos
 
 	async def read_value(self):
+		# TODO: This may need to respond to no_slider, which if true,
+		# will yield - only once - either the last value or 0.
 		Motor.sleep(False)
 		last_speed = None
 		last_dir = None
