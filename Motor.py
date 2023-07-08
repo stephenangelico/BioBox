@@ -9,14 +9,15 @@ PIN_STBY = 23
 PIN_PWM = 17
 FREQ = 50
 
-GPIO.setmode(GPIO.BCM)
-GPIO.setwarnings(False)
-GPIO.setup(PIN_A, GPIO.OUT)
-GPIO.setup(PIN_B, GPIO.OUT)
-GPIO.setup(PIN_STBY, GPIO.OUT)
-GPIO.setup(PIN_PWM, GPIO.OUT)
-pwm = GPIO.PWM(PIN_PWM, FREQ)
-pwm.start(0)
+def init():
+	GPIO.setmode(GPIO.BCM)
+	GPIO.setwarnings(False)
+	GPIO.setup(PIN_A, GPIO.OUT)
+	GPIO.setup(PIN_B, GPIO.OUT)
+	GPIO.setup(PIN_STBY, GPIO.OUT)
+	GPIO.setup(PIN_PWM, GPIO.OUT)
+	pwm = GPIO.PWM(PIN_PWM, FREQ)
+	pwm.start(0)
 
 def standby(state):
 	# "Standby" means turning off the motor. The controller requires the

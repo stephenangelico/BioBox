@@ -35,6 +35,7 @@ class Slider:
 			self.chan0 = AnalogIn(mcp, MCP.P0)
 			print('Raw ADC Value: ', self.chan0.value)
 			print('ADC Voltage: ' + str(self.chan0.voltage) + 'V')
+			Motor.init()
 
 	async def read_position(self):
 		last_read = 0	# this keeps track of the last potentiometer value
