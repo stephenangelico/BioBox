@@ -117,6 +117,7 @@ class Channel(Gtk.Frame):
 	step = 0.01
 	max = 150
 	min = 0
+	hidden = False
 	channel_types = []
 
 	def __init_subclass__(cls, **kwargs):
@@ -159,7 +160,7 @@ class Channel(Gtk.Frame):
 		self.connect("event", self.click_anywhere)
 		# Add self to group
 		self.group.pack_start(self, True, True, 0)
-		self.group.show_all()
+		if not self.hidden: self.group.show_all()
 
 	def focus_delay(self, widget, direction):
 		GLib.idle_add(self.focus_select, widget)
