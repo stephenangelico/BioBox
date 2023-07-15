@@ -17,11 +17,29 @@ except (ImportError, NotImplementedError, RuntimeError):
 
 TOLERANCE = 1
 
-class Slider:
+class DummySlider:
 	def __init__(self):
 		self.goal = None
 		self.next_goal = None
 		self.next_goal_time = time.monotonic() + 0.5 # TODO: Experiment with startup delay
+
+	def remap_range(self, raw):
+		# Bound and invert values from ADC
+		if raw >= 1023: # Check if at extremities
+			raw = 1023
+		elif raw <= 0:
+			raw = 0
+		# Invert value - by default on this potentiometer, 0 is top. May change
+		# if wires are other way round on 1'/2'/3' or by using 1/2/3.
+		pos = 1023 - raw
+		return pos
+
+	async def read_value(self):
+		if 0: yield 0 # Don't actually yield, becuase if this did yield 0,
+		# disabling the slider would cause the current channel will snap to 0.
+
+class Slider(DummySlider):
+	def __init__(self):
 		if not no_slider:
 			# Set pin numbering mode
 			GPIO.setmode(GPIO.BCM)
@@ -37,7 +55,7 @@ class Slider:
 			print('ADC Voltage: ' + str(self.chan0.voltage) + 'V')
 			Motor.init()
 
-	async def read_position(self):
+	async def _read_position(self):
 		# TODO: Should this be behind `if not no_slider`?
 		last_read = 0	# this keeps track of the last potentiometer value
 		while True:
@@ -54,17 +72,6 @@ class Slider:
 				last_read = pot
 				yield(pos)
 
-	def remap_range(self, raw):
-		# Bound and invert values from ADC
-		if raw >= 1023: # Check if at extremities
-			raw = 1023
-		elif raw <= 0:
-			raw = 0
-		# Invert value - by default on this potentiometer, 0 is top. May change
-		# if wires are other way round on 1'/2'/3' or by using 1/2/3.
-		pos = 1023 - raw
-		return pos
-
 	async def read_value(self):
 		# TODO: This may need to respond to no_slider, which if true,
 		# will yield - only once - either the last value or 0.
@@ -74,7 +81,7 @@ class Slider:
 		goal_completed = 0
 		#safety = collections.deque([0] * 2, 5)
 		try:
-			async for pos in read_position():
+			async for pos in _read_position():
 				if self.next_goal is not None:
 					if time.monotonic() > self.next_goal_time:
 						print("Accepting goal:", self.next_goal)
@@ -134,6 +141,16 @@ class Slider:
 		finally:
 			self.goal = None
 			Motor.sleep(True)
+
+async def start_slider():
+	global slider
+	slider = None
+	if not no_slider:
+		try:
+			slider = Slider()
+			
+		finally:
+			slider = DummySlider()
 
 
 def test_slider():
