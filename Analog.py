@@ -112,7 +112,7 @@ async def start_slider():
 			print('ADC Voltage: ' + str(chan0.voltage) + 'V')
 			Motor.init()
 			slider = Slider()
-			await read_value()
+			spawn(read_value())
 		finally:
 			if slider:
 				slider.remove()
@@ -186,7 +186,7 @@ async def read_value():
 					last_dir = dir
 			else:
 				if not next_goal and time.monotonic() > goal_completed + 0.15:
-					yield(pos)
+					slider.refract_value(pos, "backend")
 	finally:
 		goal = None
 		Motor.sleep(True)
