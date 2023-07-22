@@ -21,8 +21,38 @@ goal = None
 next_goal = None
 next_goal_time = time.monotonic() + 0.5 # TODO: Experiment with startup delay
 
-def remap_range(self, raw):
-	# Bound and invert values from ADC
+class Slider(Channel):
+	group_name = "Slider"
+	step = 1.0
+	min = 0
+	max = 1023
+	#hidden = True
+
+	def __init__(self):
+		super().__init__(name="Slider")
+
+	def write_external(self, value):
+		global next_goal
+		next_goal = value
+
+	def refract_value(self, value, source):
+		# Send value to multiple places, keeping track of sent value to
+		# avoid bounce or slider fighting.
+		if abs(value - self.oldvalue) >= 1: # Prevent feedback loop when moving slider
+			#print(self.channel_name, source, value)
+			if source != "gtk":
+				self.update_position(value)
+			if source != "channel":
+				if selected_channel:
+					if selected_channel is not self:
+						selected_channel.refract_value(value, "analog")
+			if source != "backend":
+				self.write_external(value)
+			self.oldvalue = value
+
+
+def remap_range(raw):
+	"""Bound and invert values from ADC"""
 	if raw >= 1023: # Check if at extremities
 		raw = 1023
 	elif raw <= 0:
@@ -36,123 +66,130 @@ def remap_range(self, raw):
 	#	if 0: yield 0 # Don't actually yield, becuase if this did yield 0,
 	#	# disabling the slider would cause the current channel will snap to 0.
 
-class Slider(Channel):
-	group_name = "Slider"
-	step = 1.0
-	
-	# TODO: align methods to the names and models that the other modules use
-	
-	def __init__(self):
-		super().__init__(name="Slider")
-		# TODO: add trigger for read_value?
+async def read_position():
+	"""Read the raw value from the ADC"""
+	last_read = 0	# this keeps track of the last potentiometer value
+	while True:
+		await asyncio.sleep(0.015625)
+		# read the analog pin
+		# ADC provides a 16-bit value, but the low 5 bits are always floored,
+		# so divide by 64 to get more usable numbers without losing precision.
+		pot = chan0.value // 64
+		# how much has it changed since the last read?
+		pot_adjust = abs(pot - last_read)
+		if pot_adjust > TOLERANCE or next_goal is not None or goal is not None:
+			pos = remap_range(pot)
+			# save the potentiometer reading for the next loop
+			last_read = pot
+			yield(pos)
 
-	async def _read_position(self):
-		# TODO: Should this be behind `if not no_slider`?
-		last_read = 0	# this keeps track of the last potentiometer value
-		while True:
-			await asyncio.sleep(0.015625)
-			# read the analog pin
-			# ADC provides a 16-bit value, but the low 5 bits are always floored,
-			# so divide by 64 to get more usable numbers without losing precision.
-			pot = self.chan0.value // 64
-			# how much has it changed since the last read?
-			pot_adjust = abs(pot - last_read)
-			if pot_adjust > TOLERANCE or self.next_goal is not None or self.goal is not None:
-				pos = remap_range(pot)
-				# save the potentiometer reading for the next loop
-				last_read = pot
-				yield(pos)
-
-	async def read_value(self):
-		# TODO: This may need to respond to no_slider, which if true,
-		# will yield - only once - either the last value or 0.
-		Motor.sleep(False)
-		last_speed = None
-		last_dir = None
-		goal_completed = 0
-		#safety = collections.deque([0] * 2, 5)
-		try:
-			async for pos in _read_position():
-				if self.next_goal is not None:
-					if time.monotonic() > self.next_goal_time:
-						print("Accepting goal:", self.next_goal)
-						self.goal = self.next_goal
-						self.next_goal = None
-						self.next_goal_time = time.monotonic() + 0.15
-					# Else wait until the next iteration, eventually it will be.
-				if self.goal is not None:
-					braked = False
-					#safety.append(pos)
-					if self.goal < 0:
-						self.goal = 0
-						print("Goal set to 0")
-					if self.goal > 1023:
-						self.goal = 1023
-						print("Goal set to 1023")
-					if self.goal > pos:
-						dir = Motor.forward
-					elif self.goal < pos:
-						dir = Motor.backward
-					else:
-						dir = Motor.stop # If exactly equal, we don't need to move, but in case we *ever* get NaN, don't do weird stuff.
-						# Not strictly necessary becuase distance is checked below but good for logic.
-					dist = abs(pos - self.goal)
-					if dist >= 256:
-						speed = 100
-					elif dist >= 16:
-						speed = 80
-					elif dist >= 1:
-						speed = 20
-						# TODO: Prevent changing speed by more that ±20% per tick
-					else:
-						# If dist is NaN for any reason, all above statements will be False and the motor will stop.
-						speed = 0
-						dir = Motor.stop
-						# TODO: only unset goal if we're stable here - set a flag for next iteration to check or clear if we've overshot.
-						self.goal = None
-						goal_completed = time.monotonic()
-						#safety.append(-1)
-					#if max(safety) - min(safety) < 1: # Guard against getting stuck
-					#	# This does not solve slider fighting, but it should stop the motor wearing out as fast
-					#	braked = True # Use in print call below like `braked * "Brakes engaged"`
-					#	speed = 0
-					#	dir = Motor.brake
-					#	self.goal = None
-					#	goal_completed = time.monotonic()
-					print(self.goal, pos, dist, speed, dir.__name__)
-					if speed != last_speed:
-						Motor.speed(speed)
-						last_speed = speed
-					if dir is not last_dir:
-						dir()
-						last_dir = dir
-				else:
-					if not self.next_goal and time.monotonic() > goal_completed + 0.15:
-						yield(pos)
-		finally:
-			self.goal = None
-			Motor.sleep(True)
 
 async def start_slider():
+	"""Initialize MCP object and start the hidden channel"""
+	# Reset goal attributes in case of slider restart
+	global goal
+	global next_goal
+	global next_goal_time
+	goal = None
+	next_goal = None
+	next_goal_time = time.monotonic() + 0.5 # TODO: Experiment with startup delay
 	global slider
 	slider = None
 	if not no_slider:
-		# Set pin numbering mode
-		GPIO.setmode(GPIO.BCM)
-		# create the spi bus
-		spi = busio.SPI(clock=board.SCK, MISO=board.MISO, MOSI=board.MOSI)
-		# create the cs (chip select)
-		cs = digitalio.DigitalInOut(board.D22)
-		# create the mcp object
-		mcp = MCP.MCP3008(spi, cs)
-		# create an analog input channel on pin 0
-		self.chan0 = AnalogIn(mcp, MCP.P0)
-		print('Raw ADC Value: ', self.chan0.value)
-		print('ADC Voltage: ' + str(self.chan0.voltage) + 'V')
-		Motor.init()
-		slider = Slider()
-			
+		try:
+			# Set pin numbering mode
+			GPIO.setmode(GPIO.BCM)
+			# create the spi bus
+			spi = busio.SPI(clock=board.SCK, MISO=board.MISO, MOSI=board.MOSI)
+			# create the cs (chip select)
+			cs = digitalio.DigitalInOut(board.D22)
+			# create the mcp object
+			mcp = MCP.MCP3008(spi, cs)
+			# create an analog input channel on pin 0
+			global chan0
+			chan0 = AnalogIn(mcp, MCP.P0)
+			print('Raw ADC Value: ', chan0.value)
+			print('ADC Voltage: ' + str(chan0.voltage) + 'V')
+			Motor.init()
+			slider = Slider()
+			await read_value()
+		finally:
+			if slider:
+				slider.remove()
+			Motor.cleanup()
+			slider = None
 
+async def read_value():
+	""""Move the slider if it has somewhere to go, otherwise send values to BioBox"""
+	global goal
+	global next_goal
+	global next_goal_time
+	Motor.sleep(False)
+	last_speed = None
+	last_dir = None
+	goal_completed = 0
+	#safety = collections.deque([0] * 2, 5)
+	try:
+		async for pos in read_position():
+			if next_goal is not None:
+				if time.monotonic() > next_goal_time:
+					print("Accepting goal:", next_goal)
+					goal = next_goal
+					next_goal = None
+					next_goal_time = time.monotonic() + 0.15
+				# Else wait until the next iteration, eventually it will be.
+			if goal is not None:
+				braked = False
+				#safety.append(pos)
+				if goal < 0:
+					goal = 0
+					print("Goal set to 0")
+				if goal > 1023:
+					goal = 1023
+					print("Goal set to 1023")
+				if goal > pos:
+					dir = Motor.forward
+				elif goal < pos:
+					dir = Motor.backward
+				else:
+					dir = Motor.stop # If exactly equal, we don't need to move, but in case we *ever* get NaN, don't do weird stuff.
+					# Not strictly necessary becuase distance is checked below but good for logic.
+				dist = abs(pos - goal)
+				if dist >= 256:
+					speed = 100
+				elif dist >= 16:
+					speed = 80
+				elif dist >= 1:
+					speed = 20
+					# TODO: Prevent changing speed by more that ±20% per tick
+				else:
+					# If dist is NaN for any reason, all above statements will be False and the motor will stop.
+					speed = 0
+					dir = Motor.stop
+					# TODO: only unset goal if we're stable here - set a flag for next iteration to check or clear if we've overshot.
+					goal = None
+					goal_completed = time.monotonic()
+					#safety.append(-1)
+				#if max(safety) - min(safety) < 1: # Guard against getting stuck
+				#	# This does not solve slider fighting, but it should stop the motor wearing out as fast
+				#	braked = True # Use in print call below like `braked * "Brakes engaged"`
+				#	speed = 0
+				#	dir = Motor.brake
+				#	goal = None
+				#	goal_completed = time.monotonic()
+				print(goal, pos, dist, speed, dir.__name__)
+				if speed != last_speed:
+					Motor.speed(speed)
+					last_speed = speed
+				if dir is not last_dir:
+					dir()
+					last_dir = dir
+			else:
+				if not next_goal and time.monotonic() > goal_completed + 0.15:
+					yield(pos)
+	finally:
+		goal = None
+		Motor.sleep(True)
 
 def test_slider():
 	# Test progression of slider with slow movement to tell the difference
@@ -170,6 +207,7 @@ def test_slider():
 	Motor.sleep(True)
 
 def print_value():
+	# TODO: fix now that initialization is in start_slider()
 	last = None
 	while True:
 		value = 1023 - chan0.value // 64

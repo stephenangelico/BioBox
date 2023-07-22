@@ -11,6 +11,7 @@ from gi.repository import Gtk, Gdk, GLib
 import gbulb
 gbulb.install(gtk=True)
 
+"""
 try:
 	import Analog
 	from Motor import cleanup as motor_cleanup
@@ -25,6 +26,7 @@ except (ImportError, NotImplementedError, RuntimeError): # Provide a dummy for t
 			yield 0 # Yield once and then stop
 			# Just as a function is destined to yield once, and then face termination...
 			# TODO: instead of creating dummy function, disable slider task on startup
+"""
 
 import config # ImportError? See config_example.py
 
@@ -113,6 +115,7 @@ def init_motor_pos():
 
 @export
 class Channel(Gtk.Frame):
+	group_name = "Channel"
 	mute_labels = ("Mute", "Muted")
 	step = 0.01
 	max = 150
@@ -205,13 +208,17 @@ class Channel(Gtk.Frame):
 				self.update_position(value)
 			if source != "analog":
 				if selected_channel is self:
-					self.write_analog(value)
+					if self.group_name != "Slider":
+						self.write_analog(value)
 			if source != "backend":
 				self.write_external(value)
 			self.oldvalue = value
 
 	def write_analog(self, value):
-		Analog.next_goal = value / self.max * 1023
+		normalized_value = value / self.max * 1023 # Scale to the slider's range
+		if Analog.slider:
+			Analog.slider.refract_value(normalized_value, "channel") # Special source only used by slider channel
+		#Analog.next_goal = value / self.max * 1023
 		print("Slider goal: %s" % Analog.next_goal)
 
 	# Fallback function if subclasses don't provide write_external()
@@ -220,7 +227,7 @@ class Channel(Gtk.Frame):
 
 	# Fallback/superclass functions
 	def muted(self, widget):
-		mute_state = widget.get_active()
+		mute_state = widget.get_active() # TODO: Why do all subclasses use super().muted?
 		self.mute.set_label(self.mute_labels[mute_state])
 		print(self.channel_name, "un" * (not mute_state) + "muted")
 		return mute_state
@@ -240,6 +247,7 @@ import vlc
 import webcam
 import obs
 import browser
+import Analog
 
 async def main():
 	stop = asyncio.Event() # Hold open until destroy signal triggers this event
@@ -273,7 +281,7 @@ async def main():
 		def Browser():
 			return browser.listen()
 		def Slider():
-			return read_analog()
+			return Analog.start_slider()
 	def toggle_menu_item(widget):
 		toggle_group = widget.get_name()
 		if widget.get_active():
@@ -363,7 +371,6 @@ async def main():
 	start_task("Webcam")
 	start_task("Slider")
 	await stop.wait()
-	motor_cleanup()
 	
 if __name__ == "__main__":
 	css = b"""
