@@ -16,6 +16,7 @@ def init():
 	GPIO.setup(PIN_B, GPIO.OUT)
 	GPIO.setup(PIN_STBY, GPIO.OUT)
 	GPIO.setup(PIN_PWM, GPIO.OUT)
+	global pwm
 	pwm = GPIO.PWM(PIN_PWM, FREQ)
 	pwm.start(0)
 
