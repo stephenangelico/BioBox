@@ -112,7 +112,7 @@ async def start_slider():
 			print('ADC Voltage: ' + str(chan0.voltage) + 'V')
 			Motor.init()
 			slider = Slider()
-			spawn(read_value())
+			await read_value()
 		finally:
 			if slider:
 				slider.remove()
