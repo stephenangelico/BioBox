@@ -46,6 +46,7 @@ class Slider(Channel):
 				if selected_channel:
 					if selected_channel is not self:
 						selected_channel.refract_value(value, "analog")
+				# TODO: Get selected_channel somehow
 			if source != "backend":
 				self.write_external(value)
 			self.oldvalue = value
