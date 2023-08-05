@@ -21,7 +21,7 @@ selected_channel = None
 
 goal = None
 next_goal = None
-next_goal_time = time.monotonic() + 0.5 # TODO: Experiment with startup delay
+next_goal_time = time.monotonic()
 
 class Slider(Channel):
 	group_name = "Slider"
@@ -67,10 +67,6 @@ def remap_range(raw):
 	pos = 1023 - raw
 	return pos
 
-	#async def read_value(self):
-	#	if 0: yield 0 # Don't actually yield, becuase if this did yield 0,
-	#	# disabling the slider would cause the current channel will snap to 0.
-
 async def read_position():
 	"""Read the raw value from the ADC"""
 	last_read = 0	# this keeps track of the last potentiometer value
@@ -97,7 +93,7 @@ async def start_slider():
 	global next_goal_time
 	goal = None
 	next_goal = None
-	next_goal_time = time.monotonic() + 0.5 # TODO: Experiment with startup delay
+	next_goal_time = time.monotonic()
 	global slider
 	slider = None
 	if not no_slider:
@@ -115,8 +111,18 @@ async def start_slider():
 			chan0 = AnalogIn(mcp, MCP.P0)
 			print('Raw ADC Value: ', chan0.value)
 			print('ADC Voltage: ' + str(chan0.voltage) + 'V')
+			# Let's get this motor on the MOVE!
 			Motor.init()
+			# Spawn the channel
 			slider = Slider()
+			# Initialize slider position after giving other channels a chance to initialize themselves
+			await asyncio.sleep(0.5)
+			if selected_channel:
+				normalized_value = selected_channel.slider.get_value() / selected_channel.max * 1023 # Scale to the slider's range
+				slider.refract_value(normalized_value, "channel")
+			else:
+				slider.refract_value(1023, "channel")
+			# Start reading - await so it holds here until interrupted
 			await read_value()
 		finally:
 			if slider:

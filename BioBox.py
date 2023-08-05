@@ -79,7 +79,7 @@ def spawn(awaitable):
 	task.add_done_callback(task_done)
 	return task
 
-def init_motor_pos():
+def init_select_channel():
 	# TODO: Why does this sometimes not select anything?
 	# Selecting a channel, in normal state, already sets position to its
 	# value. Do we need to set it again?
@@ -90,11 +90,6 @@ def init_motor_pos():
 			break
 		if Analog.selected_channel:
 			break
-	if Analog.selected_channel:
-		scale_max = Analog.selected_channel.max
-		Analog.selected_channel.write_analog(Analog.selected_channel.slider.get_value())
-	else:
-		Analog.slider.refract_value(1023, channel)
 
 @export
 class Channel(Gtk.Frame):
@@ -321,7 +316,6 @@ async def main():
 	menubox.add(scrollbar)
 	scrollbar.add(modules)
 
-	GLib.timeout_add(1000, init_motor_pos)
 	# Show window
 	def save_win_pos(*a):
 		global winconfig
@@ -350,6 +344,7 @@ async def main():
 	start_task("Browser")
 	start_task("Webcam")
 	start_task("Slider")
+	GLib.timeout_add(500, init_select_channel)
 	await stop.wait()
 	
 if __name__ == "__main__":
