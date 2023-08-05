@@ -17,6 +17,8 @@ except (ImportError, NotImplementedError, RuntimeError):
 
 TOLERANCE = 1
 
+selected_channel = None
+
 goal = None
 next_goal = None
 next_goal_time = time.monotonic() + 0.5 # TODO: Experiment with startup delay
@@ -26,7 +28,7 @@ class Slider(Channel):
 	step = 1.0
 	min = 0
 	max = 1023
-	#hidden = True
+	hidden = True
 
 	def __init__(self):
 		super().__init__(name="Slider")
@@ -36,8 +38,7 @@ class Slider(Channel):
 		next_goal = value
 
 	def refract_value(self, value, source):
-		# Send value to multiple places, keeping track of sent value to
-		# avoid bounce or slider fighting.
+		"""Send value to multiple places, keeping track of sent value to avoid bounce or slider fighting."""
 		if abs(value - self.oldvalue) >= 1: # Prevent feedback loop when moving slider
 			#print(self.channel_name, source, value)
 			if source != "gtk":
@@ -45,8 +46,11 @@ class Slider(Channel):
 			if source != "channel":
 				if selected_channel:
 					if selected_channel is not self:
-						selected_channel.refract_value(value, "analog")
-				# TODO: Get selected_channel somehow
+						# Scale 0-1023 to scale_max
+						# So far I have no reason for a module with a non-zero minimum
+						# Webcam exposure can be 3-2048 but this can basically be ignored
+						level = value * selected_channel.max / 1023
+						selected_channel.refract_value(level, "analog")
 			if source != "backend":
 				self.write_external(value)
 			self.oldvalue = value

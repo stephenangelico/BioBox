@@ -37,8 +37,6 @@ try:
 except FileNotFoundError:
 	pass # Later references to winconfig should already handle no data
 
-selected_channel = None
-
 UI_HEADER = """
 <ui>
 	<menubar name='MenuBar'>
@@ -81,21 +79,6 @@ def spawn(awaitable):
 	task.add_done_callback(task_done)
 	return task
 
-# Slider
-async def read_analog():
-	# Get analog value from Analog.py and write to selected channel's slider
-	# TODO: Turn the above line and other similar comments into docstrings
-	async for pos in Analog.read_value():
-		if selected_channel:
-			print("From slider:", pos)
-			# So far I have no reason for a module with a non-zero minimum
-			# TODO: Yes I do now - Webcam exposure can be 3-2048
-			scale_max = selected_channel.max
-			# Scale 0-1023 to scale_max
-			value = pos * scale_max / 1023
-			selected_channel.refract_value(value, "analog")
-			Analog.next_goal_time = time.monotonic() + 0.15
-
 def init_motor_pos():
 	# TODO: Why does this sometimes not select anything?
 	# Selecting a channel, in normal state, already sets position to its
@@ -105,13 +88,13 @@ def init_motor_pos():
 			channel.selector.set_active(True)
 			channel.mute.grab_focus()
 			break
-		if selected_channel:
+		if Analog.selected_channel:
 			break
-	if selected_channel:
-		scale_max = selected_channel.max
-		Analog.next_goal = selected_channel.slider.get_value() / scale_max * 1023
+	if Analog.selected_channel:
+		scale_max = Analog.selected_channel.max
+		Analog.selected_channel.write_analog(Analog.selected_channel.slider.get_value())
 	else:
-		Analog.next_goal = 1023
+		Analog.slider.refract_value(1023, channel)
 
 @export
 class Channel(Gtk.Frame):
@@ -184,11 +167,10 @@ class Channel(Gtk.Frame):
 			print(event.get_event_type().value_name)
 
 	def check_selected(self, widget):
-		global selected_channel
 		if widget.get_active():
-			selected_channel = self
-			print(selected_channel.channel_name, "selected")
-			self.write_analog(selected_channel.slider.get_value())
+			Analog.selected_channel = self
+			print(Analog.selected_channel.channel_name, "selected")
+			self.write_analog(Analog.selected_channel.slider.get_value())
 
 	def adjustment_changed(self, widget):
 		value = widget.get_value()
@@ -200,14 +182,13 @@ class Channel(Gtk.Frame):
 		# to select the radio button.
 
 	def refract_value(self, value, source):
-		# Send value to multiple places, keeping track of sent value to
-		# avoid bounce or slider fighting.
+		"""Send value to multiple places, keeping track of sent value to avoid bounce or slider fighting."""
 		if abs(value - self.oldvalue) >= 1: # Prevent feedback loop when moving slider
 			#print(self.channel_name, source, value)
 			if source != "gtk":
 				self.update_position(value)
 			if source != "analog":
-				if selected_channel is self:
+				if Analog.selected_channel is self:
 					if self.group_name != "Slider":
 						self.write_analog(value)
 			if source != "backend":
@@ -219,7 +200,7 @@ class Channel(Gtk.Frame):
 		if Analog.slider:
 			Analog.slider.refract_value(normalized_value, "channel") # Special source only used by slider channel
 		#Analog.next_goal = value / self.max * 1023
-		print("Slider goal: %s" % Analog.next_goal)
+		print("Slider goal:", normalized_value)
 
 	# Fallback function if subclasses don't provide write_external()
 	def write_external(self, value):
@@ -237,9 +218,8 @@ class Channel(Gtk.Frame):
 			self.slider.set_value(value)
 
 	def remove(self):
-		global selected_channel
-		if selected_channel is self:
-			selected_channel = None # Because it doesn't make sense to select another module
+		if Analog.selected_channel is self:
+			Analog.selected_channel = None # Because it doesn't make sense to select another module
 		print("Removing:", self.channel_name)
 		self.group.remove(self)
 
