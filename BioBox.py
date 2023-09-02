@@ -102,11 +102,12 @@ class Channel(Gtk.Frame):
 	channel_types = []
 
 	def __init_subclass__(cls, **kwargs):
-		# This ensures that subclasses defined elsewhere are counted for menus
+		"""Ensure that subclasses defined elsewhere are counted for menus"""
 		cls.channel_types.append(cls)
 		super().__init_subclass__(**kwargs)
 
 	def __init__(self, name):
+		"""Build the channel's GTK elements"""
 		super().__init__(label=name, shadow_type=Gtk.ShadowType.ETCHED_IN)
 		super().set_label_align(0.5,0)
 		self.set_border_width(5)
@@ -144,17 +145,19 @@ class Channel(Gtk.Frame):
 		if not self.hidden: self.group.show_all()
 
 	def focus_delay(self, widget, direction):
+		"""Run focus_select asynchronously"""
 		GLib.idle_add(self.focus_select, widget)
 
 	def focus_select(self, widget):
-		# Select a module if it gains focus
-		# This will also select the first module on startup as its scale
-		# will be the first object and will be given focus initially.
+		"""Select a channel if it gains focus.
+		This will also select the first channel on startup as its scale
+		will be the first object and will be given focus initially."""
 		if widget.is_focus():
 			self.selector.set_active(True)
 			print(self.channel_name, "pulled focus")
 
 	def click_anywhere(self, widget, event):
+		"""Select a channel if it is clicked on or touched"""
 		if "BUTTON" in event.get_event_type().value_name:
 			self.selector.set_active(True)
 			return False
@@ -162,19 +165,21 @@ class Channel(Gtk.Frame):
 			print(event.get_event_type().value_name)
 
 	def check_selected(self, widget):
+		"""When a channel is selected, move the slider to its position"""
 		if widget.get_active():
 			Analog.selected_channel = self
 			print(Analog.selected_channel.channel_name, "selected")
 			self.write_analog(Analog.selected_channel.slider.get_value())
 
 	def adjustment_changed(self, widget):
+		"""React to an update from the scale or spinbutton.
+		Gtk.Adjustment::value-changed appears to only emit when the
+		value has been changed by user interaction, not when the slider
+		is moved or the backend emits a change. Thus, we can use this
+		to select the radio button."""
 		value = widget.get_value()
 		self.refract_value(value, "gtk")
 		self.selector.set_active(True)
-		# Gtk.Adjustment::value-changed appears to only emit when the
-		# value has been changed by user interaction, not when the slider
-		# is moved or the backend emits a change. Thus, we can use this
-		# to select the radio button.
 
 	def refract_value(self, value, source):
 		"""Send value to multiple places, keeping track of sent value to avoid bounce or slider fighting."""
@@ -191,6 +196,7 @@ class Channel(Gtk.Frame):
 			self.oldvalue = value
 
 	def write_analog(self, value):
+		"""Send a new goal to the special Analog channel if present"""
 		normalized_value = value / self.max * 1023 # Scale to the slider's range
 		if Analog.slider:
 			Analog.slider.refract_value(normalized_value, "channel") # Special source only used by slider channel
@@ -199,20 +205,24 @@ class Channel(Gtk.Frame):
 
 	# Fallback function if subclasses don't provide write_external()
 	def write_external(self, value):
+		"""Send the new value to channel backend"""
 		print(self.channel_name, value)
 
 	# Fallback/superclass functions
 	def muted(self, widget):
+		"""React to mute button being pressed"""
 		mute_state = widget.get_active() # TODO: Why do all subclasses use super().muted?
 		self.mute.set_label(self.mute_labels[mute_state])
 		print(self.channel_name, "un" * (not mute_state) + "muted")
 		return mute_state
 
 	def update_position(self, value):
-		with self.slider.handler_block(self.slider_signal):
+		"""Update GTK adjustment (ie scale and spinbutton)"""
+		with self.slider.handler_block(self.slider_signal): # Debounce
 			self.slider.set_value(value)
 
 	def remove(self):
+		"""Remove channel from group, destroying its displayed elements"""
 		if Analog.selected_channel is self:
 			Analog.selected_channel = None # Because it doesn't make sense to select another module
 		print("Removing:", self.channel_name)
