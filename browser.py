@@ -1,9 +1,6 @@
 # WebSocket server for potential integration with BioBox
 # Uses asyncio. If the rest of the project does too, create listen() as a task;
 # otherwise, spin off run() as a thread.
-# NOTE: As of 20210611, the current version of the websockets library (9.1) does
-# not support Python 3.10, and will fail with several errors relating to loop=
-# parameters. Downgrade to Python 3.9 until this is fixed.
 import asyncio # ImportError? Upgrade to Python 3.7+
 import json
 import ssl

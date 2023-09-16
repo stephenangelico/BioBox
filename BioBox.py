@@ -11,23 +11,6 @@ from gi.repository import Gtk, Gdk, GLib
 import gbulb
 gbulb.install(gtk=True)
 
-"""
-try:
-	import Analog
-	from Motor import cleanup as motor_cleanup
-except (ImportError, NotImplementedError, RuntimeError): # Provide a dummy for testing
-	def motor_cleanup():
-		pass
-	class Analog():
-		goal = None
-		next_goal = None
-		next_goal_time = 0
-		async def read_value():
-			yield 0 # Yield once and then stop
-			# Just as a function is destined to yield once, and then face termination...
-			# TODO: instead of creating dummy function, disable slider task on startup
-"""
-
 import config # ImportError? See config_example.py
 
 winconfig = {}

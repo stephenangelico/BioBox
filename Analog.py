@@ -132,7 +132,7 @@ async def start_slider():
 			slider = None
 
 async def read_value():
-	""""Move the slider if it has somewhere to go, otherwise send values to BioBox"""
+	"""Move the slider if it has somewhere to go, otherwise send values to BioBox"""
 	global goal
 	global next_goal
 	global next_goal_time
