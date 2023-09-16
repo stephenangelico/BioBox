@@ -54,6 +54,8 @@ def speed(duty_cycle):
 	pwm.ChangeDutyCycle(duty_cycle)
 
 def cleanup():
+	global pwm
 	sleep(True)
 	pwm.stop()
 	GPIO.cleanup()
+	pwm = None

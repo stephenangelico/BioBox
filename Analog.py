@@ -128,6 +128,7 @@ async def start_slider():
 			if slider:
 				slider.remove()
 			Motor.cleanup()
+			GPIO.cleanup()
 			slider = None
 
 async def read_value():
@@ -232,3 +233,4 @@ if __name__ == "__main__":
 		print_value()
 	finally:
 		Motor.cleanup()
+		GPIO.cleanup()
