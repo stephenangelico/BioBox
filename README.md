@@ -72,7 +72,20 @@ Webcam control setup:
    - `webcam_control_path` with the path to `camera.py`
    - `webcams` with the names and device paths of your webcams in `config.py`
 
-TODO: Add browser extension setup (pending rewrite of browser module)
+Browser extension setup:
+
+Chrome:
+1. Modify `VolumeSocket/volsock.js` (line 11) as necessary for the machine running BioBox
+2. Open ⠇ -> Extensions -> Manage extensions or go to [chrome://extensions/](chrome://extensions/)
+3. Enable Developer mode in the top right
+4. Click Load unpacked in the top left
+5. Navigate to the BioBox folder and select the VolumeSocket folder
+
+TODO: Support other browsers eg. Firefox, Brave, Opera GX
+
+If BioBox is running on a different machine to the browser, a TLS certificate is required.
+TODO: Document TLS setup in detail - perhaps first consider un-hardcoding `volsock.js`
+Current setup has `fullchain.pem` and `privkey.pem` symlinked from cert directory
 
 Wiring:
 =======
