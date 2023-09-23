@@ -23,8 +23,11 @@ sites = {
 # the page. With no way to get the raw volume or the max normalised volume, it
 # is impossible to rescale the value to match a 0-100 scale, so the best we can
 # do is to use what we have as is.
-# TODO: Explore interactively setting YouTube tab to "100%" and scaling normalised
-# to 100%
+# YouTube has an API for integrating with an embedded video:
+# https://developers.google.com/youtube/iframe_api_reference#changing-the-player-volume
+# TODO: Can this be used by volsock.js on a normal youtube.com page? Otherwise,
+# explore interactively setting YouTube tab to "100%" and scaling normalised
+# to 100%.
 
 class Browser(Channel):
 	group_name = "Browser"
