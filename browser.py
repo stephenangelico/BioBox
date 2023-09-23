@@ -1,7 +1,7 @@
 # WebSocket server for potential integration with BioBox
 # Uses asyncio. If the rest of the project does too, create listen() as a task;
 # otherwise, spin off run() as a thread.
-import asyncio # ImportError? Upgrade to Python 3.7+
+import asyncio
 import json
 import ssl
 from pprint import pprint

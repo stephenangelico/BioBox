@@ -183,7 +183,6 @@ class Channel(Gtk.Frame):
 		normalized_value = value / self.max * 1023 # Scale to the slider's range
 		if Analog.slider:
 			Analog.slider.refract_value(normalized_value, "channel") # Special source only used by slider channel
-		#Analog.next_goal = value / self.max * 1023
 		print("Slider goal:", normalized_value)
 
 	# Fallback function if subclasses don't provide write_external()
