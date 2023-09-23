@@ -45,7 +45,7 @@ Software:
   - `adafruit-blinka` and `adafruit-circuitpython-mcp3xxx` - for interfacing with slider
   - `RPi.GPIO` - for motor driver in Motor.py
   - `websockets` - for connecting to OBS and browser extension
-  - `v4l2py` - for interfacing with webcams
+  - `v4l2py` - for interfacing with webcams - TODO - check version not affected by [https://github.com/tiagocoutinho/v4l2py/pull/47](https://github.com/tiagocoutinho/v4l2py/pull/47)
 - [TellMeVLC](https://github.com/Rosuav/TellMeVLC) for VLC integration
 - OBS 28+ for OBS integration
 
