@@ -141,11 +141,21 @@ class Channel(Gtk.Frame):
 
 	def click_anywhere(self, widget, event):
 		"""Select a channel if it is clicked on or touched"""
-		if "BUTTON" in event.get_event_type().value_name:
+		# TODO: This currently does not work when touching elements
+		# (works fine touching blank space). From the print at the end,
+		# there are two events from touching the blank space in a channel -
+		# GDK_TOUCH_BEGIN and GDK_TOUCH_END. However, when scrolling or
+		# interacting with an element in a channel, only GDK_TOUCH_END is
+		# emitted. (Swiping vertically also emits GDK_TOUCH_UPDATE but this
+		# is of no use or consequence currently.) Consider connecting to event
+		# signal on all elements - preliminary testing suggests individual
+		# elements get a GDK_ENTER_NOTIFY event which we may be able to use.
+		ev = event.get_event_type().value_name
+		if "BUTTON" in ev or "TOUCH_BEGIN" in ev:
 			self.selector.set_active(True)
 			return False
-		elif event.get_event_type().value_name != "GDK_MOTION_NOTIFY":
-			print(event.get_event_type().value_name)
+		elif ev != "GDK_MOTION_NOTIFY":
+			print(ev)
 
 	def check_selected(self, widget):
 		"""When a channel is selected, move the slider to its position"""
