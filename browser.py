@@ -37,11 +37,11 @@ class Browser(Channel):
 		self.tabid = tabid
 
 	def write_external(self, value):
-		spawn(WebSocket.set_volume(self.tabid, (value / 100)))
+		spawn(set_volume(self.tabid, (value / 100)))
 	
 	def muted(self, widget):
 		mute_state = super().muted(widget)
-		spawn(WebSocket.set_muted(self.tabid, mute_state))
+		spawn(set_muted(self.tabid, mute_state))
 
 async def volume(sock, path):
 	if path != "/ws": return # Can we send back a 404 or something?
