@@ -78,6 +78,7 @@ def init_select_channel():
 class Channel(Gtk.Frame):
 	group_name = "Channel"
 	mute_labels = ("Mute", "Muted")
+	mute_names = ("unmuted", "muted")
 	step = 0.01
 	max = 150
 	min = 0
@@ -202,10 +203,10 @@ class Channel(Gtk.Frame):
 
 	# Fallback/superclass functions
 	def muted(self, widget):
-		"""React to mute button being pressed"""
-		mute_state = widget.get_active() # TODO: Why do all subclasses use super().muted?
+		"""React to mute button being pressed - changes label and emits debug print call"""
+		mute_state = widget.get_active()
 		self.mute.set_label(self.mute_labels[mute_state])
-		print(self.channel_name, "un" * (not mute_state) + "muted")
+		print(self.channel_name, self.mute_names[mute_state])
 		return mute_state
 
 	def update_position(self, value):

@@ -28,7 +28,7 @@ class OBSModule(Channel):
 		asyncio.create_task(send_request("SetInputVolume", {"inputName": self.name, "inputVolumeMul": ((value / 100) ** 2)}))
 
 	def muted(self, widget):
-		mute_state = super().muted(widget)
+		mute_state = super().muted(widget) # Handles label change and IIDPIO
 		asyncio.create_task(send_request("SetInputMute", {"inputName": self.name, "inputMuted": mute_state}))
 
 class OBSError(Exception):

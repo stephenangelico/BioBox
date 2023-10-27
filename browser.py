@@ -40,7 +40,7 @@ class Browser(Channel):
 		spawn(set_volume(self.tabid, (value / 100)))
 	
 	def muted(self, widget):
-		mute_state = super().muted(widget)
+		mute_state = super().muted(widget) # Handles label change and IIDPIO
 		spawn(set_muted(self.tabid, mute_state))
 
 async def volume(sock, path):

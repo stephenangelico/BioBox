@@ -7,6 +7,7 @@ webcams = {}
 class Webcam(Channel):
 	group_name = "Webcams"
 	mute_labels = ("Manual", "Auto")
+	mute_names = ("Manual", "Auto")
 	step = 1.0 # Cameras have different steps but v4l2 will round any value to the step for the camera in question
 
 	def __init__(self, cam_name, cam_path, mode, ssh):
@@ -39,10 +40,9 @@ class Webcam(Channel):
 			print("SSH connection lost")
 
 	def muted(self, widget):
-		mute_state = super().muted(widget)
+		mute_state = super().muted(widget) # Handles label change and IIDPIO
 		self.ssh.stdin.write(("%s %d %s\n" % (self.mute_cmd, self.mute_states[mute_state], self.device)).encode("utf-8"))
 		spawn(self.ssh.stdin.drain())
-		print(self.name, self.mute_labels[mute_state])
 
 async def webcam():
 	ssh = None

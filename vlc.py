@@ -16,10 +16,9 @@ class VLC(Channel):
 		print("To VLC: ", value)
 
 	def muted(self, widget):
-		mute_state = super().muted(widget)
+		mute_state = super().muted(widget) # Handles label change and IIDPIO
 		self.writer.write(b"muted %d \r\n" %mute_state)
 		spawn(self.writer.drain())
-		print("VLC Mute status:", mute_state)
 
 async def vlc():
 	vlc_module = None
