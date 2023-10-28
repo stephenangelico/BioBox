@@ -148,14 +148,14 @@ class Channel(Gtk.Frame):
 		# GDK_TOUCH_BEGIN and GDK_TOUCH_END. However, when scrolling or
 		# interacting with an element in a channel, only GDK_TOUCH_END is
 		# emitted. (Swiping vertically also emits GDK_TOUCH_UPDATE but this
-		# is of no use or consequence currently.) Consider connecting to event
-		# signal on all elements - preliminary testing suggests individual
-		# elements get a GDK_ENTER_NOTIFY event which we may be able to use.
+		# is of no use or consequence currently.) Consider changing Channel
+		# to a Gtk.EventBox (and comment out label-related code) and observe
+		# emitted events on a touchscreen.
 		ev = event.get_event_type().value_name
 		if "BUTTON" in ev or "TOUCH_BEGIN" in ev:
 			self.selector.set_active(True)
 			return False
-		elif ev != "GDK_MOTION_NOTIFY":
+		elif ev not in {"GDK_MOTION_NOTIFY", "GDK_ENTER_NOTIFY", "GDK_LEAVE_NOTIFY"}:
 			print(ev)
 
 	def check_selected(self, widget):
