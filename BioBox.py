@@ -152,11 +152,11 @@ class Channel(Gtk.Frame):
 		# to a Gtk.EventBox (and comment out label-related code) and observe
 		# emitted events on a touchscreen.
 		ev = event.get_event_type().value_name
+		if ev not in {"GDK_MOTION_NOTIFY", "GDK_ENTER_NOTIFY", "GDK_LEAVE_NOTIFY"}:
+			print(widget, ev)
 		if "BUTTON" in ev or "TOUCH_BEGIN" in ev:
 			self.selector.set_active(True)
 			return False
-		elif ev not in {"GDK_MOTION_NOTIFY", "GDK_ENTER_NOTIFY", "GDK_LEAVE_NOTIFY"}:
-			print(ev)
 
 	def check_selected(self, widget):
 		"""When a channel is selected, move the slider to its position"""
