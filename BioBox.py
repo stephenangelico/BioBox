@@ -108,21 +108,25 @@ class Channel(Gtk.Frame):
 		level.add_mark(value=100, position=Gtk.PositionType.RIGHT, markup=None)
 		box.pack_start(level, True, True, 0)
 		level.connect("focus", self.focus_delay)
+		level.connect("event-after", self.click_anywhere)
 		self.slider_signal = self.slider.connect("value-changed", self.adjustment_changed)
 		# Spinner
 		spinvalue = Gtk.SpinButton(adjustment=self.slider, digits=2)
 		box.pack_start(spinvalue, False, False, 0)
 		spinvalue.connect("focus", self.focus_delay)
+		spinvalue.connect("event-after", self.click_anywhere)
 		# Mute button
 		self.mute = Gtk.ToggleButton(label=self.mute_labels[0])
 		box.pack_start(self.mute, False, False, 0)
 		self.mute.connect("toggled", self.muted)
 		self.mute.connect("focus", self.focus_delay)
+		self.mute.connect("event-after", self.click_anywhere)
 		# Channel selector
 		self.selector = Gtk.RadioButton.new_from_widget(chan_select)
 		self.selector.set_label("Selected")
 		box.pack_start(self.selector, False, False, 0)
 		self.selector.connect("toggled", self.check_selected)
+		self.selector.connect("event-after", self.click_anywhere)
 		self.connect("event", self.click_anywhere)
 		# Add self to group
 		self.group.pack_start(self, True, True, 0)
