@@ -159,7 +159,7 @@ class Channel(Gtk.Frame):
 		if ev not in {"GDK_MOTION_NOTIFY", "GDK_ENTER_NOTIFY", "GDK_LEAVE_NOTIFY"}:
 			print(widget, ev)
 		if ev == "GDK_FOCUS_CHANGE":
-			focus_select(widget)
+			self.focus_select(widget)
 			return False
 		if "BUTTON" in ev or "TOUCH_BEGIN" in ev:
 			self.selector.set_active(True)
