@@ -134,7 +134,7 @@ class Channel(Gtk.Frame):
 
 	def focus_delay(self, widget, direction):
 		"""Run focus_select asynchronously"""
-		GLib.idle_add(self.focus_select, widget)
+		GLib.idle_add(self.focus_select, widget) # TODO: is this necessary?
 
 	def focus_select(self, widget):
 		"""Select a channel if it gains focus.
