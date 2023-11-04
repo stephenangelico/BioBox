@@ -180,6 +180,8 @@ class Channel(Gtk.Frame):
 		to select the radio button."""
 		value = widget.get_value()
 		self.refract_value(value, "gtk")
+		if not self.selector.get_active():
+			print(self.name, "adjusted")
 		self.selector.set_active(True)
 
 	def refract_value(self, value, source):
