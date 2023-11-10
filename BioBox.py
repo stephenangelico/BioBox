@@ -145,23 +145,23 @@ class Channel(Gtk.Frame):
 			print(self.channel_name, "pulled focus")
 
 	def click_anywhere(self, widget, event):
-		"""Select a channel if it is clicked on or touched"""
-		# TODO: This currently does not work when touching elements
-		# (works fine touching blank space). From the print at the end,
-		# there are two events from touching the blank space in a channel -
-		# GDK_TOUCH_BEGIN and GDK_TOUCH_END. However, when scrolling or
-		# interacting with an element in a channel, only GDK_TOUCH_END is
-		# emitted. (Swiping vertically also emits GDK_TOUCH_UPDATE but this
-		# is of no use or consequence currently.) Consider changing Channel
-		# to a Gtk.EventBox (and comment out label-related code) and observe
-		# emitted events on a touchscreen.
+		"""Select a channel if it is clicked on or touched. Connect to
+		'event' signal on channel AND 'event-after' signal on widgets,
+		otherwise not all events will be captured."""
 		ev = event.get_event_type().value_name
 		if ev not in {"GDK_MOTION_NOTIFY", "GDK_ENTER_NOTIFY", "GDK_LEAVE_NOTIFY"}:
+			# Ignore the spammy events
 			print(widget, ev)
 		if ev == "GDK_FOCUS_CHANGE":
+			# For some reason, changes of widget focus by touch do
+			# not fire the focus event, so if we get the event, pass
+			# the widget to focus_select as it should have been.
 			self.focus_select(widget)
 			return False
 		if "BUTTON" in ev or "TOUCH_BEGIN" in ev:
+			# Mouse or touch events - keyboard actions don't matter
+			# because if they select a widget, the focus signal is
+			# handled by focus_select().
 			self.selector.set_active(True)
 			return False
 
