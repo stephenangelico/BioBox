@@ -142,7 +142,7 @@ class Channel(Gtk.Frame):
 		will be the first object and will be given focus initially."""
 		if widget.is_focus():
 			self.selector.set_active(True)
-			print(self.channel_name, "pulled focus")
+			#print(self.channel_name, "pulled focus")
 
 	def click_anywhere(self, widget, event):
 		"""Select a channel if it is clicked on or touched. Connect to
@@ -151,7 +151,8 @@ class Channel(Gtk.Frame):
 		ev = event.get_event_type().value_name
 		if ev not in {"GDK_MOTION_NOTIFY", "GDK_ENTER_NOTIFY", "GDK_LEAVE_NOTIFY"}:
 			# Ignore the spammy events
-			print(widget, ev)
+			#print(widget, ev)
+			pass
 		if ev == "GDK_FOCUS_CHANGE":
 			# For some reason, changes of widget focus by touch do
 			# not fire the focus event, so if we get the event, pass
