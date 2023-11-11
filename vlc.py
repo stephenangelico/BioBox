@@ -27,6 +27,7 @@ async def vlc():
 		writer.write(b"volume\r\nmuted\r\n") # Ask volume and mute state
 		await writer.drain()
 		vlc_module = VLC(writer)
+		print("VLC connected.")
 		await vlc_buf_read(vlc_module, reader)
 	except ConnectionRefusedError:
 		print("Could not connect to VLC on %s:%s - is TMV running?" % (config.host, config.vlc_port))
