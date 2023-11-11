@@ -1,4 +1,6 @@
 import time
+start_time = time.monotonic()
+print("Start time:", start_time)
 import json
 import builtins
 import traceback
@@ -67,9 +69,9 @@ def init_select_channel():
 	# Selecting a channel, in normal state, already sets position to its
 	# value. Do we need to set it again?
 	for module in modules.get_children():
-		print("Selecting from module:", module.get_name())
+		print("[" + str(time.monotonic() - start_time) + "] Selecting from module:", module.get_name())
 		for channel in module.get_children():
-			print("Selecting:", channel.channel_name)
+			print("[" + str(time.monotonic() - start_time) + "] Selecting:", channel.channel_name)
 			channel.selector.set_active(True)
 			channel.mute.grab_focus()
 			break
@@ -359,7 +361,7 @@ async def main():
 	start_task("Browser")
 	start_task("Webcam")
 	start_task("Slider")
-	print("Starting select_channel timer...")
+	print("[" + str(time.monotonic() - start_time) + "] Starting select_channel timer...")
 	GLib.timeout_add(500, init_select_channel)
 	await stop.wait()
 	
