@@ -1,3 +1,4 @@
+import time
 import asyncio
 import config # ImportError? See config_example.py
 
@@ -20,14 +21,14 @@ class VLC(Channel):
 		self.writer.write(b"muted %d \r\n" %mute_state)
 		spawn(self.writer.drain())
 
-async def vlc():
+async def vlc(start_time):
 	vlc_module = None
 	try:
 		reader, writer = await asyncio.open_connection(config.host, config.vlc_port)
 		writer.write(b"volume\r\nmuted\r\n") # Ask volume and mute state
 		await writer.drain()
 		vlc_module = VLC(writer)
-		print("VLC connected.")
+		print("[" + str(time.monotonic() - start_time) + "] VLC connected.")
 		await vlc_buf_read(vlc_module, reader)
 	except ConnectionRefusedError:
 		print("Could not connect to VLC on %s:%s - is TMV running?" % (config.host, config.vlc_port))

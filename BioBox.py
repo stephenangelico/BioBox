@@ -265,7 +265,7 @@ async def main():
 	class Task():
 		running = {}
 		def VLC():
-			return vlc.vlc()
+			return vlc.vlc(start_time)
 		def Webcam():
 			return webcam.webcam()
 		def OBSModule():
