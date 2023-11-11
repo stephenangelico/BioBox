@@ -67,7 +67,9 @@ def init_select_channel():
 	# Selecting a channel, in normal state, already sets position to its
 	# value. Do we need to set it again?
 	for module in modules.get_children():
+		print("Selecting from module:", module.get_name())
 		for channel in module.get_children():
+			print("Selecting:", channel.channel_name)
 			channel.selector.set_active(True)
 			channel.mute.grab_focus()
 			break
