@@ -359,6 +359,7 @@ async def main():
 	start_task("Browser")
 	start_task("Webcam")
 	start_task("Slider")
+	print("Starting select_channel timer...")
 	GLib.timeout_add(500, init_select_channel)
 	await stop.wait()
 	
