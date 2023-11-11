@@ -72,8 +72,8 @@ def init_select_channel():
 		print("[" + str(time.monotonic() - start_time) + "] Selecting from module:", module.get_name())
 		for channel in module.get_children():
 			print("[" + str(time.monotonic() - start_time) + "] Selecting:", channel.channel_name)
-			channel.selector.set_active(True)
-			channel.mute.grab_focus()
+			if not channel.hidden:
+				channel.mute.grab_focus()
 			break
 		if Analog.selected_channel:
 			break
