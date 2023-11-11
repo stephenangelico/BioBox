@@ -1,3 +1,4 @@
+import time
 import subprocess
 import asyncio
 import config
@@ -44,7 +45,7 @@ class Webcam(Channel):
 		self.ssh.stdin.write(("%s %d %s\n" % (self.mute_cmd, self.mute_states[mute_state], self.device)).encode("utf-8"))
 		spawn(self.ssh.stdin.drain())
 
-async def webcam():
+async def webcam(start_time):
 	ssh = None
 	async def cleanup():
 		ssh.stdin.write(b"quit foo\n")
@@ -56,6 +57,7 @@ async def webcam():
 	try:
 		# Begin cancellable section
 		ssh = await asyncio.create_subprocess_exec("ssh", "-oBatchMode=yes", (config.webcam_user + "@" + config.host), "python3", config.webcam_control_path, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+		print("[" + str(time.monotonic() - start_time) + "] SSH connection established.")
 		while True:
 			try:
 				data = await ssh.stdout.readline()

@@ -1,6 +1,7 @@
 # WebSocket server for potential integration with BioBox
 # Uses asyncio. If the rest of the project does too, create listen() as a task;
 # otherwise, spin off run() as a thread.
+import time
 import asyncio
 import json
 import ssl
@@ -89,7 +90,7 @@ async def set_volume(tabid, vol):
 async def set_muted(tabid, muted):
 	await send_message(tabid, {"cmd": "setmuted", "muted": bool(muted)})
 
-async def listen(*, host="", port=8888):
+async def listen(start_time, *, host="", port=8888):
 	callbacks.update(connected=new_tab, disconnected=closed_tab, volumechanged=tab_volume_changed)
 	ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
 	try:
@@ -99,7 +100,7 @@ async def listen(*, host="", port=8888):
 		ssl_context = None
 	try:
 		async with websockets.serve(volume, host, port, ssl=ssl_context) as ws_server:
-			print("Websocket listening.")
+			print("[" + str(time.monotonic() - start_time) + "] Websocket listening.")
 			await asyncio.Future()
 	except OSError as e:
 		if e.errno!=(98): # 98: Address already in use

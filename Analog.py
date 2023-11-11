@@ -85,7 +85,7 @@ async def read_position():
 			yield(pos)
 
 
-async def start_slider():
+async def start_slider(start_time):
 	"""Initialize MCP object and start the hidden channel"""
 	# Reset goal attributes in case of slider restart
 	global goal
@@ -115,6 +115,7 @@ async def start_slider():
 			Motor.init()
 			# Spawn the channel
 			slider = Slider()
+			print("[" + str(time.monotonic() - start_time) + "] Slider online.")
 			# Initialize slider position after giving other channels a chance to initialize themselves
 			await asyncio.sleep(0.5)
 			if selected_channel:

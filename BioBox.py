@@ -267,13 +267,13 @@ async def main():
 		def VLC():
 			return vlc.vlc(start_time)
 		def Webcam():
-			return webcam.webcam()
+			return webcam.webcam(start_time)
 		def OBSModule():
-			return obs.obs_ws()
+			return obs.obs_ws(start_time)
 		def Browser():
-			return browser.listen()
+			return browser.listen(start_time)
 		def Slider():
-			return Analog.start_slider()
+			return Analog.start_slider(start_time)
 	def toggle_menu_item(widget):
 		toggle_group = widget.get_name()
 		if widget.get_active():

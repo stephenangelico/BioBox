@@ -1,3 +1,4 @@
+import time
 import asyncio
 import itertools
 import json
@@ -69,7 +70,7 @@ async def event_handler(event):
 	else:
 		await method(event["eventData"])
 
-async def obs_ws():
+async def obs_ws(start_time):
 	obs_uri = "ws://%s:%d" % (config.host, config.obs_port)
 	global conn
 	auth_key = ""
@@ -77,6 +78,7 @@ async def obs_ws():
 	try:
 		# Begin cancellable section
 		async with websockets.connect(obs_uri) as conn:
+			print("[" + str(time.monotonic() - start_time) + "] Connected to OBS.")
 			while True:
 				data = await conn.recv()
 				msg = json.loads(data)
