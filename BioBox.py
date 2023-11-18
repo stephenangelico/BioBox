@@ -111,19 +111,19 @@ class Channel(Gtk.Frame):
 		level.add_mark(value=100, position=Gtk.PositionType.LEFT, markup=None)
 		level.add_mark(value=100, position=Gtk.PositionType.RIGHT, markup=None)
 		box.pack_start(level, True, True, 0)
-		level.connect("focus", self.focus_delay)
+		level.connect("focus", self.focus_select)
 		level.connect("event-after", self.click_anywhere)
 		self.slider_signal = self.slider.connect("value-changed", self.adjustment_changed)
 		# Spinner
 		spinvalue = Gtk.SpinButton(adjustment=self.slider, digits=2)
 		box.pack_start(spinvalue, False, False, 0)
-		spinvalue.connect("focus", self.focus_delay)
+		spinvalue.connect("focus", self.focus_select)
 		spinvalue.connect("event-after", self.click_anywhere)
 		# Mute button
 		self.mute = Gtk.ToggleButton(label=self.mute_labels[0])
 		box.pack_start(self.mute, False, False, 0)
 		self.mute.connect("toggled", self.muted)
-		self.mute.connect("focus", self.focus_delay)
+		self.mute.connect("focus", self.focus_select)
 		self.mute.connect("event-after", self.click_anywhere)
 		# Channel selector
 		self.selector = Gtk.RadioButton.new_from_widget(chan_select)
@@ -136,11 +136,7 @@ class Channel(Gtk.Frame):
 		self.group.pack_start(self, True, True, 0)
 		if not self.hidden: self.group.show_all()
 
-	def focus_delay(self, widget, direction):
-		"""Run focus_select asynchronously"""
-		GLib.idle_add(self.focus_select, widget) # TODO: is this necessary?
-
-	def focus_select(self, widget):
+	def focus_select(self, widget, *args):
 		"""Select a channel if it gains focus.
 		This will also select the first channel on startup as its scale
 		will be the first object and will be given focus initially."""
