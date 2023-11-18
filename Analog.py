@@ -2,6 +2,7 @@ import os
 import asyncio
 import time
 import collections
+import contextlib
 import busio # ImportError? python3 -m pip install -r requirements.txt
 import digitalio # ImportError? python3 -m pip install -r requirements.txt
 
@@ -18,7 +19,7 @@ except (ImportError, NotImplementedError, RuntimeError):
 TOLERANCE = 1
 
 selected_channel = None
-
+slider = None
 goal = None
 next_goal = None
 next_goal_time = time.monotonic()
@@ -84,9 +85,35 @@ async def read_position():
 			last_read = pot
 			yield(pos)
 
-
-async def start_slider(start_time):
+@contextlib.contextmanager
+def init_slider():
 	"""Initialize MCP object and start the hidden channel"""
+	global slider
+	slider = None
+	try:
+		# Set pin numbering mode
+		GPIO.setmode(GPIO.BCM)
+		# create the spi bus
+		spi = busio.SPI(clock=board.SCK, MISO=board.MISO, MOSI=board.MOSI)
+		# create the cs (chip select)
+		cs = digitalio.DigitalInOut(board.D22)
+		# create the mcp object
+		mcp = MCP.MCP3008(spi, cs)
+		# create an analog input channel on pin 0
+		global chan0
+		chan0 = AnalogIn(mcp, MCP.P0)
+		print('Raw ADC Value: ', chan0.value)
+		print('ADC Voltage: ' + str(chan0.voltage) + 'V')
+		yield # Context manager takes over here
+	finally:
+		if slider:
+			slider.remove()
+		Motor.cleanup()
+		GPIO.cleanup()
+		slider = None
+
+async def read_value(start_time):
+	"""Move the slider if it has somewhere to go, otherwise send values to BioBox"""
 	# Reset goal attributes in case of slider restart
 	global goal
 	global next_goal
@@ -94,54 +121,24 @@ async def start_slider(start_time):
 	goal = None
 	next_goal = None
 	next_goal_time = time.monotonic()
-	global slider
-	slider = None
-	if not no_slider:
-		try:
-			# Set pin numbering mode
-			GPIO.setmode(GPIO.BCM)
-			# create the spi bus
-			spi = busio.SPI(clock=board.SCK, MISO=board.MISO, MOSI=board.MOSI)
-			# create the cs (chip select)
-			cs = digitalio.DigitalInOut(board.D22)
-			# create the mcp object
-			mcp = MCP.MCP3008(spi, cs)
-			# create an analog input channel on pin 0
-			global chan0
-			chan0 = AnalogIn(mcp, MCP.P0)
-			print('Raw ADC Value: ', chan0.value)
-			print('ADC Voltage: ' + str(chan0.voltage) + 'V')
-			# Let's get this motor on the MOVE!
-			Motor.init()
-			# Spawn the channel
-			slider = Slider()
-			print("[" + str(time.monotonic() - start_time) + "] Slider online.")
-			# Initialize slider position after giving other channels a chance to initialize themselves
-			await asyncio.sleep(0.5)
-			if selected_channel:
-				normalized_value = selected_channel.slider.get_value() / selected_channel.max * 1023 # Scale to the slider's range
-				slider.refract_value(normalized_value, "channel")
-			else:
-				slider.refract_value(1023, "channel")
-			# Start reading - await so it holds here until interrupted
-			await read_value()
-		finally:
-			if slider:
-				slider.remove()
-			Motor.cleanup()
-			GPIO.cleanup()
-			slider = None
-
-async def read_value():
-	"""Move the slider if it has somewhere to go, otherwise send values to BioBox"""
-	global goal
-	global next_goal
-	global next_goal_time
-	Motor.sleep(False)
 	last_speed = None
 	last_dir = None
 	goal_completed = 0
 	#safety = collections.deque([0] * 2, 5)
+	# Let's get this motor on the MOVE!
+	Motor.init()
+	Motor.sleep(False)
+	# Spawn the channel
+	global slider
+	slider = Slider()
+	print("[" + str(time.monotonic() - start_time) + "] Slider online.")
+	# Initialize slider position after giving other channels a chance to initialize themselves
+	await asyncio.sleep(0.5)
+	if selected_channel:
+		normalized_value = selected_channel.slider.get_value() / selected_channel.max * 1023 # Scale to the slider's range
+		slider.refract_value(normalized_value, "channel")
+	else:
+		slider.refract_value(1023, "channel")
 	try:
 		async for pos in read_position():
 			if next_goal is not None:
@@ -203,6 +200,14 @@ async def read_value():
 	finally:
 		goal = None
 		Motor.sleep(True)
+
+async def start_slider(start_time):
+	"""Wrapper for init_slider"""
+	if no_slider:
+		return
+	with init_slider():
+		# Start reading - await so it holds here until interrupted
+		await read_value(start_time)
 
 def test_slider():
 	# Test progression of slider with slow movement to tell the difference
