@@ -235,12 +235,15 @@ def test_slider():
 def print_value():
 	# TODO: fix now that initialization is in start_slider()
 	last = None
-	while True:
-		value = 1023 - chan0.value // 64
-		if value != last:
-			print(value, end="\x1b[K\r")
-			last = value
-		time.sleep(0.015625)
+	if no_slider:
+		return
+	with init_slider():
+		while True:
+			value = 1023 - chan0.value // 64
+			if value != last:
+				print(value, end="\x1b[K\r")
+				last = value
+			time.sleep(0.015625)
 
 if __name__ == "__main__":
 	try:
