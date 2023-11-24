@@ -8,6 +8,7 @@ PIN_B = 27
 PIN_STBY = 23
 PIN_PWM = 17
 FREQ = 50
+pwm = None
 
 def init():
 	GPIO.setmode(GPIO.BCM)
@@ -56,6 +57,7 @@ def speed(duty_cycle):
 def cleanup():
 	global pwm
 	sleep(True)
-	pwm.stop()
+	if pwm:
+		pwm.stop()
 	GPIO.cleanup()
 	pwm = None
