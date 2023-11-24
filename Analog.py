@@ -24,6 +24,14 @@ goal = None
 next_goal = None
 next_goal_time = time.monotonic()
 
+# Stub to fix running Analog.py without BioBox context
+try:
+	Channel
+except NameError:
+	class Channel():
+		def __init__(self, **kw):
+			pass
+
 class Slider(Channel):
 	group_name = "Slider"
 	step = 1.0
