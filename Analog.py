@@ -233,7 +233,7 @@ def test_slider():
 	Motor.sleep(True)
 
 def print_value():
-	# TODO: fix now that initialization is in start_slider()
+	"""Show the current position of the slider"""
 	last = None
 	if no_slider:
 		return
@@ -241,7 +241,8 @@ def print_value():
 		while True:
 			value = 1023 - chan0.value // 64
 			if value != last:
-				print(value, end="\x1b[K\r")
+				print(value, end="\x1b[K\r") # End sequence to cleanly overwrite line
+				# 		  ^Esc ^Clear to end of line, CR instead of LF
 				last = value
 			time.sleep(0.015625)
 
