@@ -218,21 +218,24 @@ async def start_slider(start_time):
 		await read_value(start_time)
 
 def test_motor():
+	"""Test motor functions without getting stuck - start with slider at bottom of travel"""
 	if no_slider:
 		return
 	with init_slider():
 		start = chan0.value // 64
-		safety = collections.deque([0] * 2, 5)
+		safety = collections.deque([-10] * 2, 8)
+		Motor.init()
 		Motor.sleep(False)
 		Motor.forward()
-		Motor.speed(30)
-		while chan0.value // 64 < 0:
+		Motor.speed(50)
+		while chan0.value // 64 > 0:
 			safety.append(chan0.value // 64)
 			print(safety, max(safety) - min(safety))
-			if safety.maxlen == len(safety) and max(safety) - min(safety) < 2:
+			if safety.maxlen == len(safety) and max(safety) - min(safety) < 10:
 				print("Stuck?")
 				break
-		print(chan0.value, chan0.value - start)
+			time.sleep(1/64)
+		print(chan0.value // 64, chan0.value // 64 - start)
 		Motor.sleep(True)
 			
 
