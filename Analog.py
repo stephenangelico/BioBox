@@ -217,6 +217,25 @@ async def start_slider(start_time):
 		# Start reading - await so it holds here until interrupted
 		await read_value(start_time)
 
+def test_motor():
+	if no_slider:
+		return
+	with init_slider():
+		start = chan0.value // 64
+		safety = collections.deque([0] * 2, 5)
+		Motor.sleep(False)
+		Motor.forward()
+		Motor.speed(30)
+		while chan0.value // 64 < 0:
+			safety.append(chan0.value // 64)
+			print(safety, max(safety) - min(safety))
+			if safety.maxlen == len(safety) and max(safety) - min(safety) < 2:
+				print("Stuck?")
+				break
+		print(chan0.value, chan0.value - start)
+		Motor.sleep(True)
+			
+
 def test_slider():
 	# Test progression of slider with slow movement to tell the difference
 	# between acceleration and getting stuck
