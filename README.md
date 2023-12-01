@@ -134,6 +134,12 @@ to the ground rail. Add a link from ground also to row 4 (AGND).
 Connect rows 5 to 8 to the Pi GPIO 22, SPI MOSI, SPI MISO, and SPI SCLK (pins
 15, 19, 21 and 23 respectively).
 
+You should now be able to test the slider's functionality. Run `python3 Analog.py print-value`
+from the BioBox directory and move the slider. You should see the value change
+between 0 at the bottom of travel and 1023 at the top. Press Ctrl-C to complete
+the test. If the direction is inverted, consider swapping the order of wires
+from the MCP3008 to the slider, or swapping to/from 1/2/3 and 1'/2'/3'.
+
 Insert the motor controller across the ravine below the MCP by 5 rows including
 the link in row 10 (ie insert from row 15 to row 22). Because the motor
 controller is 7 pins wide, insert into the board in column D and column H - this
@@ -149,18 +155,19 @@ Connect A and B on the slider to rows 18 and 19 on the left side (A02 and A01).
 Connect rows 15 to 18 on the right side to the Pi GPIO 17, 27, 18 and 23 (pins
 11, 13, 12 and 16 respectively).
 
-You should now be able to test the slider's functionality. Run `python3 Analog.py print-value`
-from the BioBox directory and move the slider. You should see the value change
-between 0 and 1023. Press Ctrl-C to complete the test.
-
-TODO: Write motor test
+To test the motor, move the slider to the bottom of its travel and run `python3 Analog.py test-motor`.
+The slider should move all the way to the top unless it is physically blocked,
+in which case it will stop.
 
 Once testing is completed, you can consider a more permanent installation by
 soldering the chips to a circuit board and using JST connectors to connect to
 the slider and Pi. This is optional but may be necessary if you have problems
 with slider drift or incomplete range.
 
-- MCP3008 connections:
+Connections:
+============
+
+- MCP3008:
 	- CH0  -> Slider 2'
 	- CH1  -> Slider 1', GND
 	- CH2  unused
@@ -178,7 +185,7 @@ with slider drift or incomplete range.
 	- VREF -> Pi 3.3V (pin 17)
 	- VDD  -> Pi 3.3V (pin 17)
 
-- Slider connections:
+- Slider:
 	- A  -> TB6 A02
 	- B  -> TB6 A01
 	- 3 unused
@@ -189,7 +196,7 @@ with slider drift or incomplete range.
 	- 2' -> MCP CH0 (pin 1)
 	- 3' -> MCP VDD (pin 16)
 
-- TB6612FNG connections:
+- TB6612FNG:
 	- VM   -> Pi +5V  (pin 2)
 	- VCC  -> Pi +5V  (pin 2)
 	- GND1 unused
