@@ -149,7 +149,7 @@ Connect A and B on the slider to rows 18 and 19 on the left side (A02 and A01).
 Connect rows 15 to 18 on the right side to the Pi GPIO 17, 27, 18 and 23 (pins
 11, 13, 12 and 16 respectively).
 
-You should now be able to test the slider's functionality. Run `python3 Analog.py`
+You should now be able to test the slider's functionality. Run `python3 Analog.py print-value`
 from the BioBox directory and move the slider. You should see the value change
 between 0 and 1023. Press Ctrl-C to complete the test.
 
