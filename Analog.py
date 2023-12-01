@@ -226,6 +226,7 @@ async def start_slider(start_time):
 @command
 def test_motor():
 	"""Test motor functions without getting stuck - start with slider at bottom of travel"""
+	# TODO: Add interaction to put slider at bottom of travel if not there already
 	if no_slider:
 		return
 	with init_slider():
@@ -248,6 +249,7 @@ def test_motor():
 @command
 def print_value():
 	"""Show the current position of the slider"""
+	# TODO: Tidily handle KeyboardInterrupt and add "Press Ctrl-C to exit" message
 	last = None
 	if no_slider:
 		print("No slider available - are you running on a PC rather than a Raspberry Pi?")
