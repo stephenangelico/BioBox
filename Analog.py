@@ -3,6 +3,7 @@ import asyncio
 import time
 import collections
 import contextlib
+import clize # ImportError? python3 -m pip install -r requirements.txt
 import busio # ImportError? python3 -m pip install -r requirements.txt
 import digitalio # ImportError? python3 -m pip install -r requirements.txt
 
@@ -23,6 +24,11 @@ slider = None
 goal = None
 next_goal = None
 next_goal_time = time.monotonic()
+
+commands = []
+def command(f):
+	commands.append(f)
+	return f
 
 # Stub to fix running Analog.py without BioBox context
 try:
@@ -217,6 +223,7 @@ async def start_slider(start_time):
 		# Start reading - await so it holds here until interrupted
 		await read_value(start_time)
 
+@command
 def test_motor():
 	"""Test motor functions without getting stuck - start with slider at bottom of travel"""
 	if no_slider:
@@ -237,27 +244,13 @@ def test_motor():
 			time.sleep(1/64)
 		print(chan0.value // 64, chan0.value // 64 - start)
 		Motor.sleep(True)
-			
 
-def test_slider():
-	# Test progression of slider with slow movement to tell the difference
-	# between acceleration and getting stuck
-	# Start with slider at *top* of travel, slider will stop close to middle
-	Motor.sleep(False)
-	Motor.backward()
-	Motor.speed(10)
-	start = chan0.value
-	while chan0.value < 36800:
-		print(chan0.value, chan0.value - start)
-		start = chan0.value
-		time.sleep(1/32)
-	print(chan0.value, chan0.value - start)
-	Motor.sleep(True)
-
+@command
 def print_value():
 	"""Show the current position of the slider"""
 	last = None
 	if no_slider:
+		print("No slider available - are you running on a PC rather than a Raspberry Pi?")
 		return
 	with init_slider():
 		while True:
@@ -270,7 +263,8 @@ def print_value():
 
 if __name__ == "__main__":
 	try:
-		print_value()
+		clize.run(commands)
 	finally:
-		Motor.cleanup()
-		GPIO.cleanup()
+		if not no_slider:
+			Motor.cleanup()
+			GPIO.cleanup()
