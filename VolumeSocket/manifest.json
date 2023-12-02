@@ -5,7 +5,7 @@
 	"version": "0.0.3",
 	"content_scripts": [{
 		"exclude_globs": ["https://dashboard.twitch.tv/*"],
-		"matches": ["https://*.youtube.com/*", "file://*", "https://*.twitch.tv/*"],
+		"matches": ["https://*.youtube.com/*", "file:///*", "https://*.twitch.tv/*"],
 		"js": ["volsock.js"]
 	}]
 }
