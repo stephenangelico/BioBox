@@ -81,9 +81,13 @@ Chrome:
 4. Click Load unpacked in the top left
 5. Navigate to the BioBox folder and select the VolumeSocket folder
 
-TODO: Support other browsers eg. Firefox, Brave, Opera GX
+Other Chromium-based browsers will work but installation instructions may vary.
+Brave and Opera have been tested and function normally, but YMMV with others.
+
+TODO: Support Firefox - imports but does not run
 
 If BioBox is running on a different machine to the browser, a TLS certificate is required.
+
 TODO: Document TLS setup in detail - perhaps first consider un-hardcoding `volsock.js`
 Current setup has `fullchain.pem` and `privkey.pem` symlinked from cert directory
 
