@@ -25,7 +25,12 @@ function connect()
 	socket.onmessage = (ev) => {
 		let data = JSON.parse(ev.data);
 		if (data.cmd === "setvolume") {
-			document.querySelectorAll("video").forEach(vid => vid.volume = data.volume);
+			if (location.host === "www.youtube.com") {
+				const player = document.getElementById('movie_player');
+				player.setVolume(data.volume)
+				console.log("Set volume direct to player")
+			}
+			else document.querySelectorAll("video").forEach(vid => vid.volume = data.volume);
 		}
 		if (data.cmd === "setmuted") {
 			document.querySelectorAll("video").forEach(vid => vid.muted = data.muted);
