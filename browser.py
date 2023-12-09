@@ -92,6 +92,8 @@ async def set_muted(tabid, muted):
 
 async def listen(start_time, *, host="", port=8888):
 	callbacks.update(connected=new_tab, disconnected=closed_tab, volumechanged=tab_volume_changed)
+	# TODO: This creates a channel when any tab within scope is opened/navigated -
+	# open channel only on creation of video element
 	ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
 	try:
 		ssl_context.load_cert_chain("fullchain.pem", "privkey.pem")
