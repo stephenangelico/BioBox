@@ -13,7 +13,13 @@ function connect()
 		retry_delay = 0;
 		console.log("VolSock connection established.");
 		socket.send(JSON.stringify({cmd: "init", type: "volume", "host": location.hostname, group: tabid}));
-		document.querySelectorAll("video").forEach(vid =>
+		if (location.host === "www.youtube.com") {
+			const player = document.getElementById('movie_player');
+			document.querySelectorAll("video").forEach(vid =>
+			(vid.onvolumechange = e => socket.send(JSON.stringify({cmd: "setvolume", volume: player.getVolume() / 100, muted: player.isMuted()})))()
+			);
+		}
+		else document.querySelectorAll("video").forEach(vid =>
 			(vid.onvolumechange = e => socket.send(JSON.stringify({cmd: "setvolume", volume: vid.volume, muted: vid.muted})))()
 		);
 	};
@@ -27,13 +33,22 @@ function connect()
 		if (data.cmd === "setvolume") {
 			if (location.host === "www.youtube.com") {
 				const player = document.getElementById('movie_player');
-				player.setVolume(data.volume)
-				console.log("Set volume direct to player")
+				player.setVolume(data.volume * 100)
+				sessionStorage.setItem("yt-player-volume", JSON.stringify({
+					creation: +new Date, expiration: +new Date + 2592000000, data: JSON.stringify({volume: player.getVolume(), muted: player.isMuted()})
+				}));
 			}
 			else document.querySelectorAll("video").forEach(vid => vid.volume = data.volume);
 		}
 		if (data.cmd === "setmuted") {
-			document.querySelectorAll("video").forEach(vid => vid.muted = data.muted);
+			if (location.host === "www.youtube.com") {
+				const player = document.getElementById('movie_player');
+				if (data.muted) {
+					player.mute()
+				}
+				else player.unMute()
+			}
+			else document.querySelectorAll("video").forEach(vid => vid.muted = data.muted);
 		}
 	};
 }
