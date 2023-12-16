@@ -9,7 +9,7 @@
 		"js": ["volsock.js"]
 	},
 	{
-		"exclude_globs": ["https://dashboard.twitch.tv/*", "https://dev.twitch.tv/*"],
+		"exclude_globs": ["https://dashboard.twitch.tv/*", "https://dev.twitch.tv/*", "*.pdf"],
 		"matches": ["https://music.youtube.com/*", "file:///*", "https://*.twitch.tv/*"],
 		"js": ["volsock.js"]
 	}]
