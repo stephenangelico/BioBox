@@ -32,6 +32,7 @@ sites = {
 
 class Browser(Channel):
 	group_name = "Browser"
+	max = 100 # Most video players don't do anything with volume above 100%
 	
 	def __init__(self, tabid, tabname):
 		super().__init__(name=tabname)
