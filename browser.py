@@ -112,8 +112,8 @@ def new_tab(tabid, host):
 
 def closed_tab(tabid):
 	print("Destroying channel for closed tab:", tabid)
-	tabs[tabid].remove()
-	tabs.pop(tabid, None)
+	tabs[tabid].remove() # Remove channel in GUI
+	tabs.pop(tabid, None) # Remove from list of tabs
 
 def tab_volume_changed(tabid, volume, mute_state):
 	print("On", tabid, ": Volume:", volume, "Muted:", bool(mute_state))
