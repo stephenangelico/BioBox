@@ -12,10 +12,10 @@ function connect()
 	socket.onopen = () => {
 		retry_delay = 0;
 		console.log("VolSock connection established.");
+		socket.send(JSON.stringify({cmd: "init", type: "volume", group: ""}));
 		//Pseudo code
-		for tabid in openTabs:
-			socket.send(JSON.stringify({cmd: "init", type: "volume", "host": location.hostname, group: tabid}));
-		// TODO: Figure out exactly what cmd: "init" does and what should be "newtab" instead
+		for tab in openTabs:
+			newtab(tab)
 	};
 	socket.onclose = () => {
 		console.log("VolSock connection lost.");
@@ -42,7 +42,7 @@ new listener("onVolumeChanged", volumechanged);
 function newtab(tab)
 {
 	tabs[tab.tabid] = tab;
-	socket.send(JSON.stringify({cmd: "newtab", type: "volume", "host": tab.location.hostname, "tabid": tabid}));
+	socket.send(JSON.stringify({cmd: "newtab", "host": tab.location.hostname, "tabid": tabid}));
 	// TODO: Implement cmd: "newtab" in browser.py
 }
 
@@ -50,7 +50,7 @@ function closedtab(tab)
 {
 	// Need to know from Chrome WHICH tab closed
 	tab[tab.tabid].remove()
-	socket.send(JSON.stringify({cmd: "disconnect", "tabid": tabid}));
+	socket.send(JSON.stringify({cmd: "closedtab", "tabid": tabid}));
 	// TODO: Implement cmd: "disconnect" in browser.py
 }
 

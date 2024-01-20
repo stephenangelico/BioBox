@@ -6,9 +6,10 @@ import asyncio
 import json
 import ssl
 from pprint import pprint
+from collections import defaultdict
 import websockets # ImportError? pip install websockets
 
-sockets = { }
+sockets = defaultdict(list)
 callbacks = { }
 tabs = {}
 sites = {
@@ -23,16 +24,17 @@ class Browser(Channel):
 	group_name = "Browser"
 	max = 100 # Most video players don't do anything with volume above 100%
 	
-	def __init__(self, tabid, tabname):
+	def __init__(self, group, tabid, tabname):
 		super().__init__(name=tabname)
+		self.group = group
 		self.tabid = tabid
 
 	def write_external(self, value):
-		spawn(set_volume(self.tabid, (value / 100)))
+		spawn(set_volume(self.group, self.tabid, (value / 100)))
 	
 	def muted(self, widget):
 		mute_state = super().muted(widget) # Handles label change and IIDPIO
-		spawn(set_muted(self.tabid, mute_state))
+		spawn(set_muted(self.group, self.tabid, mute_state))
 
 async def volume(sock, path):
 	if path != "/ws": return # Can we send back a 404 or something?
@@ -46,42 +48,45 @@ async def volume(sock, path):
 			if msg["cmd"] == "init":
 				if msg.get("type") != "volume": continue # This is the only socket type currently supported
 				if "group" not in msg: continue
+				group = str(msg["group"])
+				sockets[group].append(sock)
+			elif msg["cmd"] == "newtab":
 				host = str(msg["host"])
-				tabid = str(msg["group"])
-				if tabid not in sockets:
-					cb = callbacks.get("connected")
-					if cb: cb(tabid, host)
-				else:
-					await send_message(tabid, {"cmd": "disconnect"})
-				sockets[tabid] = sock # Possible floop
+				tabid = str(msg["tabid"])
+				if tabid not in tabs:
+					cb = callbacks.get("newtab")
+					if cb: cb(group, tabid, host)
+			elif msg["cmd"] == "closedtab":
+				tabid = str(msg["tabid"])
+				if tabid in tabs:
+					cb = callbacks.get("closedtab")
+					if cb: cb(tabid)
 			elif msg["cmd"] == "setvolume":
 				cb = callbacks.get("volumechanged")
 				if cb: cb(tabid, msg.get("volume", 0), bool(msg.get("muted")))
+			else:
+				print(msg)
 	except websockets.ConnectionClosedError:
 		pass
 	# If this sock isn't in the dict, most likely another socket kicked us,
 	# which is uninteresting.
-	if sockets.get(tabid) is sock:
-		cb = callbacks.get("disconnected")
-		if cb: cb(tabid)
-		del sockets[tabid]
+	sockets[group].remove(sock)
 
-async def send_message(tabid, msg):
-	if tabid not in sockets:
-		return "Gone" # Other end has gone away. Probably not a problem in practice.
-	await sockets[tabid].send(json.dumps(msg))
+async def send_message(group, msg):
+	for sock in sockets[group]:
+		await sock.send(json.dumps(msg))
 
-async def set_volume(tabid, vol):
+async def set_volume(group, tabid, vol):
 	# What happens if the buffer fills up and we start another send?
 	# Ideally: prevent subsequent sends until the first one finishes, but remember the latest
 	# volume selection made. If that's not the same as the first volume, send another after.
-	await send_message(tabid, {"cmd": "setvolume", "volume": vol})
+	await send_message(group, {"cmd": "setvolume", "tabid": tabid, "volume": vol})
 
-async def set_muted(tabid, muted):
-	await send_message(tabid, {"cmd": "setmuted", "muted": bool(muted)})
+async def set_muted(group, tabid, muted):
+	await send_message(group, {"cmd": "setmuted", "tabid": tabid, "muted": bool(muted)})
 
 async def listen(start_time, *, host="", port=8888):
-	callbacks.update(connected=new_tab, disconnected=closed_tab, volumechanged=tab_volume_changed)
+	callbacks.update(newtab=new_tab, closedtab=closed_tab, volumechanged=tab_volume_changed)
 	# TODO: This creates a channel when any tab within scope is opened/navigated -
 	# open channel only on creation of video element
 	ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
@@ -101,13 +106,13 @@ async def listen(start_time, *, host="", port=8888):
 		print("Websocket shutting down.") # I don't hate you!
 
 # Channel management
-def new_tab(tabid, host):
+def new_tab(group, tabid, host):
 	if host in sites:
 		tabname = sites[host]
 	else:
 		tabname = host
 	print("Creating channel for new tab:", tabid)
-	newtab = Browser(tabid, tabname)
+	newtab = Browser(group, tabid, tabname)
 	tabs[tabid] = newtab
 
 def closed_tab(tabid):
