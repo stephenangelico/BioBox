@@ -9,13 +9,13 @@ let retry_delay = 5000;
 function connect()
 {
 	let socket = new WebSocket("wss://F-35LightningII.rosuav.com:8888/ws");
-	socket.onopen = () => {
+	socket.onopen = async () => {
 		retry_delay = 0;
 		console.log("VolSock connection established.");
 		socket.send(JSON.stringify({cmd: "init", type: "volume", group: ""}));
-		//Pseudo code
-		for tab in openTabs:
-			newtab(tab)
+		var openTabs = await chrome.tabs.query({"url": "*://*.youtube.com"});
+		// TODO: get all tabs the extension runs on, not just YT
+		openTabs.forEach(newtab);
 	};
 	socket.onclose = () => {
 		console.log("VolSock connection lost.");
@@ -43,7 +43,6 @@ function newtab(tab)
 {
 	tabs[tab.tabid] = tab;
 	socket.send(JSON.stringify({cmd: "newtab", "host": tab.location.hostname, "tabid": tabid}));
-	// TODO: Implement cmd: "newtab" in browser.py
 }
 
 function closedtab(tab)
@@ -51,12 +50,10 @@ function closedtab(tab)
 	// Need to know from Chrome WHICH tab closed
 	tab[tab.tabid].remove()
 	socket.send(JSON.stringify({cmd: "closedtab", "tabid": tabid}));
-	// TODO: Implement cmd: "disconnect" in browser.py
 }
 
 function volumechanged(tab, volume, muted)
 {
-	// TODO: See if this can and should also handle muting
 	socket.send(JSON.stringify({cmd: "setvolume", "tabid": tabid, "volume": volume, "muted": muted}));
 }
 

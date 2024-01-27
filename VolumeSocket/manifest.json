@@ -2,7 +2,8 @@
 	"manifest_version": 3,
 	"name": "WebSocket Volume Control",
 	"description": "Bidirectional volume control for YouTube pages",
-	"version": "0.0.4",
+	"version": "0.0.5",
+	"permissions": ["tabs"],
 	"content_scripts": [{
 		"world": "MAIN",
 		"matches": ["https://youtube.com/*", "https://www.youtube.com/*"],
