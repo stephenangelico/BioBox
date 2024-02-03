@@ -13,7 +13,7 @@ function connect()
 		retry_delay = 0;
 		console.log("VolSock connection established.");
 		socket.send(JSON.stringify({cmd: "init", type: "volume", group: ""}));
-		var openTabs = await chrome.tabs.query({"url": "*://*.youtube.com"});
+		var openTabs = await browser.tabs.query({"url": "*://*.youtube.com"});
 		// TODO: get all tabs the extension runs on, not just YT
 		openTabs.forEach(newtab);
 	};
