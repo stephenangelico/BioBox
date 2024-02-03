@@ -41,20 +41,20 @@ new listener("onVolumeChanged", volumechanged);
 
 function newtab(tab)
 {
-	tabs[tab.tabid] = tab;
-	socket.send(JSON.stringify({cmd: "newtab", "host": tab.location.hostname, "tabid": tabid}));
+	tabs[tab.id] = tab;
+	socket.send(JSON.stringify({cmd: "newtab", "host": tab.location.hostname, "tabid": tab.id}));
 }
 
 function closedtab(tab)
 {
 	// Need to know from Chrome WHICH tab closed
-	tab[tab.tabid].remove()
-	socket.send(JSON.stringify({cmd: "closedtab", "tabid": tabid}));
+	tabs[tab.id].remove()
+	socket.send(JSON.stringify({cmd: "closedtab", "tabid": tab.id}));
 }
 
 function volumechanged(tab, volume, muted)
 {
-	socket.send(JSON.stringify({cmd: "setvolume", "tabid": tabid, "volume": volume, "muted": muted}));
+	socket.send(JSON.stringify({cmd: "setvolume", "tabid": tab.id, "volume": volume, "muted": muted}));
 }
 
 // TODO: figure out how to run connect()
