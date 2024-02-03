@@ -57,6 +57,4 @@ function volumechanged(tab, volume, muted)
 	socket.send(JSON.stringify({cmd: "setvolume", "tabid": tab.id, "volume": volume, "muted": muted}));
 }
 
-// TODO: figure out how to run connect()
-if (document.readyState !== "loading") connect();
-else window.addEventListener("DOMContentLoaded", connect);
+connect();
