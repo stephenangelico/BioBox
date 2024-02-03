@@ -26,19 +26,29 @@ function connect()
 	socket.onmessage = (ev) => {
 		let data = JSON.parse(ev.data);
 		if (data.cmd === "setvolume") {
-			// Pseudo code
-			new event(data.tabid, "volume", data.volume);
+			browser.tabs.sendMessage(data.tabid, {"volume": data.volume});
 		}
 		if (data.cmd === "setmuted") {
-			// Pseudo code
-			new event(data.tabid, "mute", data.muted);
+			browser.tabs.sendMessage(data.tabid, {"mute": data.muted});
 		}
 	};
 }
-// Pseudo code
-new listener("onPageLoad", newtab);
-new listener("onTabClose", closedtab);
-new listener("onVolumeChanged", volumechanged);
+
+function tabListen(message, sender, response)
+{
+	if (message["cmd"] === "newtab") {
+		newtab(sender.tab);
+	}
+	if (message["cmd"] === "closetab") {
+		closedtab(sender.tab)
+		// TODO: There may be multiple reasons to close the channel or *not* close
+		// it - check on page unload, navigate, and tab inactive (memory saving mode)
+	}
+	if (message["cmd"] === "volumechanged") {
+		volumechanged(sender.tab, message["volume"], message["muted"])
+		// TODO: Consider splitting into separate volume and mute
+	}
+}
 
 function newtab(tab)
 {
@@ -57,5 +67,7 @@ function volumechanged(tab, volume, muted)
 {
 	socket.send(JSON.stringify({cmd: "setvolume", "tabid": tab.id, "volume": volume, "muted": muted}));
 }
+
+browser.runtime.onMessage.addListener(tabListen);
 
 connect();
