@@ -15,6 +15,7 @@ function connect()
 		socket.send(JSON.stringify({cmd: "init", type: "volume", group: ""}));
 		var openTabs = await browser.tabs.query({"url": "*://*.youtube.com"});
 		// TODO: get all tabs the extension runs on, not just YT
+		// TODO: avoid duplicating channels for tabs
 		openTabs.forEach(newtab);
 	};
 	socket.onclose = () => {
