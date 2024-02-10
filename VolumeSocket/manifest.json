@@ -4,6 +4,9 @@
 	"description": "Bidirectional volume control for YouTube pages",
 	"version": "0.0.5",
 	"permissions": ["tabs"],
+	"background": {
+		"service_worker": "background.js"
+	},
 	"content_scripts": [{
 		"world": "MAIN",
 		"matches": ["https://youtube.com/*", "https://www.youtube.com/*"],
