@@ -54,7 +54,8 @@ function tabListen(message, sender, response)
 function newtab(tab)
 {
 	tabs[tab.id] = tab;
-	socket.send(JSON.stringify({cmd: "newtab", "host": tab.location.hostname, "tabid": tab.id}));
+	let host = new URL(tab.url).hostname // Technically "host" includes port but meh
+	socket.send(JSON.stringify({cmd: "newtab", "host": host, "tabid": tab.id}));
 }
 
 function closedtab(tab)
