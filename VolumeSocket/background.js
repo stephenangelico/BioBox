@@ -27,10 +27,10 @@ function connect()
 	socket.onmessage = (ev) => {
 		let data = JSON.parse(ev.data);
 		if (data.cmd === "setvolume") {
-			browser.tabs.sendMessage(data.tabid, {"volume": data.volume});
+			chrome.tabs.sendMessage(data.tabid, {cmd: "volume", value: data.volume});
 		}
 		if (data.cmd === "setmuted") {
-			browser.tabs.sendMessage(data.tabid, {"mute": data.muted});
+			chrome.tabs.sendMessage(data.tabid, {cmd: "mute", value: data.muted});
 		}
 	};
 }
