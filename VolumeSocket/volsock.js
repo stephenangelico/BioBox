@@ -3,54 +3,54 @@
 //NOTE: This broadly assumes only one important video object, which is
 //always present. It might work with multiple but isn't guaranteed.
 
-//Content scripts aren't allowed to see the actual tab ID, so hack in an unlikely-to-be-duplicated one
-const tabid = Math.random() + "" + Math.random();
-let retry_delay = 5000;
-function connect()
+function init(ExtID)
 {
-	let socket = new WebSocket("wss://F-35LightningII.rosuav.com:8888/ws");
-	socket.onopen = () => {
-		retry_delay = 0;
-		console.log("VolSock connection established.");
-		socket.send(JSON.stringify({cmd: "init", type: "volume", "host": location.hostname, group: tabid}));
+	chrome.runtime.onMessage.addListener(extListen);
+	if (location.host === "www.youtube.com") {
+		const player = document.getElementById('movie_player');
+		document.querySelectorAll("video").forEach(vid =>
+		(vid.onvolumechange = e => chrome.runtime.sendMessage(extID, {cmd: "volumechanged", volume: player.getVolume() / 100, muted: player.isMuted()}))()
+		);
+	}
+	else document.querySelectorAll("video").forEach(vid =>
+		(vid.onvolumechange = e => chrome.runtime.sendMessage(extID, {cmd: "volumechanged", volume: vid.volume, muted: vid.muted}))()
+	);
+}
+
+function extListen(message, sender, response)
+{
+	if (message.cmd === "init") {
+		extID = message.value;
+		init(extID);
+		// With this bootstrap method, new tabs are at the mercy of the service worker reloading.
+		// This is not ideal, but we *need* the extension ID to communicate with the service worker.
+		// TODO: get the extension ID in a way accessible to the content script, either by storing
+		// something on install, or by generating and hard-coding a stable ID (also need to test that
+		// ID in other browsers).
+	}
+	if (message.cmd === "volume") {
 		if (location.host === "www.youtube.com") {
 			const player = document.getElementById('movie_player');
-			document.querySelectorAll("video").forEach(vid =>
-			(vid.onvolumechange = e => socket.send(JSON.stringify({cmd: "setvolume", volume: player.getVolume() / 100, muted: player.isMuted()})))()
-			);
+			player.setVolume(message.value * 100)
+			sessionStorage.setItem("yt-player-volume", JSON.stringify({
+				creation: +new Date, expiration: +new Date + 2592000000, data: JSON.stringify({volume: player.getVolume(), muted: player.isMuted()})
+			}));
 		}
-		else document.querySelectorAll("video").forEach(vid =>
-			(vid.onvolumechange = e => socket.send(JSON.stringify({cmd: "setvolume", volume: vid.volume, muted: vid.muted})))()
-		);
-	};
-	socket.onclose = () => {
-		console.log("VolSock connection lost.");
-		setTimeout(connect, retry_delay || 250);
-		if (retry_delay < 30000) retry_delay += 5000;
-	};
-	socket.onmessage = (ev) => {
-		let data = JSON.parse(ev.data);
-		if (data.cmd === "setvolume") {
-			if (location.host === "www.youtube.com") {
-				const player = document.getElementById('movie_player');
-				player.setVolume(data.volume * 100)
-				sessionStorage.setItem("yt-player-volume", JSON.stringify({
-					creation: +new Date, expiration: +new Date + 2592000000, data: JSON.stringify({volume: player.getVolume(), muted: player.isMuted()})
-				}));
+		else document.querySelectorAll("video").forEach(vid => vid.volume = message.value);
+	}
+	if (message.cmd === "mute") {
+		if (location.host === "www.youtube.com") {
+			const player = document.getElementById('movie_player');
+			if (message.value) {
+				player.mute()
 			}
-			else document.querySelectorAll("video").forEach(vid => vid.volume = data.volume);
+			else player.unMute()
 		}
-		if (data.cmd === "setmuted") {
-			if (location.host === "www.youtube.com") {
-				const player = document.getElementById('movie_player');
-				if (data.muted) {
-					player.mute()
-				}
-				else player.unMute()
-			}
-			else document.querySelectorAll("video").forEach(vid => vid.muted = data.muted);
-		}
-	};
+		else document.querySelectorAll("video").forEach(vid => vid.muted = message.value);
+	}
 }
-if (document.readyState !== "loading") connect();
-else window.addEventListener("DOMContentLoaded", connect);
+
+console.log("Extension ID:", chrome.runtime.id)
+
+if (document.readyState !== "loading") chrome.runtime.onMessage.addListener(extListen);
+else window.addEventListener("DOMContentLoaded", chrome.runtime.onMessage.addListener(extListen));
