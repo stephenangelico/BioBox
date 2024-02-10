@@ -6,9 +6,10 @@
 // Security Policy of YouTube, notably YT Music and Studio (YT main seems fine).
 let tabs = {}
 let retry_delay = 5000;
+let socket = null
 function connect()
 {
-	let socket = new WebSocket("wss://F-35LightningII.rosuav.com:8888/ws");
+	socket = new WebSocket("wss://F-35LightningII.rosuav.com:8888/ws");
 	socket.onopen = async () => {
 		retry_delay = 0;
 		console.log("VolSock connection established.");
