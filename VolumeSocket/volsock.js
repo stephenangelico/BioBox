@@ -19,34 +19,40 @@ function init(extID)
 
 function extListen(message, sender, response)
 {
-	if (message.cmd === "init") {
-		extID = message.value;
-		init(extID);
-		// With this bootstrap method, new tabs are at the mercy of the service worker reloading.
-		// This is not ideal, but we *need* the extension ID to communicate with the service worker.
-		// TODO: get the extension ID in a way accessible to the content script, either by storing
-		// something on install, or by generating and hard-coding a stable ID (also need to test that
-		// ID in other browsers).
-	}
-	if (message.cmd === "volume") {
-		if (location.host === "www.youtube.com") {
-			const player = document.getElementById('movie_player');
-			player.setVolume(message.value * 100)
-			sessionStorage.setItem("yt-player-volume", JSON.stringify({
-				creation: +new Date, expiration: +new Date + 2592000000, data: JSON.stringify({volume: player.getVolume(), muted: player.isMuted()})
-			}));
-		}
-		else document.querySelectorAll("video").forEach(vid => vid.volume = message.value);
-	}
-	if (message.cmd === "mute") {
-		if (location.host === "www.youtube.com") {
-			const player = document.getElementById('movie_player');
-			if (message.value) {
-				player.mute()
+	switch (message.cmd) {
+		case "init":
+			if (message.value != extID) {
+				extID = message.value;
+				init(extID);
+				// With this bootstrap method, new tabs are at the mercy of the service worker reloading.
+				// This is not ideal, but we *need* the extension ID to communicate with the service worker.
+				// TODO: get the extension ID in a way accessible to the content script, either by storing
+				// something on install, or by generating and hard-coding a stable ID (also need to test that
+				// ID in other browsers).
+				// Update 20240217: Last week I added the above because I was not getting the extension ID in
+				// content scripts, and assumed that content scripts do not have access to their extension ID
+				// (in my defense, stranger restrictions apply in browsers). This morning, all running content
+				// scripts got their extension IDs without issue. In case the issue occurs again, I will keep
+				// this fallback with all its faults.
 			}
-			else player.unMute()
-		}
-		else document.querySelectorAll("video").forEach(vid => vid.muted = message.value);
+		case "volume":
+			if (location.host === "www.youtube.com") {
+				const player = document.getElementById('movie_player');
+				player.setVolume(message.value * 100);
+				sessionStorage.setItem("yt-player-volume", JSON.stringify({
+					creation: +new Date, expiration: +new Date + 2592000000, data: JSON.stringify({volume: player.getVolume(), muted: player.isMuted()})
+				}));
+			}
+			else document.querySelectorAll("video").forEach(vid => vid.volume = message.value);
+		case "mute":
+			if (location.host === "www.youtube.com") {
+				const player = document.getElementById('movie_player');
+				if (message.value) {
+					player.mute();
+				}
+				else player.unMute();
+			}
+			else document.querySelectorAll("video").forEach(vid => vid.muted = message.value);
 	}
 }
 
