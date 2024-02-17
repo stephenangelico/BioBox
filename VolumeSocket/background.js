@@ -4,9 +4,9 @@
 // the slider in whatever way is appropriate for the site, while the service
 // worker will handle the connection to BioBox. This will satisfy the Content
 // Security Policy of YouTube, notably YT Music and Studio (YT main seems fine).
-let tabs = {}
+let tabs = {};
 let retry_delay = 5000;
-let socket = null
+let socket = null;
 function connect()
 {
 	socket = new WebSocket("wss://F-35LightningII.rosuav.com:8888/ws");
@@ -35,7 +35,7 @@ function connect()
 
 function sendID(tab)
 {
-	chrome.tabs.sendMessage(tab.id, {cmd: "init", value: chrome.runtime.id})
+	chrome.tabs.sendMessage(tab.id, {cmd: "init", value: chrome.runtime.id});
 }
 
 function tabListen(message, sender, response)
@@ -44,12 +44,12 @@ function tabListen(message, sender, response)
 		newtab(sender.tab);
 	}
 	if (message.cmd === "closetab") {
-		closedtab(sender.tab)
+		closedtab(sender.tab);
 		// TODO: There may be multiple reasons to close the channel or *not* close
 		// it - check on page unload, navigate, and tab inactive (memory saving mode)
 	}
 	if (message.cmd === "volumechanged") {
-		volumechanged(sender.tab, message.volume, message.muted)
+		volumechanged(sender.tab, message.volume, message.muted);
 		// TODO: Consider splitting into separate volume and mute
 	}
 }
@@ -57,14 +57,14 @@ function tabListen(message, sender, response)
 function newtab(tab)
 {
 	tabs[tab.id] = tab;
-	let host = new URL(tab.url).hostname // Technically "host" includes port but meh
+	let host = new URL(tab.url).hostname; // Technically "host" includes port but meh
 	socket.send(JSON.stringify({cmd: "newtab", "host": host, "tabid": tab.id}));
 }
 
 function closedtab(tab)
 {
 	// Need to know from Chrome WHICH tab closed
-	tabs[tab.id].remove()
+	tabs[tab.id].remove();
 	socket.send(JSON.stringify({cmd: "closedtab", "tabid": tab.id}));
 }
 
@@ -73,7 +73,7 @@ function volumechanged(tab, volume, muted)
 	socket.send(JSON.stringify({cmd: "setvolume", "tabid": tab.id, "volume": volume, "muted": muted}));
 }
 
-console.log("Extension ID:", chrome.runtime.id)
+console.log("Extension ID:", chrome.runtime.id);
 
 chrome.runtime.onMessage.addListener(tabListen);
 
