@@ -2,6 +2,17 @@
 //How does that signal that a page no longer meets the criterion?
 //NOTE: This broadly assumes only one important video object, which is
 //always present. It might work with multiple but isn't guaranteed.
+let extID;
+extID = chrome.runtime.id;
+try {
+	if (extID.length == 32) {
+		init(extID);
+	}
+} catch {
+	if (e.name == "TypeError") {
+		// Wait for an ID to come from background.js
+	}
+}
 
 function init(extID)
 {
