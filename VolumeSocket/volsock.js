@@ -3,7 +3,7 @@
 //NOTE: This broadly assumes only one important video object, which is
 //always present. It might work with multiple but isn't guaranteed.
 
-function init(ExtID)
+function init(extID)
 {
 	chrome.runtime.onMessage.addListener(extListen);
 	if (location.host === "www.youtube.com") {
