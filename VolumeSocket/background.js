@@ -52,6 +52,7 @@ function tabListen(message, sender, response)
 		volumechanged(sender.tab, message.volume, message.muted);
 		// TODO: Consider splitting into separate volume and mute
 	}
+	response({});
 }
 
 function newtab(tab)

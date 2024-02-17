@@ -65,6 +65,7 @@ function extListen(message, sender, response)
 			}
 			else document.querySelectorAll("video").forEach(vid => vid.muted = message.value);
 	}
+	response({});
 }
 
 console.log("Extension ID:", chrome.runtime.id);
