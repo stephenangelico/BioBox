@@ -8,7 +8,7 @@ try {
 	if (extID.length == 32) {
 		init(extID);
 	}
-} catch {
+} catch (e) {
 	if (e.name == "TypeError") {
 		// Wait for an ID to come from background.js
 	}
