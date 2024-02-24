@@ -22,6 +22,7 @@ function init(extID)
 		document.querySelectorAll("video").forEach(vid =>
 		(vid.onvolumechange = e => chrome.runtime.sendMessage(extID, {cmd: "volumechanged", volume: player.getVolume() / 100, muted: player.isMuted()}))()
 		);
+		// TODO: communicate with yt_hook instead, also fix that scope
 	}
 	else document.querySelectorAll("video").forEach(vid =>
 		(vid.onvolumechange = e => chrome.runtime.sendMessage(extID, {cmd: "volumechanged", volume: vid.volume, muted: vid.muted}))()
@@ -45,6 +46,12 @@ function extListen(message, sender, response)
 				// (in my defense, stranger restrictions apply in browsers). This morning, all running content
 				// scripts got their extension IDs without issue. In case the issue occurs again, I will keep
 				// this fallback with all its faults.
+				// Update 20240224: It makes sense now - content scripts runnning in the MAIN world are
+				// effectively orphaned from the extension, and therefore have no extension ID. To work around
+				// this, there will be a new hook script for YT players (and other hooks for other players as
+				// becomes known) which will run in the MAIN world, and volsock.js will migrate back to the
+				// ISOLATED world. The service worker is probably still necessary for CSP reasons, but if nothing
+				// else it may be helpful for making an options page.
 			}
 		case "volume":
 			if (location.host === "www.youtube.com") {

@@ -7,6 +7,9 @@
 	"background": {
 		"service_worker": "background.js"
 	},
+	"externally_connectable": {
+		"matches": ["https://*.youtube.com/*", "https://*.twitch.tv/*", "file:///*"]
+	},
 	"content_scripts": [{
 		"world": "MAIN",
 		"matches": ["https://youtube.com/*", "https://www.youtube.com/*"],
