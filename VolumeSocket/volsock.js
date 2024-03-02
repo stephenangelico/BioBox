@@ -2,17 +2,13 @@
 //How does that signal that a page no longer meets the criterion?
 //NOTE: This broadly assumes only one important video object, which is
 //always present. It might work with multiple but isn't guaranteed.
-let extID;
-extID = chrome.runtime.id;
-try {
-	if (extID.length == 32) {
-		init(extID);
-	}
-} catch (e) {
-	if (e.name == "TypeError") {
-		// Wait for an ID to come from background.js
-	}
-}
+let extID = "oejgabkmelnodicghenecnopnnninpmm"
+// Content scripts runnning in the MAIN world basically become page scripts, and
+// therefore lose their extension ID. Because it is extremely difficult for a
+// page script to communicate with an extension without knowing the ID for that
+// extension, it is easier to simply embed that ID here for all communications.
+// This ID is current for me, on my systems, with an unpacked extension. For
+// distribution, a new and stable extension ID will be generated.
 
 function init(extID)
 {
@@ -22,7 +18,6 @@ function init(extID)
 		document.querySelectorAll("video").forEach(vid =>
 		(vid.onvolumechange = e => chrome.runtime.sendMessage(extID, {cmd: "volumechanged", volume: player.getVolume() / 100, muted: player.isMuted()}))()
 		);
-		// TODO: communicate with yt_hook instead, also fix that scope
 	}
 	else document.querySelectorAll("video").forEach(vid =>
 		(vid.onvolumechange = e => chrome.runtime.sendMessage(extID, {cmd: "volumechanged", volume: vid.volume, muted: vid.muted}))()
@@ -34,24 +29,10 @@ function extListen(message, sender, response)
 	switch (message.cmd) {
 		case "init":
 			if (message.value != extID) {
+				console.log("Extension IDs do not match:", extID, "vs", message.value);
 				extID = message.value;
 				init(extID);
-				// With this bootstrap method, new tabs are at the mercy of the service worker reloading.
-				// This is not ideal, but we *need* the extension ID to communicate with the service worker.
-				// TODO: get the extension ID in a way accessible to the content script, either by storing
-				// something on install, or by generating and hard-coding a stable ID (also need to test that
-				// ID in other browsers).
-				// Update 20240217: Last week I added the above because I was not getting the extension ID in
-				// content scripts, and assumed that content scripts do not have access to their extension ID
-				// (in my defense, stranger restrictions apply in browsers). This morning, all running content
-				// scripts got their extension IDs without issue. In case the issue occurs again, I will keep
-				// this fallback with all its faults.
-				// Update 20240224: It makes sense now - content scripts runnning in the MAIN world are
-				// effectively orphaned from the extension, and therefore have no extension ID. To work around
-				// this, there will be a new hook script for YT players (and other hooks for other players as
-				// becomes known) which will run in the MAIN world, and volsock.js will migrate back to the
-				// ISOLATED world. The service worker is probably still necessary for CSP reasons, but if nothing
-				// else it may be helpful for making an options page.
+				// Currently will replace extension ID - revisit once extension is packed
 			}
 		case "volume":
 			if (location.host === "www.youtube.com") {
