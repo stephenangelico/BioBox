@@ -12,12 +12,12 @@
 	},
 	"content_scripts": [{
 		"world": "MAIN",
-		"matches": ["https://youtube.com/*", "https://www.youtube.com/*"],
+		"matches": ["https://music.youtube.com/*", "https://youtube.com/*", "https://www.youtube.com/*"],
 		"js": ["volsock.js"]
 	},
 	{
 		"exclude_globs": ["https://dashboard.twitch.tv/*", "https://dev.twitch.tv/*", "*.pdf"],
-		"matches": ["https://music.youtube.com/*", "file:///*", "https://*.twitch.tv/*"],
+		"matches": ["file:///*", "https://*.twitch.tv/*"],
 		"js": ["volsock.js"]
 	}]
 }

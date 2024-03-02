@@ -12,18 +12,20 @@ let extID = "oejgabkmelnodicghenecnopnnninpmm"
 
 function init(extID)
 {
-	chrome.runtime.onMessage.addListener(extListen);
+	let port = chrome.runtime.connect(extID);
+	port.postMessage({cmd: "newtab", host: location.host})
+	port.onMessage.addListener(extListen)
 	if (location.host === "www.youtube.com" || location.host === "music.youtube.com") {
 		const player = document.getElementById('movie_player');
 		document.querySelectorAll("video").forEach(vid =>
 		(vid.onvolumechange = e => chrome.runtime.sendMessage(extID, {cmd: "volumechanged", volume: player.getVolume() / 100, muted: player.isMuted()}))()
-		);
+		); //TODO: use new protocol port.postMessage
 	}
 	else document.querySelectorAll("video").forEach(vid =>
 		(vid.onvolumechange = e => chrome.runtime.sendMessage(extID, {cmd: "volumechanged", volume: vid.volume, muted: vid.muted}))()
-	);
+	); //TODO: use new protocol port.postMessage
 }
-
+//TODO: check if extListen gets those arguments
 function extListen(message, sender, response)
 {
 	switch (message.cmd) {

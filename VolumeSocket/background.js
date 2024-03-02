@@ -23,17 +23,20 @@ function connect()
 		let data = JSON.parse(ev.data);
 		if (data.cmd === "setvolume") {
 			chrome.tabs.sendMessage(data.tabid, {cmd: "volume", value: data.volume});
+			//TODO: send on port instead
 		}
 		if (data.cmd === "setmuted") {
 			chrome.tabs.sendMessage(data.tabid, {cmd: "mute", value: data.muted});
+			//TODO: send on port instead
 		}
 	};
 }
-
-function tabListen(message, sender, response)
+//TODO: New protocol for content script to service worker (newtab done). Port sends message,
+// tabListen does not pass tab but port, functions can get the tab ID from port.sender.tab.id
+function tabListen(message, port)
 {
 	if (message.cmd === "newtab") {
-		newtab(sender.tab);
+		newtab(port, message.host);
 	}
 	if (message.cmd === "closetab") {
 		closedtab(sender.tab);
@@ -44,14 +47,13 @@ function tabListen(message, sender, response)
 		volumechanged(sender.tab, message.volume, message.muted);
 		// TODO: Consider splitting into separate volume and mute
 	}
-	response({});
 }
 
-function newtab(tab)
+function newtab(port, host)
 {
-	tabs[tab.id] = tab;
-	let host = new URL(tab.url).hostname; // Technically "host" includes port but meh
-	socket.send(JSON.stringify({cmd: "newtab", "host": host, "tabid": tab.id}));
+	let tabid = port.sender.tab.id
+	tabs[tabid] = port;
+	socket.send(JSON.stringify({cmd: "newtab", "host": host, "tabid": tabid}));
 }
 
 function closedtab(tab)
@@ -68,6 +70,6 @@ function volumechanged(tab, volume, muted)
 
 console.log("Extension ID:", chrome.runtime.id);
 
-chrome.runtime.onMessage.addListener(tabListen);
+chrome.runtime.onConnectExternal.addListener(port => {port.onMessage.addListener(tabListen)});
 
 connect();
