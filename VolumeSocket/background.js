@@ -13,9 +13,6 @@ function connect()
 	socket.onopen = async () => {
 		retry_delay = 0;
 		console.log("VolSock connection established.");
-		socket.send(JSON.stringify({cmd: "init", type: "volume", group: ""}));
-		(await chrome.tabs.query({"url": "*://*.youtube.com/*"})).forEach(sendID);
-		// TODO: get all tabs the extension runs on, not just YT
 	};
 	socket.onclose = () => {
 		console.log("VolSock connection lost.");
@@ -31,11 +28,6 @@ function connect()
 			chrome.tabs.sendMessage(data.tabid, {cmd: "mute", value: data.muted});
 		}
 	};
-}
-
-function sendID(tab)
-{
-	chrome.tabs.sendMessage(tab.id, {cmd: "init", value: chrome.runtime.id});
 }
 
 function tabListen(message, sender, response)

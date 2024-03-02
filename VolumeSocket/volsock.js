@@ -27,13 +27,6 @@ function init(extID)
 function extListen(message, sender, response)
 {
 	switch (message.cmd) {
-		case "init":
-			if (message.value != extID) {
-				console.log("Extension IDs do not match:", extID, "vs", message.value);
-				extID = message.value;
-				init(extID);
-				// Currently will replace extension ID - revisit once extension is packed
-			}
 		case "volume":
 			if (location.host === "www.youtube.com" || location.host === "music.youtube.com") {
 				const player = document.getElementById('movie_player');
@@ -58,5 +51,5 @@ function extListen(message, sender, response)
 
 console.log("Extension ID:", chrome.runtime.id);
 
-if (document.readyState !== "loading") chrome.runtime.onMessage.addListener(extListen);
-else window.addEventListener("DOMContentLoaded", chrome.runtime.onMessage.addListener(extListen));
+if (document.readyState !== "loading") init(extID);
+else window.addEventListener("DOMContentLoaded", init(extID));
