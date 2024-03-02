@@ -13,7 +13,7 @@ let extID = "oejgabkmelnodicghenecnopnnninpmm"
 function init(extID)
 {
 	chrome.runtime.onMessage.addListener(extListen);
-	if (location.host === "www.youtube.com") {
+	if (location.host === "www.youtube.com" || location.host === "music.youtube.com") {
 		const player = document.getElementById('movie_player');
 		document.querySelectorAll("video").forEach(vid =>
 		(vid.onvolumechange = e => chrome.runtime.sendMessage(extID, {cmd: "volumechanged", volume: player.getVolume() / 100, muted: player.isMuted()}))()
@@ -35,7 +35,7 @@ function extListen(message, sender, response)
 				// Currently will replace extension ID - revisit once extension is packed
 			}
 		case "volume":
-			if (location.host === "www.youtube.com") {
+			if (location.host === "www.youtube.com" || location.host === "music.youtube.com") {
 				const player = document.getElementById('movie_player');
 				player.setVolume(message.value * 100);
 				sessionStorage.setItem("yt-player-volume", JSON.stringify({
@@ -44,7 +44,7 @@ function extListen(message, sender, response)
 			}
 			else document.querySelectorAll("video").forEach(vid => vid.volume = message.value);
 		case "mute":
-			if (location.host === "www.youtube.com") {
+			if (location.host === "www.youtube.com" || location.host === "music.youtube.com") {
 				const player = document.getElementById('movie_player');
 				if (message.value) {
 					player.mute();
