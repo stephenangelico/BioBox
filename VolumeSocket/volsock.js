@@ -53,7 +53,5 @@ function extListen(message, sender, response)
 	response({});
 }
 
-console.log("Extension ID:", chrome.runtime.id);
-
 if (document.readyState !== "loading") init(extID);
 else window.addEventListener("DOMContentLoaded", init(extID));
