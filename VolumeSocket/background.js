@@ -25,12 +25,10 @@ function connect()
 	socket.onmessage = (ev) => {
 		let data = JSON.parse(ev.data);
 		if (data.cmd === "setvolume") {
-			chrome.tabs.sendMessage(data.tabid, {cmd: "volume", value: data.volume});
-			//TODO: send on port instead
+			tabs[data.tabid].postMessage({cmd: "volume", value: data.volume});
 		}
 		if (data.cmd === "setmuted") {
-			chrome.tabs.sendMessage(data.tabid, {cmd: "mute", value: data.muted});
-			//TODO: send on port instead
+			tabs[data.tabid].postMessage({cmd: "mute", value: data.muted});
 		}
 	};
 }
@@ -42,12 +40,12 @@ function tabListen(message, port)
 		newtab(port, message.host);
 	}
 	if (message.cmd === "closetab") {
-		closedtab(sender.tab);
+		closedtab(port.sender.tab.id);
 		// TODO: There may be multiple reasons to close the channel or *not* close
 		// it - check on page unload, navigate, and tab inactive (memory saving mode)
 	}
 	if (message.cmd === "volumechanged") {
-		volumechanged(sender.tab, message.volume, message.muted);
+		volumechanged(port.sender.tab.id, message.volume, message.muted);
 		// TODO: Consider splitting into separate volume and mute
 	}
 }
@@ -59,16 +57,16 @@ function newtab(port, host)
 	socket.send(JSON.stringify({cmd: "newtab", "host": host, "tabid": tabid}));
 }
 
-function closedtab(tab)
+function closedtab(tabid)
 {
 	// Need to know from Chrome WHICH tab closed
-	tabs[tab.id].remove();
-	socket.send(JSON.stringify({cmd: "closedtab", "tabid": tab.id}));
+	tabs[tabid].remove();
+	socket.send(JSON.stringify({cmd: "closedtab", "tabid": tabid}));
 }
 
-function volumechanged(tab, volume, muted)
+function volumechanged(tabid, volume, muted)
 {
-	socket.send(JSON.stringify({cmd: "setvolume", "tabid": tab.id, "volume": volume, "muted": muted}));
+	socket.send(JSON.stringify({cmd: "setvolume", "tabid": tabid, "volume": volume, "muted": muted}));
 }
 
 console.log("Extension ID:", chrome.runtime.id);
