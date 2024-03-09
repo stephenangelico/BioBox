@@ -69,8 +69,6 @@ function volumechanged(tabid, volume, muted)
 	socket.send(JSON.stringify({cmd: "setvolume", "tabid": tabid, "volume": volume, "muted": muted}));
 }
 
-console.log("Extension ID:", chrome.runtime.id);
-
 chrome.runtime.onConnectExternal.addListener(port => {port.onMessage.addListener(tabListen)});
 
 connect();
