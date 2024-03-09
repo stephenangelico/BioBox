@@ -38,6 +38,7 @@ function extListen(message, sender, response)
 				}));
 			}
 			else document.querySelectorAll("video").forEach(vid => vid.volume = message.value);
+			break;
 		case "mute":
 			if (location.host === "www.youtube.com" || location.host === "music.youtube.com") {
 				const player = document.getElementById('movie_player');
@@ -47,6 +48,7 @@ function extListen(message, sender, response)
 				else player.unMute();
 			}
 			else document.querySelectorAll("video").forEach(vid => vid.muted = message.value);
+			break;
 	}
 	response({});
 }
