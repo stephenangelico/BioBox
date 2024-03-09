@@ -13,6 +13,7 @@ function connect()
 	socket.onopen = async () => {
 		retry_delay = 0;
 		console.log("VolSock connection established.");
+		socket.send(JSON.stringify({cmd: "init", type: "volume", group: ""}));
 	};
 	socket.onclose = () => {
 		console.log("VolSock connection lost.");
