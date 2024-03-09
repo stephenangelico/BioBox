@@ -25,8 +25,7 @@ function init(extID)
 		(vid.onvolumechange = e => port.postMessage(extID, {cmd: "volumechanged", volume: vid.volume, muted: vid.muted}))()
 	);
 }
-//TODO: check if extListen gets those arguments
-function extListen(message, sender, response)
+function extListen(message)
 {
 	switch (message.cmd) {
 		case "volume":
@@ -50,7 +49,6 @@ function extListen(message, sender, response)
 			else document.querySelectorAll("video").forEach(vid => vid.muted = message.value);
 			break;
 	}
-	response({});
 }
 
 if (document.readyState !== "loading") init(extID);
