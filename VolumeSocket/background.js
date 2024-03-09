@@ -32,8 +32,6 @@ function connect()
 		}
 	};
 }
-//TODO: New protocol for content script to service worker (newtab done). Port sends message,
-// tabListen does not pass tab but port, functions can get the tab ID from port.sender.tab.id
 function tabListen(message, port)
 {
 	if (message.cmd === "newtab") {
