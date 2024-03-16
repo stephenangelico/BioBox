@@ -50,12 +50,14 @@ async def volume(sock, path):
 				if "group" not in msg: continue
 				group = str(msg["group"])
 				sockets[group].append(sock)
+				# TODO: Add a tab list for each group
 			elif msg["cmd"] == "newtab":
 				host = str(msg["host"])
 				tabid = str(msg["tabid"])
 				if tabid not in tabs:
 					cb = callbacks.get("newtab")
 					if cb: cb(group, tabid, host)
+				# TODO: Cope with getting the same tab on reconnect - may need to re-add tab rather than ignore
 			elif msg["cmd"] == "closedtab":
 				tabid = str(msg["tabid"])
 				if tabid in tabs:

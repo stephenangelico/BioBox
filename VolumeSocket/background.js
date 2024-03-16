@@ -41,6 +41,7 @@ function tabListen(message, port)
 		closedtab(port.sender.tab.id);
 		// TODO: There may be multiple reasons to close the channel or *not* close
 		// it - check on page unload, navigate, and tab inactive (memory saving mode)
+		// Should receive a port.onDisconnect event for most of these
 	}
 	if (message.cmd === "volumechanged") {
 		volumechanged(port.sender.tab.id, message.volume, message.muted);
@@ -78,3 +79,10 @@ function volumechanged(tabid, volume, muted)
 chrome.runtime.onConnectExternal.addListener(port => {port.onMessage.addListener(tabListen)});
 
 connect();
+//TODO: create keepalive/heartbeat to reconnect when service worker is shut down
+// Chrome shuts down workers that have been inactive for 30 seconds, but forcibly
+// shuts down workers that have been active for 5 minutes. Shutdowns should result
+// in an onDisconnect event at the other end of a port - experiment with another
+// page/worker/script to reconnect with onDisconnect, which should restart the
+// service worker. Such a worker can be idle except for this event, which should
+// mean it will be suspended for inactivity, waking up on this event.
