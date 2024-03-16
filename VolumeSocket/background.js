@@ -13,9 +13,9 @@ function connect()
 	socket.onopen = async () => {
 		retry_delay = 0;
 		console.log("VolSock connection established.");
-		socket.send(JSON.stringify({cmd: "init", type: "volume", group: ""}));
-		//TODO: Should we run newtab here for everything already in tabs?
-		// More importantly, under what circumstances should we not?
+		let instanceID = Math.random() + "" + Math.random();
+		socket.send(JSON.stringify({cmd: "init", type: "volume", group: instanceID}));
+		Object.values(tabs).forEach(resendtab);
 	};
 	socket.onclose = () => {
 		console.log("VolSock connection lost.");
@@ -53,6 +53,14 @@ function newtab(port, host)
 	let tabid = port.sender.tab.id
 	tabs[tabid] = port;
 	socket.send(JSON.stringify({cmd: "newtab", "host": host, "tabid": tabid}));
+	//TODO: Stop sending host from content script and use method from resendtab
+}
+
+function resendtab(port)
+{
+	let tabid = port.sender.tab.id
+	let origin = new URL(port.sender.origin)
+	socket.send(JSON.stringify({cmd: "newtab", "host": origin.hostname, "tabid": tabid}));
 }
 
 function closedtab(tabid)
