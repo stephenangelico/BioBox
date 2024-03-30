@@ -76,13 +76,22 @@ function volumechanged(tabid, volume, muted)
 	socket.send(JSON.stringify({cmd: "setvolume", "tabid": tabid, "volume": volume, "muted": muted}));
 }
 
+function heartbeat(port)
+{
+	setInterval(beat => {port.sendMessage("ping")}, 30000);
+}
+
+chrome.runtime.onConnect.addListener(port => {heartbeat(port)});
 chrome.runtime.onConnectExternal.addListener(port => {port.onMessage.addListener(tabListen)});
 
 connect();
 //TODO: create keepalive/heartbeat to reconnect when service worker is shut down
 // Chrome shuts down workers that have been inactive for 30 seconds, but forcibly
 // shuts down workers that have been active for 5 minutes. Shutdowns should result
-// in an onDisconnect event at the other end of a port - experiment with another
-// page/worker/script to reconnect with onDisconnect, which should restart the
-// service worker. Such a worker can be idle except for this event, which should
-// mean it will be suspended for inactivity, waking up on this event.
+// in an onDisconnect event at the other end of a port. This can be used to reconnect
+// as necessary. Other options for persisting the service worker are:
+// 1. Use chrome.runtime API every <30 sec - bug exploit
+// 2. Use offscreen page for heartbeat/ping-pong
+// 3. BioBox to VolSock heartbeat every <30 sec - Chrome feature
+// 4. Reconnect ports every <300 sec
+// See https://stackoverflow.com/questions/66618136/persistent-service-worker-in-chrome-extension
