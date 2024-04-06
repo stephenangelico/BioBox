@@ -7,18 +7,22 @@
 let tabs = {};
 let retry_delay = 5000;
 let socket = null;
+let keepalive_timer = 0;
 function connect()
 {
 	socket = new WebSocket("wss://F-35LightningII.rosuav.com:8888/ws");
 	socket.onopen = async () => {
 		retry_delay = 0;
 		console.log("VolSock connection established.");
+		// Possible bug exploit in Chrome 110+ to keep SW alive but seemingly accepted as a feature for now
+		keepalive_timer = setInterval(chrome.runtime.getPlatformInfo, 20e3);
 		let instanceID = Math.random() + "" + Math.random();
 		socket.send(JSON.stringify({cmd: "init", type: "volume", group: instanceID}));
 		Object.values(tabs).forEach(resendtab);
 	};
 	socket.onclose = () => {
 		console.log("VolSock connection lost.");
+		clearInterval(keepalive_timer);
 		setTimeout(connect, retry_delay || 250);
 		if (retry_delay < 30000) retry_delay += 5000;
 	};
