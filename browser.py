@@ -66,6 +66,8 @@ async def volume(sock, path):
 			elif msg["cmd"] == "setvolume":
 				cb = callbacks.get("volumechanged")
 				if cb: cb(tabid, msg.get("volume", 0), bool(msg.get("muted")))
+			elif msg["cmd"] == "beat":
+				pass
 			else:
 				print(msg)
 	except websockets.ConnectionClosedError:
@@ -77,6 +79,13 @@ async def volume(sock, path):
 async def send_message(group, msg):
 	for sock in sockets[group]:
 		await sock.send(json.dumps(msg))
+
+async def keepalive():
+	while True:
+		await asyncio.sleep(20)
+		for socks in sockets.values():
+			for sock in socks:
+				await sock.send(json.dumps({"cmd": "heartbeat"}))
 
 async def set_volume(group, tabid, vol):
 	# What happens if the buffer fills up and we start another send?
@@ -99,6 +108,7 @@ async def listen(start_time, *, host="", port=8888):
 		ssl_context = None
 	try:
 		async with websockets.serve(volume, host, port, ssl=ssl_context) as ws_server:
+			spawn(keepalive())
 			print("[" + str(time.monotonic() - start_time) + "] Websocket listening.")
 			await asyncio.Future()
 	except OSError as e:
