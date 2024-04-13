@@ -86,10 +86,10 @@ function volumechanged(tabid, volume, muted)
 
 function heartbeat(port)
 {
+	// Unused - can be added to content script if BG<->page heartbeat required
 	setInterval(beat => {port.sendMessage("ping")}, 30000);
 }
 
-chrome.runtime.onConnect.addListener(port => {heartbeat(port)});
 chrome.runtime.onConnectExternal.addListener(port => {port.onMessage.addListener(tabListen)});
 
 connect();
