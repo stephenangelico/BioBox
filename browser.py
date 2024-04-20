@@ -87,9 +87,8 @@ async def send_message(sockid, msg):
 async def keepalive():
 	while True:
 		await asyncio.sleep(20)
-		for socks in sockets.values():
-			for sock in socks:
-				await sock.send(json.dumps({"cmd": "heartbeat"}))
+		for conn in sockets.values():
+			await conn.sock.send(json.dumps({"cmd": "heartbeat"}))
 
 async def set_volume(sockid, tabid, vol):
 	# What happens if the buffer fills up and we start another send?
