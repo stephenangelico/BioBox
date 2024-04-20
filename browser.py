@@ -80,6 +80,12 @@ async def volume(sock, path):
 				print(msg)
 	except websockets.ConnectionClosedError:
 		pass
+	# If this sock isn't in the dict, most likely another socket kicked us,
+	# which is uninteresting.
+	if sockid:
+		for tab in sockets[sockid].tabs:
+			tab.remove() # Remove from GUI
+		sockets.pop(sockid)
 
 async def send_message(sockid, msg):
 	await sockets[sockid].sock.send(json.dumps(msg))
@@ -88,7 +94,10 @@ async def keepalive():
 	while True:
 		await asyncio.sleep(20)
 		for conn in sockets.values():
-			await conn.sock.send(json.dumps({"cmd": "heartbeat"}))
+			try:
+				await conn.sock.send(json.dumps({"cmd": "heartbeat"}))
+			except websockets.exceptions.ConnectionClosedOK:
+				print("Possible old sock:", conn.sockid)
 
 async def set_volume(sockid, tabid, vol):
 	# What happens if the buffer fills up and we start another send?
