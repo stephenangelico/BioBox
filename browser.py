@@ -123,9 +123,9 @@ def new_tab(group, tabid, host):
 		tabname = sites[host]
 	else:
 		tabname = host
-	print("Creating channel for new tab:", tabid)
-	newtab = Browser(group, tabid, tabname)
-	tabs[tabid] = newtab
+	print("Creating channel for new tab:", tabid, tabname)
+	tab = Browser(group, tabid, tabname)
+	tabs[tabid] = tab
 
 def closed_tab(tabid):
 	print("Destroying channel for closed tab:", tabid)
