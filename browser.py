@@ -24,17 +24,17 @@ class Browser(Channel):
 	group_name = "Browser"
 	max = 100 # Most video players don't do anything with volume above 100%
 	
-	def __init__(self, group, tabid, tabname):
+	def __init__(self, groupid, tabid, tabname):
 		super().__init__(name=tabname)
-		self.group = group
+		self.groupid = groupid
 		self.tabid = tabid
 
 	def write_external(self, value):
-		spawn(set_volume(self.group, self.tabid, (value / 100)))
+		spawn(set_volume(self.groupid, self.tabid, (value / 100)))
 	
 	def muted(self, widget):
 		mute_state = super().muted(widget) # Handles label change and IIDPIO
-		spawn(set_muted(self.group, self.tabid, mute_state))
+		spawn(set_muted(self.groupid, self.tabid, mute_state))
 
 async def volume(sock, path):
 	if path != "/ws": return # Can we send back a 404 or something?
