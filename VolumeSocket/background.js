@@ -17,7 +17,7 @@ function connect()
 		// Possible bug exploit in Chrome 110+ to keep SW alive but seemingly accepted as a feature for now
 		keepalive_timer = setInterval(chrome.runtime.getPlatformInfo, 20e3);
 		let instanceID = Math.random() + "" + Math.random();
-		socket.send(JSON.stringify({cmd: "init", type: "volume", group: instanceID}));
+		socket.send(JSON.stringify({cmd: "init", type: "volume", sockID: instanceID}));
 		Object.values(tabs).forEach(resendtab);
 		// TODO: Check if those tabs are all still there before resending
 	};
