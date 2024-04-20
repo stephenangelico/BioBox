@@ -19,6 +19,7 @@ function connect()
 		let instanceID = Math.random() + "" + Math.random();
 		socket.send(JSON.stringify({cmd: "init", type: "volume", group: instanceID}));
 		Object.values(tabs).forEach(resendtab);
+		// TODO: Check if those tabs are all still there before resending
 	};
 	socket.onclose = () => {
 		console.log("VolSock connection lost.");
@@ -59,7 +60,7 @@ function tabListen(message, port)
 
 function newtab(port, host)
 {
-	let tabid = port.sender.tab.id
+	let tabid = port.sender.tab.id;
 	tabs[tabid] = port;
 	socket.send(JSON.stringify({cmd: "newtab", "host": host, "tabid": tabid}));
 	//TODO: Stop sending host from content script and use method from resendtab
@@ -67,15 +68,15 @@ function newtab(port, host)
 
 function resendtab(port)
 {
-	let tabid = port.sender.tab.id
-	let origin = new URL(port.sender.origin)
+	let tabid = port.sender.tab.id;
+	let origin = new URL(port.sender.origin);
 	socket.send(JSON.stringify({cmd: "newtab", "host": origin.hostname, "tabid": tabid}));
 }
 
-function closedtab(tabid)
+function closedtab(port)
 {
-	// Need to know from Chrome WHICH tab closed
-	tabs[tabid].remove();
+	let tabid = port.sender.tab.id;
+	delete tabs[tabid];
 	socket.send(JSON.stringify({cmd: "closedtab", "tabid": tabid}));
 }
 
@@ -90,6 +91,11 @@ function heartbeat(port)
 	setInterval(beat => {port.sendMessage("ping")}, 30000);
 }
 
-chrome.runtime.onConnectExternal.addListener(port => {port.onMessage.addListener(tabListen)});
+//chrome.runtime.onDisconnect.addListener(e => {console.log(e)});
+chrome.runtime.onConnectExternal.addListener(port =>
+{
+	port.onDisconnect.addListener(port => closedtab(port));
+	port.onMessage.addListener(tabListen)
+});
 
 connect();
