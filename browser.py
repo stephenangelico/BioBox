@@ -11,7 +11,6 @@ import websockets # ImportError? pip install websockets
 
 sockets = defaultdict(list)
 callbacks = { }
-tabs = {}
 sites = {
 	"music.youtube.com": "YT Music",
 	"www.youtube.com": "YouTube",
@@ -24,17 +23,23 @@ class Browser(Channel):
 	group_name = "Browser"
 	max = 100 # Most video players don't do anything with volume above 100%
 	
-	def __init__(self, groupid, tabid, tabname):
+	def __init__(self, sockid, tabid, tabname):
 		super().__init__(name=tabname)
-		self.groupid = groupid
+		self.sockid = sockid
 		self.tabid = tabid
 
 	def write_external(self, value):
-		spawn(set_volume(self.groupid, self.tabid, (value / 100)))
+		spawn(set_volume(self.sockid, self.tabid, (value / 100)))
 	
 	def muted(self, widget):
 		mute_state = super().muted(widget) # Handles label change and IIDPIO
-		spawn(set_muted(self.groupid, self.tabid, mute_state))
+		spawn(set_muted(self.sockid, self.tabid, mute_state))
+
+class WSConn():
+	def __init__(self, sockid, sock):
+		self.sockid = sockid
+		self.sock = sock
+		self.tabs = {}
 
 async def volume(sock, path):
 	if path != "/ws": return # Can we send back a 404 or something?
@@ -47,38 +52,37 @@ async def volume(sock, path):
 			if "cmd" not in msg: continue # Every message has to have a command
 			if msg["cmd"] == "init":
 				if msg.get("type") != "volume": continue # This is the only socket type currently supported
-				if "group" not in msg: continue
-				group = str(msg["group"])
-				sockets[group].append(sock)
-				# TODO: Add a tab list for each group
+				if "sockID" not in msg: continue
+				sockid = str(msg["sockID"])
+				if sockid not in sockets:
+					conn = WSConn(sockid, sock)
+					sockets[sockid] = conn
+				else:
+					sockets[sockid].sock = sock
 			elif msg["cmd"] == "newtab":
 				host = str(msg["host"])
 				tabid = str(msg["tabid"])
-				if tabid not in tabs:
+				if tabid not in sockets[sockid].tabs: # sockid is set during init
 					cb = callbacks.get("newtab")
-					if cb: cb(group, tabid, host)
+					if cb: cb(sockid, tabid, host)
 				# TODO: Cope with getting the same tab on reconnect - may need to re-add tab rather than ignore
 			elif msg["cmd"] == "closedtab":
 				tabid = str(msg["tabid"])
-				if tabid in tabs:
+				if tabid in sockets[sockid].tabs: # sockid is set during init
 					cb = callbacks.get("closedtab")
-					if cb: cb(tabid)
+					if cb: cb(sockid, tabid)
 			elif msg["cmd"] == "setvolume":
 				cb = callbacks.get("volumechanged")
-				if cb: cb(tabid, msg.get("volume", 0), bool(msg.get("muted")))
+				if cb: cb(sockid, tabid, msg.get("volume", 0), bool(msg.get("muted")))
 			elif msg["cmd"] == "beat":
 				pass
 			else:
 				print(msg)
 	except websockets.ConnectionClosedError:
 		pass
-	# If this sock isn't in the dict, most likely another socket kicked us,
-	# which is uninteresting.
-	sockets[group].remove(sock)
 
-async def send_message(group, msg):
-	for sock in sockets[group]:
-		await sock.send(json.dumps(msg))
+async def send_message(sockid, msg):
+	await sockets[sockid].sock.send(json.dumps(msg))
 
 async def keepalive():
 	while True:
@@ -87,14 +91,14 @@ async def keepalive():
 			for sock in socks:
 				await sock.send(json.dumps({"cmd": "heartbeat"}))
 
-async def set_volume(group, tabid, vol):
+async def set_volume(sockid, tabid, vol):
 	# What happens if the buffer fills up and we start another send?
 	# Ideally: prevent subsequent sends until the first one finishes, but remember the latest
 	# volume selection made. If that's not the same as the first volume, send another after.
-	await send_message(group, {"cmd": "setvolume", "tabid": tabid, "volume": vol})
+	await send_message(sockid, {"cmd": "setvolume", "tabid": tabid, "volume": vol})
 
-async def set_muted(group, tabid, muted):
-	await send_message(group, {"cmd": "setmuted", "tabid": tabid, "muted": bool(muted)})
+async def set_muted(sockid, tabid, muted):
+	await send_message(sockid, {"cmd": "setmuted", "tabid": tabid, "muted": bool(muted)})
 
 async def listen(start_time, *, host="", port=8888):
 	callbacks.update(newtab=new_tab, closedtab=closed_tab, volumechanged=tab_volume_changed)
@@ -118,23 +122,23 @@ async def listen(start_time, *, host="", port=8888):
 		print("Websocket shutting down.") # I don't hate you!
 
 # Channel management
-def new_tab(group, tabid, host):
+def new_tab(sockid, tabid, host):
 	if host in sites:
 		tabname = sites[host]
 	else:
 		tabname = host
 	print("Creating channel for new tab:", tabid, tabname)
-	tab = Browser(group, tabid, tabname)
-	tabs[tabid] = tab
+	tab = Browser(sockid, tabid, tabname)
+	sockets[sockid].tabs[tabid] = tab
 
-def closed_tab(tabid):
+def closed_tab(sockid, tabid):
 	print("Destroying channel for closed tab:", tabid)
-	tabs[tabid].remove() # Remove channel in GUI
-	tabs.pop(tabid, None) # Remove from list of tabs
+	sockets[sockid].tabs[tabid].remove() # Remove channel in GUI
+	sockets[sockid].tabs.pop(tabid, None) # Remove from socket's list of tabs
 
-def tab_volume_changed(tabid, volume, mute_state):
+def tab_volume_changed(sockid, tabid, volume, mute_state):
 	print("On", tabid, ": Volume:", volume, "Muted:", bool(mute_state))
-	channel = tabs[tabid]
+	channel = sockets[sockid].tabs[tabid]
 	channel.refract_value(float(volume * 100), "backend")
 	channel.mute.set_active(int(mute_state))
 
