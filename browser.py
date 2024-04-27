@@ -83,7 +83,7 @@ async def volume(sock, path):
 	# If this sock isn't in the dict, most likely another socket kicked us,
 	# which is uninteresting.
 	if sockid:
-		for tab in sockets[sockid].tabs:
+		for tab in sockets[sockid].tabs.values():
 			tab.remove() # Remove from GUI
 		sockets.pop(sockid)
 
