@@ -18,8 +18,7 @@ function connect()
 		keepalive_timer = setInterval(chrome.runtime.getPlatformInfo, 20e3);
 		let instanceID = Math.random() + "" + Math.random();
 		socket.send(JSON.stringify({cmd: "init", type: "volume", sockID: instanceID}));
-		Object.values(tabs).forEach(resendtab);
-		// TODO: Check if those tabs are all still there before resending. Also get their actual volumes.
+		Object.values(tabs).forEach(checktab);
 	};
 	socket.onclose = () => {
 		console.log("VolSock connection lost.");
@@ -44,7 +43,7 @@ function connect()
 function tabListen(message, port)
 {
 	if (message.cmd === "newtab") {
-		newtab(port, message.host);
+		newtab(port);
 	}
 	if (message.cmd === "closetab") {
 		closedtab(port.sender.tab.id);
@@ -56,14 +55,23 @@ function tabListen(message, port)
 		volumechanged(port.sender.tab.id, message.volume, message.muted);
 		// TODO: Consider splitting into separate volume and mute
 	}
+	if (message.cmd === "volumeresponse") {
+		resendtab(port);
+		volumechanged(port.sender.tab.id, message.volume, message.muted);
+	}
 }
 
-function newtab(port, host)
+function newtab(port)
 {
 	let tabid = port.sender.tab.id;
+	let origin = new URL(port.sender.origin);
 	tabs[tabid] = port;
-	socket.send(JSON.stringify({cmd: "newtab", "host": host, "tabid": tabid}));
-	//TODO: Stop sending host from content script and use method from resendtab
+	socket.send(JSON.stringify({cmd: "newtab", "host": origin.hostname, "tabid": tabid}));
+}
+
+function checktab(port)
+{
+	port.postMessage({cmd: "queryvolume"});
 }
 
 function resendtab(port)

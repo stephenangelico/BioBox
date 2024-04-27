@@ -10,11 +10,12 @@ let extID = "oejgabkmelnodicghenecnopnnninpmm";
 // This ID is current for me, on my systems, with an unpacked extension. For
 // distribution, a new and stable extension ID will be generated.
 let player;
+let port;
 
 function init(extID)
 {
-	let port = chrome.runtime.connect(extID);
-	port.postMessage({cmd: "newtab", host: location.host});
+	port = chrome.runtime.connect(extID);
+	port.postMessage({cmd: "newtab"});
 	port.onMessage.addListener(extListen);
 	if (location.host === "www.youtube.com" || location.host === "music.youtube.com") {
 		if (location.host === "www.youtube.com") {
@@ -52,6 +53,14 @@ function extListen(message)
 				else player.unMute();
 			}
 			else document.querySelectorAll("video").forEach(vid => vid.muted = message.value);
+			break;
+		case "queryvolume":
+			if (location.host === "www.youtube.com" || location.host === "music.youtube.com") {
+				port.postMessage({cmd: "volumeresponse", volume: player.getVolume() / 100, muted: player.isMuted()});
+			}
+			else document.querySelectorAll("video").forEach(vid =>
+				port.postMessage({cmd: "volumeresponse", volume: vid.volume, muted: vid.muted})
+			);
 			break;
 	}
 }
