@@ -19,7 +19,7 @@ function connect()
 		let instanceID = Math.random() + "" + Math.random();
 		socket.send(JSON.stringify({cmd: "init", type: "volume", sockID: instanceID}));
 		Object.values(tabs).forEach(resendtab);
-		// TODO: Check if those tabs are all still there before resending
+		// TODO: Check if those tabs are all still there before resending. Also get their actual volumes.
 	};
 	socket.onclose = () => {
 		console.log("VolSock connection lost.");
