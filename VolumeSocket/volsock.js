@@ -29,7 +29,7 @@ function init(extID)
 		);
 	}
 	else document.querySelectorAll("video").forEach(vid =>
-		(vid.onvolumechange = e => port.postMessage(extID, {cmd: "volumechanged", volume: vid.volume, muted: vid.muted}))()
+		(vid.onvolumechange = e => port.postMessage({cmd: "volumechanged", volume: vid.volume, muted: vid.muted}))()
 	);
 }
 function extListen(message)
