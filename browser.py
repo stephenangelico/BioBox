@@ -43,7 +43,7 @@ class WSConn():
 
 async def volume(sock, path):
 	if path != "/ws": return # Can we send back a 404 or something?
-	tabid = None
+	sockid = None
 	try:
 		async for msg in sock:
 			try: msg = json.loads(msg)
@@ -72,6 +72,7 @@ async def volume(sock, path):
 					cb = callbacks.get("closedtab")
 					if cb: cb(sockid, tabid)
 			elif msg["cmd"] == "setvolume":
+				tabid = str(msg["tabid"])
 				cb = callbacks.get("volumechanged")
 				if cb: cb(sockid, tabid, msg.get("volume", 0), bool(msg.get("muted")))
 			elif msg["cmd"] == "beat":
