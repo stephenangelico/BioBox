@@ -46,7 +46,6 @@ function extListen(message)
 			break;
 		case "mute":
 			if (location.host === "www.youtube.com" || location.host === "music.youtube.com") {
-				const player = document.getElementById('movie_player');
 				if (message.value) {
 					player.mute();
 				}
