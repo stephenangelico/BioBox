@@ -22,12 +22,27 @@ function init(extID)
 				player = document.getElementById('movie_player');
 		}
 		if (location.host === "music.youtube.com") {
-				player = document.getElementById('player-page').playerUiService.playerApi;
-				// So far the UI doesn't react at all
+				player = document.querySelector('ytmusic-player-bar').playerApi;
+				// TODO: Rework for YT Music:
+				// player = document.querySelector('ytmusic-player-bar')
+				// setVolume = player.updateVolume(value)
+				// mute = player.playerApi.mute()
+				// unmute = player.playerApi.unMute()
 		}
+		new MutationObserver(mutationList =>
+			[...mutationList].forEach(mutation =>
+				mutation.addedNodes.forEach(node =>
+					node.querySelectorAll && node.querySelectorAll("video").forEach(vid => {
+						console.log("Video!", vid);
+						(vid.onvolumechange = e => port.postMessage({cmd: "volumechanged", volume: player.getVolume() / 100, muted: player.isMuted()}))()
+					})))).observe(document, {subtree:1,childList:1})
 		document.querySelectorAll("video").forEach(vid =>
-		(vid.onvolumechange = e => port.postMessage({cmd: "volumechanged", volume: player.getVolume() / 100, muted: player.isMuted()}))()
+		{
+			console.log(vid);
+			(vid.onvolumechange = e => port.postMessage({cmd: "volumechanged", volume: player.getVolume() / 100, muted: player.isMuted()}))();
+		}
 		);
+		// TODO: is the original document.querySelector now redundant?
 	}
 	else document.querySelectorAll("video").forEach(vid =>
 		(vid.onvolumechange = e => port.postMessage({cmd: "volumechanged", volume: vid.volume, muted: vid.muted}))()
