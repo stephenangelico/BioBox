@@ -47,9 +47,7 @@ function tabListen(message, port)
 	}
 	if (message.cmd === "closetab") {
 		closedtab(port.sender.tab.id);
-		// TODO: There may be multiple reasons to close the channel or *not* close
-		// it - check on page unload, navigate, and tab inactive (memory saving mode)
-		// Should receive a port.onDisconnect event for most of these
+		// Unused - for most reasons to remove a channel we already get a Port.onDisconnect
 	}
 	if (message.cmd === "volumechanged") {
 		volumechanged(port.sender.tab.id, message.volume, message.muted);
