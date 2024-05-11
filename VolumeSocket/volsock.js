@@ -28,19 +28,38 @@ function setup(vid) {
 	port.onMessage.addListener(extListen);
 	if (location.host === "www.youtube.com" || location.host === "music.youtube.com") {
 		if (location.host === "www.youtube.com") {
-			player = document.getElementById('movie_player');
+			ytplayer = document.getElementById('movie_player');
+			player = {
+				getVolume: () => ytplayer.getVolume() / 100,
+				setVolume: (value) => ytplayer.setVolume(value * 100),
+				getMuted: () => ytplayer.isMuted(),
+				setMuted: (bool) => {if (bool) {ytplayer.mute()} else ytplayer.unMute()},
+			}
 		}
 		if (location.host === "music.youtube.com") {
-			player = document.querySelector('ytmusic-player-bar').playerApi;
-			// TODO: Rework for YT Music:
-			// player = document.querySelector('ytmusic-player-bar')
-			// setVolume = player.updateVolume(value)
-			// mute = player.playerApi.mute()
-			// unmute = player.playerApi.unMute()
+			ytmplayer = document.querySelector('ytmusic-player-bar');
+			player = {
+				getVolume: () => ytmplayer.playerApi.getVolume() / 100,
+				setVolume: (value) => ytmplayer.updateVolume(value * 100),
+				getMuted: () => ytmplayer.playerApi.isMuted(),
+				setMuted: (bool) => {if (bool) {ytmplayer.playerApi.mute()} else ytmplayer.playerApi.unMute()},
+				// TODO: setMuted does not affect the UI button
+			}
+			console.log(player.getVolume())
 		}
-		(vid.onvolumechange = e => port.postMessage({cmd: "volumechanged", volume: player.getVolume() / 100, muted: player.isMuted()}))();
+		if (location.host === "") {
+			player = {
+				getVolume: () => vid.volume,
+				setVolume: (value) => vid.volume = value,
+				// TODO: work with values 0-100
+				getMuted: () => vid.muted,
+				setMuted: (bool) => vid.muted = bool,
+			};
+		}
+		(vid.onvolumechange = e => port.postMessage({cmd: "volumechanged", volume: player.getVolume(), muted: player.getMuted()}))();
 	}
 	else (vid.onvolumechange = e => port.postMessage({cmd: "volumechanged", volume: vid.volume, muted: vid.muted}))();
+	// TODO: Flatten
 }
 
 function extListen(message)
@@ -48,25 +67,22 @@ function extListen(message)
 	switch (message.cmd) {
 		case "volume":
 			if (location.host === "www.youtube.com" || location.host === "music.youtube.com") {
-				player.setVolume(message.value * 100);
+				player.setVolume(message.value);
 				sessionStorage.setItem("yt-player-volume", JSON.stringify({
-					creation: +new Date, expiration: +new Date + 2592000000, data: JSON.stringify({volume: player.getVolume(), muted: player.isMuted()})
+					creation: +new Date, expiration: +new Date + 2592000000, data: JSON.stringify({volume: player.getVolume(), muted: player.getMuted()})
 				}));
 			}
 			else document.querySelectorAll("video").forEach(vid => vid.volume = message.value);
 			break;
 		case "mute":
 			if (location.host === "www.youtube.com" || location.host === "music.youtube.com") {
-				if (message.value) {
-					player.mute();
-				}
-				else player.unMute();
+				player.setMuted(message.value);
 			}
 			else document.querySelectorAll("video").forEach(vid => vid.muted = message.value);
 			break;
 		case "queryvolume":
 			if (location.host === "www.youtube.com" || location.host === "music.youtube.com") {
-				port.postMessage({cmd: "volumeresponse", volume: player.getVolume() / 100, muted: player.isMuted()});
+				port.postMessage({cmd: "volumeresponse", volume: player.getVolume(), muted: player.getMuted()});
 			}
 			else document.querySelectorAll("video").forEach(vid =>
 				port.postMessage({cmd: "volumeresponse", volume: vid.volume, muted: vid.muted})
