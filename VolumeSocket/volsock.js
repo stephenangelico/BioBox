@@ -19,30 +19,31 @@ function init(extID)
 	port.onMessage.addListener(extListen);
 	if (location.host === "www.youtube.com" || location.host === "music.youtube.com") {
 		if (location.host === "www.youtube.com") {
-				player = document.getElementById('movie_player');
+			player = document.getElementById('movie_player');
 		}
 		if (location.host === "music.youtube.com") {
-				player = document.querySelector('ytmusic-player-bar').playerApi;
-				// TODO: Rework for YT Music:
-				// player = document.querySelector('ytmusic-player-bar')
-				// setVolume = player.updateVolume(value)
-				// mute = player.playerApi.mute()
-				// unmute = player.playerApi.unMute()
+			player = document.querySelector('ytmusic-player-bar').playerApi;
+			// TODO: Rework for YT Music:
+			// player = document.querySelector('ytmusic-player-bar')
+			// setVolume = player.updateVolume(value)
+			// mute = player.playerApi.mute()
+			// unmute = player.playerApi.unMute()
 		}
+		// Watch for the creation of a video element in case it doesn't exist yet when volsock starts
 		new MutationObserver(mutationList =>
 			[...mutationList].forEach(mutation =>
 				mutation.addedNodes.forEach(node =>
 					node.querySelectorAll && node.querySelectorAll("video").forEach(vid => {
 						console.log("Video!", vid);
 						(vid.onvolumechange = e => port.postMessage({cmd: "volumechanged", volume: player.getVolume() / 100, muted: player.isMuted()}))()
-					})))).observe(document, {subtree:1,childList:1})
+					})))).observe(document, {subtree:1,childList:1});
+		// Look for a video element now in case it already exists when the Mutation Observer starts
 		document.querySelectorAll("video").forEach(vid =>
 		{
 			console.log(vid);
 			(vid.onvolumechange = e => port.postMessage({cmd: "volumechanged", volume: player.getVolume() / 100, muted: player.isMuted()}))();
 		}
 		);
-		// TODO: is the original document.querySelector now redundant?
 	}
 	else document.querySelectorAll("video").forEach(vid =>
 		(vid.onvolumechange = e => port.postMessage({cmd: "volumechanged", volume: vid.volume, muted: vid.muted}))()
