@@ -12,8 +12,17 @@ let extID = "oejgabkmelnodicghenecnopnnninpmm";
 let player;
 let port;
 
-function init(extID)
-{
+function init() {
+	// Watch for the creation of a video element in case it doesn't exist yet when volsock starts
+	new MutationObserver(mutationList =>
+		[...mutationList].forEach(mutation =>
+			mutation.addedNodes.forEach(node =>
+				node.querySelectorAll && node.querySelectorAll("video").forEach(setup)))).observe(document, {subtree:1,childList:1});
+	// Look for a video element now in case it already exists when the Mutation Observer starts
+	document.querySelectorAll("video").forEach(setup);
+}
+
+function setup(vid) {
 	port = chrome.runtime.connect(extID);
 	port.postMessage({cmd: "newtab"});
 	port.onMessage.addListener(extListen);
@@ -29,26 +38,11 @@ function init(extID)
 			// mute = player.playerApi.mute()
 			// unmute = player.playerApi.unMute()
 		}
-		// Watch for the creation of a video element in case it doesn't exist yet when volsock starts
-		new MutationObserver(mutationList =>
-			[...mutationList].forEach(mutation =>
-				mutation.addedNodes.forEach(node =>
-					node.querySelectorAll && node.querySelectorAll("video").forEach(vid => {
-						console.log("Video!", vid);
-						(vid.onvolumechange = e => port.postMessage({cmd: "volumechanged", volume: player.getVolume() / 100, muted: player.isMuted()}))()
-					})))).observe(document, {subtree:1,childList:1});
-		// Look for a video element now in case it already exists when the Mutation Observer starts
-		document.querySelectorAll("video").forEach(vid =>
-		{
-			console.log(vid);
-			(vid.onvolumechange = e => port.postMessage({cmd: "volumechanged", volume: player.getVolume() / 100, muted: player.isMuted()}))();
-		}
-		);
+		(vid.onvolumechange = e => port.postMessage({cmd: "volumechanged", volume: player.getVolume() / 100, muted: player.isMuted()}))();
 	}
-	else document.querySelectorAll("video").forEach(vid =>
-		(vid.onvolumechange = e => port.postMessage({cmd: "volumechanged", volume: vid.volume, muted: vid.muted}))()
-	);
+	else (vid.onvolumechange = e => port.postMessage({cmd: "volumechanged", volume: vid.volume, muted: vid.muted}))();
 }
+
 function extListen(message)
 {
 	switch (message.cmd) {
@@ -81,5 +75,5 @@ function extListen(message)
 	}
 }
 
-if (document.readyState !== "loading") init(extID);
-else window.addEventListener("DOMContentLoaded", init(extID));
+if (document.readyState !== "loading") init();
+else window.addEventListener("DOMContentLoaded", init());
