@@ -50,6 +50,11 @@ function setup(vid) {
 		}
 	}
 	// TODO: Add Twitch
+	// NightmareJoker2: I mean, yes, it's Twitch, but the video element is still a video element, and you can
+	// control it with the media API, and then cause a repaint on the -webkit-slider-runnable-track pseudo value and you're good
+	// NightmareJoker2: you can also just search for input element with ID player-volume-slider-* and update
+	// that to set the volume, and the slider in one go
+	// NightmareJoker2: it's a regular input element, just get the element and use .value = ''; on it
 	
 	// if (location.host === "")
 	else player = {
