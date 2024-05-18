@@ -49,6 +49,8 @@ function setup(vid) {
 			},
 		}
 	}
+	// TODO: Add Twitch
+	
 	// if (location.host === "")
 	else player = {
 			getVolume: () => vid.volume * 100,
