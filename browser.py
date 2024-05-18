@@ -29,7 +29,7 @@ class Browser(Channel):
 		self.tabid = tabid
 
 	def write_external(self, value):
-		spawn(set_volume(self.sockid, self.tabid, (value / 100)))
+		spawn(set_volume(self.sockid, self.tabid, (value)))
 	
 	def muted(self, widget):
 		mute_state = super().muted(widget) # Handles label change and IIDPIO
@@ -146,7 +146,7 @@ def closed_tab(sockid, tabid):
 def tab_volume_changed(sockid, tabid, volume, mute_state):
 	print("On", tabid, ": Volume:", volume, "Muted:", bool(mute_state))
 	channel = sockets[sockid].tabs[tabid]
-	channel.refract_value(float(volume * 100), "backend")
+	channel.refract_value(float(volume), "backend")
 	channel.mute.set_active(int(mute_state))
 
 # Non-asyncio entry-point

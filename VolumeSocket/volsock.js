@@ -30,8 +30,8 @@ function setup(vid) {
 		if (location.host === "www.youtube.com") {
 			ytplayer = document.getElementById('movie_player');
 			player = {
-				getVolume: () => ytplayer.getVolume() / 100,
-				setVolume: (value) => ytplayer.setVolume(value * 100),
+				getVolume: () => ytplayer.getVolume(),
+				setVolume: (value) => ytplayer.setVolume(value),
 				getMuted: () => ytplayer.isMuted(),
 				setMuted: (bool) => {if (bool) {ytplayer.mute()} else ytplayer.unMute()},
 			}
@@ -39,8 +39,8 @@ function setup(vid) {
 		if (location.host === "music.youtube.com") {
 			ytmplayer = document.querySelector('ytmusic-player-bar');
 			player = {
-				getVolume: () => ytmplayer.playerApi.getVolume() / 100,
-				setVolume: (value) => ytmplayer.updateVolume(value * 100),
+				getVolume: () => ytmplayer.playerApi.getVolume(),
+				setVolume: (value) => ytmplayer.updateVolume(value),
 				getMuted: () => ytmplayer.playerApi.isMuted(),
 				setMuted: (bool) => {if (bool) {ytmplayer.playerApi.mute()} else ytmplayer.playerApi.unMute()},
 				// TODO: setMuted does not affect the UI button
@@ -49,8 +49,8 @@ function setup(vid) {
 		}
 		if (location.host === "") {
 			player = {
-				getVolume: () => vid.volume,
-				setVolume: (value) => vid.volume = value,
+				getVolume: () => vid.volume * 100,
+				setVolume: (value) => vid.volume = value / 100,
 				// TODO: work with values 0-100
 				getMuted: () => vid.muted,
 				setMuted: (bool) => vid.muted = bool,
