@@ -12,12 +12,8 @@
 	},
 	"content_scripts": [{
 		"world": "MAIN",
-		"matches": ["file:///*", "https://music.youtube.com/*", "https://youtube.com/*", "https://www.youtube.com/*"],
-		"js": ["volsock.js"]
-	},
-	{
 		"exclude_globs": ["https://dashboard.twitch.tv/*", "https://dev.twitch.tv/*", "*.pdf"],
-		"matches": ["https://*.twitch.tv/*"],
+		"matches": ["file:///*", "https://music.youtube.com/*", "https://youtube.com/*", "https://www.youtube.com/*", "https://*.twitch.tv/*"],
 		"js": ["volsock.js"]
 	}]
 }
