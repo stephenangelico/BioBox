@@ -41,8 +41,12 @@ function setup(vid) {
 			getVolume: () => ytmplayer.playerApi.getVolume(),
 			setVolume: (value) => ytmplayer.updateVolume(value),
 			getMuted: () => ytmplayer.playerApi.isMuted(),
-			setMuted: (bool) => {if (bool) {ytmplayer.playerApi.mute()} else ytmplayer.playerApi.unMute()},
-			// TODO: setMuted does not affect the UI button
+			setMuted: (bool) => {
+				muteButton = document.querySelector('[title="Mute"]');
+				// qSA yields two elements but the first always seems to be in the bar
+				if (!!bool != player.getMuted()) {muteButton.click()};
+				// I would like to use playerApi.mute/unMute but these are not reflected in the UI
+			},
 		}
 	}
 	// if (location.host === "")
