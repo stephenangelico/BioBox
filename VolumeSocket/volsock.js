@@ -26,67 +26,51 @@ function setup(vid) {
 	port = chrome.runtime.connect(extID);
 	port.postMessage({cmd: "newtab"});
 	port.onMessage.addListener(extListen);
-	if (location.host === "www.youtube.com" || location.host === "music.youtube.com") {
-		if (location.host === "www.youtube.com") {
-			ytplayer = document.getElementById('movie_player');
-			player = {
-				getVolume: () => ytplayer.getVolume(),
-				setVolume: (value) => ytplayer.setVolume(value),
-				getMuted: () => ytplayer.isMuted(),
-				setMuted: (bool) => {if (bool) {ytplayer.mute()} else ytplayer.unMute()},
-			}
+	if (location.host === "www.youtube.com") {
+		ytplayer = document.getElementById('movie_player');
+		player = {
+			getVolume: () => ytplayer.getVolume(),
+			setVolume: (value) => ytplayer.setVolume(value),
+			getMuted: () => ytplayer.isMuted(),
+			setMuted: (bool) => {if (bool) {ytplayer.mute()} else ytplayer.unMute()},
 		}
-		if (location.host === "music.youtube.com") {
-			ytmplayer = document.querySelector('ytmusic-player-bar');
-			player = {
-				getVolume: () => ytmplayer.playerApi.getVolume(),
-				setVolume: (value) => ytmplayer.updateVolume(value),
-				getMuted: () => ytmplayer.playerApi.isMuted(),
-				setMuted: (bool) => {if (bool) {ytmplayer.playerApi.mute()} else ytmplayer.playerApi.unMute()},
-				// TODO: setMuted does not affect the UI button
-			}
-			console.log(player.getVolume())
-		}
-		if (location.host === "") {
-			player = {
-				getVolume: () => vid.volume * 100,
-				setVolume: (value) => vid.volume = value / 100,
-				// TODO: work with values 0-100
-				getMuted: () => vid.muted,
-				setMuted: (bool) => vid.muted = bool,
-			};
-		}
-		(vid.onvolumechange = e => port.postMessage({cmd: "volumechanged", volume: player.getVolume(), muted: player.getMuted()}))();
 	}
-	else (vid.onvolumechange = e => port.postMessage({cmd: "volumechanged", volume: vid.volume, muted: vid.muted}))();
-	// TODO: Flatten
+	if (location.host === "music.youtube.com") {
+		ytmplayer = document.querySelector('ytmusic-player-bar');
+		player = {
+			getVolume: () => ytmplayer.playerApi.getVolume(),
+			setVolume: (value) => ytmplayer.updateVolume(value),
+			getMuted: () => ytmplayer.playerApi.isMuted(),
+			setMuted: (bool) => {if (bool) {ytmplayer.playerApi.mute()} else ytmplayer.playerApi.unMute()},
+			// TODO: setMuted does not affect the UI button
+		}
+	}
+	// if (location.host === "")
+	else player = {
+			getVolume: () => vid.volume * 100,
+			setVolume: (value) => vid.volume = value / 100,
+			getMuted: () => vid.muted,
+			setMuted: (bool) => vid.muted = bool,
+		};
+	(vid.onvolumechange = e => port.postMessage({cmd: "volumechanged", volume: player.getVolume(), muted: player.getMuted()}))();
 }
 
 function extListen(message)
 {
 	switch (message.cmd) {
 		case "volume":
+			player.setVolume(message.value);
 			if (location.host === "www.youtube.com" || location.host === "music.youtube.com") {
-				player.setVolume(message.value);
 				sessionStorage.setItem("yt-player-volume", JSON.stringify({
 					creation: +new Date, expiration: +new Date + 2592000000, data: JSON.stringify({volume: player.getVolume(), muted: player.getMuted()})
 				}));
 			}
-			else document.querySelectorAll("video").forEach(vid => vid.volume = message.value);
 			break;
 		case "mute":
-			if (location.host === "www.youtube.com" || location.host === "music.youtube.com") {
-				player.setMuted(message.value);
-			}
-			else document.querySelectorAll("video").forEach(vid => vid.muted = message.value);
+			player.setMuted(message.value);
 			break;
 		case "queryvolume":
-			if (location.host === "www.youtube.com" || location.host === "music.youtube.com") {
-				port.postMessage({cmd: "volumeresponse", volume: player.getVolume(), muted: player.getMuted()});
-			}
-			else document.querySelectorAll("video").forEach(vid =>
-				port.postMessage({cmd: "volumeresponse", volume: vid.volume, muted: vid.muted})
-			);
+			port.postMessage({cmd: "volumeresponse", volume: player.getVolume(), muted: player.getMuted()});
 			break;
 	}
 }
