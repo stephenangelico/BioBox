@@ -49,13 +49,20 @@ function setup(vid) {
 			},
 		}
 	}
-	// TODO: Add Twitch
-	// NightmareJoker2: I mean, yes, it's Twitch, but the video element is still a video element, and you can
-	// control it with the media API, and then cause a repaint on the -webkit-slider-runnable-track pseudo value and you're good
-	// NightmareJoker2: you can also just search for input element with ID player-volume-slider-* and update
-	// that to set the volume, and the slider in one go
-	// NightmareJoker2: it's a regular input element, just get the element and use .value = ''; on it
-	
+	if (location.host === "www.twitch.tv") {
+		let twitchplayer;
+		// Begin magic blob, thanks Rosuav and Nightdev
+		for (let a = Object.entries(document.querySelector('div[data-a-target="player-overlay-click-handler"],.video-player')
+				).find(([k, v]) => k.startsWith("__reactFiber"))[1]; !twitchplayer; a = a.return)
+			twitchplayer = a.memoizedProps.mediaPlayerInstance?.core;
+		// End magic blob
+		player = {
+			getVolume: () => twitchplayer.getVolume() * 100,
+			setVolume: (value) => twitchplayer.setVolume(value / 100),
+			getMuted: () => twitchplayer.isMuted(),
+			setMuted: (bool) => twitchplayer.setMuted(bool),
+		};
+	}
 	// if (location.host === "")
 	else player = {
 			getVolume: () => vid.volume * 100,
