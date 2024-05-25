@@ -63,6 +63,7 @@ function setup(vid) {
 			setMuted: (bool) => twitchplayer.setMuted(bool),
 		};
 	}
+	// TODO: Add Spotify? Disney+?
 	// if (location.host === "")
 	else player = {
 			getVolume: () => vid.volume * 100,
