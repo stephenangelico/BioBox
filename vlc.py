@@ -2,7 +2,6 @@ import time
 import asyncio
 import config # ImportError? See config_example.py
 
-
 class VLC(Channel):
 	group_name = "VLC"
 	step = 1.0
@@ -32,6 +31,7 @@ async def vlc(start_time):
 		await vlc_buf_read(vlc_module, reader)
 	except ConnectionRefusedError:
 		print("Could not connect to VLC on %s:%s - is TMV running?" % (config.host, config.vlc_port))
+		# TODO: Retry connection if lost
 	finally:
 		if vlc_module:
 			vlc_module.remove()
