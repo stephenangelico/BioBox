@@ -19,7 +19,7 @@ function init() {
 			mutation.addedNodes.forEach(node =>
 				node.querySelectorAll && node.querySelectorAll("video").forEach(setup)))).observe(document, {subtree:1,childList:1});
 	// Look for a video element now in case it already exists when the Mutation Observer starts
-	document.querySelectorAll("video").forEach(vid => setTimeout(setup, 1000, vid));
+	document.querySelectorAll("video").forEach(vid => setTimeout(setup, 2000, vid));
 	// Timeout seems necessary to dodge a race condition on YT causing the video to blank
 }
 
