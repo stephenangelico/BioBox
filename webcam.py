@@ -51,7 +51,6 @@ async def webcam(start_time):
 		ssh.stdin.write(b"quit foo\n")
 		try:
 			await asyncio.wait_for(ssh.stdin.drain(), timeout=5)
-			# TODO: Handle ConnectionResetError here
 		except asyncio.TimeoutError:
 			ssh.terminate()
 	try:
