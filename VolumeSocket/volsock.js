@@ -19,7 +19,8 @@ function init() {
 			mutation.addedNodes.forEach(node =>
 				node.querySelectorAll && node.querySelectorAll("video").forEach(setup)))).observe(document, {subtree:1,childList:1});
 	// Look for a video element now in case it already exists when the Mutation Observer starts
-	document.querySelectorAll("video").forEach(setup);
+	document.querySelectorAll("video").forEach(vid => setTimeout(setup, 500, vid));
+	// Timeout seems necessary to dodge a race condition on YT causing the video to blank
 }
 
 function setup(vid) {
@@ -34,7 +35,6 @@ function setup(vid) {
 			getMuted: () => ytplayer.isMuted(),
 			setMuted: (bool) => {if (bool) {ytplayer.mute()} else ytplayer.unMute()},
 		}
-	// TODO: Figure out why volsock causes YT to blank the player
 	}
 	else if (location.host === "music.youtube.com") {
 		ytmplayer = document.querySelector('ytmusic-player-bar');
