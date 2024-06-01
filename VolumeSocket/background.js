@@ -50,7 +50,6 @@ function tabListen(message, port)
 	}
 	if (message.cmd === "volumechanged") {
 		volumechanged(port.sender.tab.id, message.volume, message.muted);
-		// TODO: Consider splitting into separate volume and mute
 	}
 	if (message.cmd === "volumeresponse") {
 		resendtab(port);

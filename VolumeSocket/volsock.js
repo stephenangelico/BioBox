@@ -72,6 +72,8 @@ function setup(vid) {
 			setMuted: (bool) => vid.muted = bool,
 		};
 	(vid.onvolumechange = e => port.postMessage({cmd: "volumechanged", volume: player.getVolume(), muted: player.getMuted()}))();
+	// It's easier to get one trigger for both volume changes and mute changes
+	// and send that all the way through than to split them at any point
 }
 
 function extListen(message)
