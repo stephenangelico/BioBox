@@ -36,7 +36,7 @@ function setup(vid) {
 		}
 	// TODO: Figure out why volsock causes YT to blank the player
 	}
-	if (location.host === "music.youtube.com") {
+	else if (location.host === "music.youtube.com") {
 		ytmplayer = document.querySelector('ytmusic-player-bar');
 		player = {
 			getVolume: () => ytmplayer.playerApi.getVolume(),
@@ -50,7 +50,7 @@ function setup(vid) {
 			},
 		}
 	}
-	if (location.host === "www.twitch.tv") {
+	else if (location.host === "www.twitch.tv") {
 		let twitchplayer;
 		// Begin magic blob, thanks Rosuav and Nightdev
 		for (let a = Object.entries(document.querySelector('div[data-a-target="player-overlay-click-handler"],.video-player')
