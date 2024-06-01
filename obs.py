@@ -110,6 +110,8 @@ async def obs_ws(start_time):
 						future.set_exception(OBSError(msg["d"]["requestStatus"]["comment"]))
 	except websockets.exceptions.ConnectionClosedOK:
 		pass # Context manager plus finally section should clean everything up, just catch the exception
+	except websockets.exceptions.ConnectionClosedError:
+		pass # Same as above
 	except OSError as e:
 		if e.errno != 111: raise
 		# Ignore connection-refused and just let the module get cleaned up
