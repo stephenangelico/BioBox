@@ -99,6 +99,9 @@ async def keepalive():
 				await conn.sock.send(json.dumps({"cmd": "heartbeat"}))
 			except websockets.exceptions.ConnectionClosedOK:
 				print("Possible old sock:", conn.sockid)
+			except websockets.exceptions.ConnectionClosedError:
+				# Should be handled by volume() after its try/except
+				print("Possible lost connection:", conn.sockid)
 
 async def set_volume(sockid, tabid, vol):
 	# What happens if the buffer fills up and we start another send?
