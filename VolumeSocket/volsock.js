@@ -34,6 +34,7 @@ function setup(vid) {
 			getMuted: () => ytplayer.isMuted(),
 			setMuted: (bool) => {if (bool) {ytplayer.mute()} else ytplayer.unMute()},
 		}
+	// TODO: Figure out why volsock causes YT to blank the player
 	}
 	if (location.host === "music.youtube.com") {
 		ytmplayer = document.querySelector('ytmusic-player-bar');
