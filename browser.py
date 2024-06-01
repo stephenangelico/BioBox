@@ -65,7 +65,6 @@ async def volume(sock, path):
 				if tabid not in sockets[sockid].tabs: # sockid is set during init
 					cb = callbacks.get("newtab")
 					if cb: cb(sockid, tabid, host)
-				# TODO: Cope with getting the same tab on reconnect - may need to re-add tab rather than ignore
 			elif msg["cmd"] == "closedtab":
 				tabid = str(msg["tabid"])
 				if tabid in sockets[sockid].tabs: # sockid is set during init
