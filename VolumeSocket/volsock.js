@@ -35,6 +35,7 @@ function setup(vid) {
 			getMuted: () => ytplayer.isMuted(),
 			setMuted: (bool) => {if (bool) {ytplayer.mute()} else ytplayer.unMute()},
 		}
+	// TODO: Either shush or support Shorts - they use a different player
 	}
 	else if (location.host === "music.youtube.com") {
 		ytmplayer = document.querySelector('ytmusic-player-bar');
