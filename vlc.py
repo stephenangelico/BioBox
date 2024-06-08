@@ -32,6 +32,14 @@ async def vlc(start_time):
 	except ConnectionRefusedError:
 		print("Could not connect to VLC on %s:%s - is TMV running?" % (config.host, config.vlc_port))
 		# TODO: Retry connection if lost
+	except OSError as e:
+		if 110 <= e.errno <= 113 or e.errno == -3: 
+			# 110: Connection timed out - Probably a firewall issue
+			# 111: Connection refused - OBS-Websocket not running
+			# 112: Host is down - self-explanatory
+			# 113: No route to host - One end or the other is disconnected
+			# socket.gaierror -3: Temporary failure in name resolution - disconnected with local DNS server
+		print("Could not connect to VLC on %s:%s - is TMV running?" % (config.host, config.vlc_port))
 	finally:
 		if vlc_module:
 			vlc_module.remove()
