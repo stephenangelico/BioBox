@@ -127,7 +127,6 @@ async def obs_ws(start_time):
 			source.remove()
 		obs_sources.clear()
 		print("OBS cleanup done")
-		# TODO: Retry connection if lost
 
 async def list_scene_sources(scene_name):
 	sources = (await send_request("GetSceneItemList", request_data={"sceneName": scene_name}))["sceneItems"]

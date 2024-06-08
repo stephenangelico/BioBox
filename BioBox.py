@@ -280,6 +280,7 @@ async def main():
 		obj = spawn(getattr(Task, task)())
 		Task.running[task] = obj
 		obj.add_done_callback(handle_errors)
+		# TODO: If a task returns without being cancelled, restart it (with increasing timeout)
 	async def cancel_task(task):
 		t = Task.running.pop(task)
 		print("Cancelling", task)

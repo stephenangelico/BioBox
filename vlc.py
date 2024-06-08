@@ -31,7 +31,6 @@ async def vlc(start_time):
 		await vlc_buf_read(vlc_module, reader)
 	except ConnectionRefusedError:
 		print("Could not connect to VLC on %s:%s - is TMV running?" % (config.host, config.vlc_port))
-		# TODO: Retry connection if lost
 	except OSError as e:
 		if 110 <= e.errno <= 113 or e.errno == -3: 
 			# 110: Connection timed out - Probably a firewall issue
