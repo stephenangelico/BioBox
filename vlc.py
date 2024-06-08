@@ -39,7 +39,7 @@ async def vlc(start_time):
 			# 112: Host is down - self-explanatory
 			# 113: No route to host - One end or the other is disconnected
 			# socket.gaierror -3: Temporary failure in name resolution - disconnected with local DNS server
-		print("Could not connect to VLC on %s:%s - is TMV running?" % (config.host, config.vlc_port))
+			print("Could not connect to VLC on %s:%s - is TMV running?" % (config.host, config.vlc_port))
 	finally:
 		if vlc_module:
 			vlc_module.remove()
