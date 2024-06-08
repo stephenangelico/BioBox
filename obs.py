@@ -113,8 +113,15 @@ async def obs_ws(start_time):
 	except websockets.exceptions.ConnectionClosedError:
 		pass # Same as above
 	except OSError as e:
-		if e.errno != 111: raise
-		# Ignore connection-refused and just let the module get cleaned up
+		if 110 <= e.errno <= 113 or e.errno == -3: 
+			# 110: Connection timed out - Probably a firewall issue
+			# 111: Connection refused - OBS-Websocket not running
+			# 112: Host is down - self-explanatory
+			# 113: No route to host - One end or the other is disconnected
+			# socket.gaierror -3: Temporary failure in name resolution - disconnected with local DNS server
+			print("Cannot connect to OBS - check connection?")
+		else:
+			raise
 	finally:
 		for source in obs_sources.values():
 			source.remove()
