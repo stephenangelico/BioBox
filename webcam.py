@@ -56,7 +56,7 @@ async def webcam(start_time):
 	try:
 		# Begin cancellable section
 		ssh = await asyncio.create_subprocess_exec("ssh", "-oBatchMode=yes", (config.webcam_user + "@" + config.host), "python3", config.webcam_control_path, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
-		print("[" + str(time.monotonic() - start_time) + "] SSH connection established.")
+		print("[" + str(time.monotonic() - start_time) + "] Opening SSH connection...")
 		while True:
 			try:
 				data = await ssh.stdout.readline()
@@ -64,6 +64,7 @@ async def webcam(start_time):
 				print("SSH connection lost")
 				break
 			if not data:
+				print("SSH connection lost")
 				ssh = None
 				break
 			line = data.decode("utf-8")
@@ -73,6 +74,7 @@ async def webcam(start_time):
 					print(line)
 				elif device == "Info":
 					if attr == "Hi":
+						print("[" + str(time.monotonic() - start_time) + "] Webcams connected.")
 						for cam_name, cam_path in config.webcams.items():
 							ssh.stdin.write(("cam_check %s \n" %cam_path).encode("utf-8"))
 							webcams[cam_path + "focus"] = Webcam(cam_name, cam_path, "Focus", ssh)
