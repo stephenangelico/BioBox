@@ -271,34 +271,35 @@ async def main():
 		def Slider():
 			return Analog.start_slider(start_time)
 	def toggle_menu_item(widget):
-		toggle_group = widget.get_name()
+		task_name = widget.get_name()
 		if widget.get_active():
-			start_task(toggle_group)
+			start_task(task_name)
 		else:
-			spawn(cancel_task(toggle_group))
-	def start_task(task):
-		obj = spawn(getattr(Task, task)())
-		Task.running[task] = obj
-		obj.add_done_callback(handle_errors)
-		# TODO: If a task returns without being cancelled, restart it (with increasing timeout)
-	async def cancel_task(task):
-		t = Task.running.pop(task)
-		print("Cancelling", task)
-		t.cancel()
-		print(task, "cancelled")
+			spawn(cancel_task(task_name))
+	def start_task(task_name):
+		task = spawn(getattr(Task, task_name)())
+		Task.running[task_name] = task
+		task.add_done_callback(handle_errors)
+		task.add_done_callback(restart_task)
+		# TODO: If a task returns without being cancelled, restart it
+	async def cancel_task(task_name):
+		task = Task.running.pop(task_name)
+		print("Cancelling", task_name)
+		task.cancel()
+		print(task_name, "cancelled")
 		try:
-			await t
+			await task
 		except asyncio.CancelledError:
 			pass
 		except:
 			# Will only happen if the task raises during finalization
-			print(task, "raised an exception")
+			print(task_name, "raised an exception")
 			traceback.print_exc()
 		finally:
-			print(task, "cancellation complete")
+			print(task_name, "cancellation complete")
 	async def cancel_all():
 		print("Shutting down - cancelling all tasks")
-		await asyncio.gather(*[cancel_task(t) for t in Task.running])
+		await asyncio.gather(*[cancel_task(task_name) for task_name in Task.running])
 		print("All tasks cancelled")
 		stop.set()
 	for category in Channel.__subclasses__():
