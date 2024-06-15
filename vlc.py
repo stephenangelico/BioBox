@@ -34,7 +34,7 @@ async def vlc(start_time):
 	except OSError as e:
 		if 110 <= e.errno <= 113 or e.errno == -3: 
 			# 110: Connection timed out - Probably a firewall issue
-			# 111: Connection refused - OBS-Websocket not running
+			# 111: Connection refused - TMV/VLC not running
 			# 112: Host is down - self-explanatory
 			# 113: No route to host - One end or the other is disconnected
 			# socket.gaierror -3: Temporary failure in name resolution - disconnected with local DNS server
