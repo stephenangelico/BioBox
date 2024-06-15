@@ -29,6 +29,7 @@ async def vlc(start_time):
 		vlc_module = VLC(writer)
 		print("[" + str(time.monotonic() - start_time) + "] VLC connected.")
 		await vlc_buf_read(vlc_module, reader)
+		# TODO: Detect disconnection and end task to prevent spam on reconnect
 	except ConnectionRefusedError:
 		print("Could not connect to VLC on %s:%s - is TMV running?" % (config.host, config.vlc_port))
 	except OSError as e:
