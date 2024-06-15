@@ -358,7 +358,13 @@ async def main():
 	start_task("OBSModule")
 	start_task("Browser")
 	start_task("Webcam")
-	start_task("Slider")
+	if Analog.no_slider:
+		for child in action_group.list_actions():
+			if child.get_label() == "Slider":
+				child.set_active(False)
+				child.set_sensitive(False)
+	else:
+		start_task("Slider")
 	print("[" + str(time.monotonic() - start_time) + "] Starting select_channel timer...")
 	GLib.timeout_add(500, init_select_channel)
 	await stop.wait()
