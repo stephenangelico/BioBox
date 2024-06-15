@@ -276,12 +276,20 @@ async def main():
 			start_task(task_name)
 		else:
 			spawn(cancel_task(task_name))
+	def restart_shim(task):
+		spawn(restart_task(task))
+	async def restart_task(task):
+		for task_name, running_task in Task.running.items():
+			if running_task is task:
+				await cancel_task(task_name)
+				await asyncio.sleep(5)
+				start_task(task_name)
+				break
 	def start_task(task_name):
 		task = spawn(getattr(Task, task_name)())
 		Task.running[task_name] = task
 		task.add_done_callback(handle_errors)
-		task.add_done_callback(restart_task)
-		# TODO: If a task returns without being cancelled, restart it
+		task.add_done_callback(restart_shim)
 	async def cancel_task(task_name):
 		task = Task.running.pop(task_name)
 		print("Cancelling", task_name)
