@@ -366,6 +366,7 @@ async def main():
 	start_task("OBSModule")
 	start_task("Browser")
 	start_task("Webcam")
+	# TODO: Disable slider if there is another running instance of BioBox
 	if Analog.no_slider:
 		for child in action_group.list_actions():
 			if child.get_label() == "Slider":
