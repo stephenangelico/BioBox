@@ -125,6 +125,8 @@ async def listen(start_time, *, host="", port=8888):
 			print("[" + str(time.monotonic() - start_time) + "] Websocket listening.")
 			await asyncio.Future()
 	except OSError as e:
+		# TODO: Because of automatic restarting of uncancelled tasks, this now spams.
+		# Is it worth trying to cancel the task automatically, or disable for this run?
 		if e.errno!=(98): # 98: Address already in use
 			raise # Task should automatically complete on return if it was errno 98
 	finally:
