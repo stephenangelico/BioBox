@@ -291,7 +291,12 @@ async def main():
 		task.add_done_callback(handle_errors)
 		task.add_done_callback(restart_shim)
 	async def cancel_task(task_name):
-		task = Task.running.pop(task_name)
+		try:
+			task = Task.running.pop(task_name)
+		except KeyError:
+			# If a task is cancelled but is not in the list, it probably wasn't running in the first place
+			print(task_name, "was not running")
+			return
 		print("Cancelling", task_name)
 		task.cancel()
 		print(task_name, "cancelled")
