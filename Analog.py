@@ -1,4 +1,5 @@
 import os
+import fcntl
 import asyncio
 import time
 import collections
@@ -16,6 +17,15 @@ try:
 	import Motor
 except (ImportError, NotImplementedError, RuntimeError):
 	no_slider = True
+
+# Lock file to prevent multiple instances of Analog running
+slider_lock = open("/tmp/biobox-analog-slider", "w")
+# File is held open until process ends - gotta hold that lock
+try:
+	fcntl.flock(slider_lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+except BlockingIOError:
+	no_slider = True
+	print("Another instance of Analog is running - slider disabled")
 
 TOLERANCE = 1
 
