@@ -10,7 +10,7 @@ this project allows use of a motorised slider to smoothly adjust a number of
 audio or analog sources, such as:
 
 - OBS: Mic, desktop capture, other inputs
-- VLC
+- VLC Media Player
 - Media in Chrome - see unpacked extension in VolumeSocket
 - Webcam focus and exposure
 - Pulseaudio - TODO
