@@ -121,7 +121,7 @@ async def listen(start_time, *, host="", port=8888):
 		ssl_context = None
 	try:
 		async with websockets.serve(volume, host, port, ssl=ssl_context) as ws_server:
-			spawn(keepalive())
+			ka = spawn(keepalive())
 			print("[" + str(time.monotonic() - start_time) + "] Websocket listening.")
 			await asyncio.Future()
 	except OSError as e:
@@ -129,7 +129,11 @@ async def listen(start_time, *, host="", port=8888):
 			raise # Task should automatically complete on return if it was errno 98
 	finally:
 		#print("Websocket shutting down.") # I don't hate you!
-		pass
+		ka.cancel()
+		try:
+			await ka
+		except asyncio.CancelledError:
+			pass
 
 # Channel management
 def new_tab(sockid, tabid, host):
