@@ -130,7 +130,6 @@ async def obs_ws(start_time):
 
 async def list_scene_sources(scene_name):
 	sources = (await send_request("GetSceneItemList", request_data={"sceneName": scene_name}))["sceneItems"]
-	# TODO: filter to just source names
 	collector = {}
 	for source in sources:
 		if source['inputKind'] in source_types:
