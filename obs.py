@@ -126,7 +126,7 @@ async def obs_ws(start_time):
 		for source in obs_sources.values():
 			source.remove()
 		obs_sources.clear()
-		print("OBS cleanup done")
+		#print("OBS cleanup done")
 
 async def list_scene_sources(scene_name):
 	sources = (await send_request("GetSceneItemList", request_data={"sceneName": scene_name}))["sceneItems"]
@@ -136,7 +136,7 @@ async def list_scene_sources(scene_name):
 			if source['inputKind'] in source_types:
 				vol = max((await send_request("GetInputVolume", request_data={"inputName": source['sourceName']}))["inputVolumeMul"], 0) ** 0.5 * 100
 				mute = (await send_request("GetInputMute", request_data={"inputName": source['sourceName']}))["inputMuted"]
-				print(source['sourceName'], vol, "Muted:", mute)
+				#print(source['sourceName'], vol, "Muted:", mute)
 				collector[source['sourceName']] = source
 				if source['sourceName'] not in obs_sources:
 					obs_sources[source['sourceName']] = OBSModule(source['sourceName'], vol, mute)

@@ -1,9 +1,10 @@
 import time
 start_time = time.monotonic()
-print("Start time:", start_time)
+#print("Start time:", start_time)
 import json
 import builtins
 import traceback
+import warnings
 import asyncio
 
 import gi
@@ -21,6 +22,8 @@ try:
 		winconfig = json.load(f)
 except FileNotFoundError:
 	pass # Later references to winconfig should already handle no data
+
+warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 UI_HEADER = """
 <ui>
@@ -69,10 +72,10 @@ def init_select_channel():
 	# Selecting a channel, in normal state, already sets position to its
 	# value. Do we need to set it again?
 	for module in modules.get_children():
-		print("[" + str(time.monotonic() - start_time) + "] Selecting from module:", module.get_name())
+		#print("[" + str(time.monotonic() - start_time) + "] Selecting from module:", module.get_name())
 		for channel in module.get_children():
 			if not channel.hidden:
-				print("[" + str(time.monotonic() - start_time) + "] Selecting:", channel.channel_name)
+				#print("[" + str(time.monotonic() - start_time) + "] Selecting:", channel.channel_name)
 				channel.mute.grab_focus()
 				break
 		if Analog.selected_channel:
@@ -228,7 +231,7 @@ class Channel(Gtk.Frame):
 		"""Remove channel from group, destroying its displayed elements"""
 		if Analog.selected_channel is self:
 			Analog.selected_channel = None # Because it doesn't make sense to select another module
-		print("Removing:", self.channel_name)
+		#print("Removing:", self.channel_name)
 		self.group.remove(self)
 
 import vlc
@@ -297,9 +300,9 @@ async def main():
 			# If a task is cancelled but is not in the list, it probably wasn't running in the first place
 			print(task_name, "was not running")
 			return
-		print("Cancelling", task_name)
+		#print("Cancelling", task_name)
 		task.cancel()
-		print(task_name, "cancelled")
+		#print(task_name, "cancelled")
 		try:
 			await task
 		except asyncio.CancelledError:
@@ -309,11 +312,12 @@ async def main():
 			print(task_name, "raised an exception")
 			traceback.print_exc()
 		finally:
-			print(task_name, "cancellation complete")
+			#print(task_name, "cancellation complete")
+			pass
 	async def cancel_all():
-		print("Shutting down - cancelling all tasks")
+		#print("Shutting down - cancelling all tasks")
 		await asyncio.gather(*[cancel_task(task_name) for task_name in Task.running])
-		print("All tasks cancelled")
+		#print("All tasks cancelled")
 		stop.set()
 	for category in Channel.__subclasses__():
 		category_ref = category.__name__
@@ -378,7 +382,7 @@ async def main():
 				child.set_sensitive(False)
 	else:
 		start_task("Slider")
-	print("[" + str(time.monotonic() - start_time) + "] Starting select_channel timer...")
+	#print("[" + str(time.monotonic() - start_time) + "] Starting select_channel timer...")
 	GLib.timeout_add(500, init_select_channel)
 	await stop.wait()
 	

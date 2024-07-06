@@ -119,8 +119,8 @@ async def webcam(start_time):
 	finally:
 		for cam in list(webcams):
 			webcams[cam].remove()
-		print("Done removing webcams")
+		#print("Done removing webcams")
 		if ssh:
 			await cleanup()
-			print("SSH cleanup done")
+			#print("SSH cleanup done")
 

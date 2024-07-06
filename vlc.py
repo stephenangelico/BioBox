@@ -45,7 +45,7 @@ async def vlc(start_time):
 			vlc_module.remove()
 			writer.close() # Close connection and remove module
 			await writer.wait_closed()
-		print("VLC cleanup done")
+		#print("VLC cleanup done")
 
 async def vlc_buf_read(vlc_module, reader):
 	while True:
