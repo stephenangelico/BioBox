@@ -131,18 +131,24 @@ async def obs_ws(start_time):
 async def list_scene_sources(scene_name):
 	sources = (await send_request("GetSceneItemList", request_data={"sceneName": scene_name}))["sceneItems"]
 	collector = {}
-	for source in sources:
-		if source['inputKind'] in source_types:
-			vol = max((await send_request("GetInputVolume", request_data={"inputName": source['sourceName']}))["inputVolumeMul"], 0) ** 0.5 * 100
-			mute = (await send_request("GetInputMute", request_data={"inputName": source['sourceName']}))["inputMuted"]
-			print(source['sourceName'], vol, "Muted:", mute)
-			collector[source['sourceName']] = source
-			if source['sourceName'] not in obs_sources:
-				obs_sources[source['sourceName']] = OBSModule(source['sourceName'], vol, mute)
-		elif source['inputKind'] == None and source['sourceType'] == 'OBS_SOURCE_TYPE_SCENE':
-			# Catches scenes and groups, though groups are deprecated
-			#TODO: get this scene's sources and recurse
-			pass
+	async def iterate_sources(sources, collector):
+		for source in sources:
+			if source['inputKind'] in source_types:
+				vol = max((await send_request("GetInputVolume", request_data={"inputName": source['sourceName']}))["inputVolumeMul"], 0) ** 0.5 * 100
+				mute = (await send_request("GetInputMute", request_data={"inputName": source['sourceName']}))["inputMuted"]
+				print(source['sourceName'], vol, "Muted:", mute)
+				collector[source['sourceName']] = source
+				if source['sourceName'] not in obs_sources:
+					obs_sources[source['sourceName']] = OBSModule(source['sourceName'], vol, mute)
+			elif source['inputKind'] == None and source['sourceType'] == 'OBS_SOURCE_TYPE_SCENE':
+				# Catches scenes and groups, though groups are deprecated
+				if source['isGroup']:
+					nested_sources = (await send_request("GetGroupSceneItemList", request_data={"sceneName": source['sourceName']}))["sceneItems"]
+				else:
+					nested_sources = (await send_request("GetSceneItemList", request_data={"sceneName": source['sourceName']}))["sceneItems"]
+				await iterate_sources(nested_sources, collector)
+				
+	await iterate_sources(sources, collector)
 	for source in list(obs_sources):
 		if source not in collector:
 			print("Removing", source)
