@@ -46,6 +46,7 @@ Software:
   - `RPi.GPIO` - for motor driver in Motor.py
   - `websockets` - for connecting to OBS and browser extension
   - `v4l2py` - for interfacing with webcams
+  - `aiohttp` - for Spotify integration
 - [TellMeVLC](https://github.com/Rosuav/TellMeVLC) for VLC integration
 - OBS 28+ for OBS integration
 

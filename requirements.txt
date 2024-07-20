@@ -2,6 +2,7 @@ adafruit-blinka
 adafruit-circuitpython-mcp3xxx
 RPi.GPIO
 websockets>=10
-gbulb
+gbulb>=0.6.5
 v4l2py
 clize
+aiohttp
