@@ -238,6 +238,7 @@ import vlc
 import webcam
 import obs
 import browser
+import spotify
 import Analog
 
 async def main():
@@ -271,6 +272,8 @@ async def main():
 			return obs.obs_ws(start_time)
 		def Browser():
 			return browser.listen(start_time)
+		def Spotify():
+			return spotify.spotify(start_time)
 		def Slider():
 			return Analog.start_slider(start_time)
 	def toggle_menu_item(widget):
@@ -375,6 +378,12 @@ async def main():
 	start_task("OBSModule")
 	start_task("Browser")
 	start_task("Webcam")
+	#start_task("Spotify")
+	for child in action_group.list_actions():
+		if child.get_label() == "Spotify":
+			child.set_active(False)
+			# Temporary: While running the Spotify module automatically opens the OAuth page,
+			# make it at least somewhat interactive until a better solution is made
 	if Analog.no_slider:
 		for child in action_group.list_actions():
 			if child.get_label() == "Slider":
