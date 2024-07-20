@@ -2,7 +2,6 @@ import asyncio
 import json
 import secrets
 import base64
-import hashlib
 import webbrowser
 import urllib.parse
 import aiohttp
