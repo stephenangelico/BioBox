@@ -9,11 +9,6 @@ from pprint import pprint
 from collections import defaultdict
 import websockets # ImportError? pip install websockets
 
-import urllib.parse
-import aiohttp
-import base64
-import config
-
 sockets = defaultdict(list)
 callbacks = { }
 sites = {
@@ -125,7 +120,7 @@ async def listen(start_time, *, host="", port=8888):
 		# No cert found. Not an error, just don't support encryption.
 		ssl_context = None
 	try:
-		async with websockets.serve(volume, host, port, ssl=ssl_context, process_request=process_request) as ws_server:
+		async with websockets.serve(volume, host, port, ssl=ssl_context) as ws_server:
 			ka = spawn(keepalive())
 			print("[" + str(time.monotonic() - start_time) + "] Websocket listening.")
 			await asyncio.Future()
@@ -160,31 +155,6 @@ def tab_volume_changed(sockid, tabid, volume, mute_state):
 	channel = sockets[sockid].tabs[tabid]
 	channel.refract_value(float(volume), "backend")
 	channel.mute.set_active(int(mute_state))
-
-async def process_request(path, headers):
-	print(path)
-	if not path.startswith("/spotify_login?"):
-		return None
-	params = urllib.parse.parse_qs(urllib.parse.urlparse(path).query)
-	# TODO: check state and error
-	print(params)
-	if params["code"]:
-		spawn(get_access_token(params["code"][0]))
-	return (200, {}, "")
-
-async def get_access_token(auth_code):
-	grant_type = "authorization_code"
-	redirect_uri = "http://localhost:8888/spotify_login"
-	client_id = config.spotify_id
-	client_secret = config.spotify_secret
-	Authorization = "Basic " + base64.b64encode((client_id + ":" + client_secret).encode()).decode()
-	Content_Type = "application/x-www-form-urlencoded"
-	params = {"grant_type": grant_type, "code": auth_code, "redirect_uri": redirect_uri}
-	headers = {"content-type": Content_Type, "Authorization": Authorization}
-	async with aiohttp.ClientSession() as session:
-		async with session.post('https://accounts.spotify.com/api/token', params=params, headers=headers) as resp:
-			print(resp.status)
-			print(await resp.text())
 
 # Non-asyncio entry-point
 def run(**kw): asyncio.run(listen(**kw))
