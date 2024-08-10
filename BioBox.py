@@ -289,7 +289,9 @@ async def main():
 			if running_task is task:
 				await cancel_task(task_name)
 				await asyncio.sleep(5)
-				start_task(task_name)
+				for child in action_group.list_actions():
+					if child.get_label() == task_name and child.get_active():
+						start_task(task_name)
 				break
 	def start_task(task_name):
 		task = spawn(getattr(Task, task_name)())
