@@ -28,9 +28,26 @@ class Spotify(Channel):
 	
 	def write_external(self, value):
 		pass
+		# if no current buffer timer, start one (1 sec)
+		# set flag to suspend poll of volume
+		# hold/update current value as temp value
+		# if timer has run out, send value
+		# keep value sent with timestamp for future check
+		# unset flag to resume polling
+		# If volume is now zero, mute (button only)
+		# If volume was zero, unmute (button only)
 	
 	def muted(self, widget):
+		# Spotify does not seem to have a mute function, instead the mute button sets
+		# volume to zero for muting and sets volume to the "last" volume when unmuting.
+		# However, this is somewhat inconsistent in the web interface as it sometimes
+		# restores an old volume instead.
 		pass
+		# If not muted:
+		#	Store current volume
+		#	Set volume to zero
+		# If muted:
+		#	Restore stored volume - may soon be overwritten by next poll
 
 async def get_auth_code(request):
 	params = request.query
@@ -84,6 +101,14 @@ async def hello_world():
 			# TODO: handle 204 response
 			playback_state = await resp.json()
 			print("Volume:", playback_state["device"]["volume_percent"])
+
+async def poll_playback():
+	pass
+	# check flag to see if polling is suspended
+	# get volume from playback state
+	# if volume is same as current, all is fine
+	# if volume is same as previous request in last 3(?) seconds, ignore
+	# else, refract_value("backend")
 
 async def user_auth():
 	pass
