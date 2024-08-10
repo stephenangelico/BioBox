@@ -266,9 +266,9 @@ async def main():
 		running = {}
 		def VLC():
 			return vlc.vlc(start_time)
-		def Webcam():
+		def Webcams():
 			return webcam.webcam(start_time)
-		def OBSModule():
+		def OBS():
 			return obs.obs_ws(start_time)
 		def Browser():
 			return browser.listen(start_time)
@@ -375,9 +375,9 @@ async def main():
 	main_ui.show_all()
 
 	start_task("VLC")
-	start_task("OBSModule")
+	start_task("OBS")
 	start_task("Browser")
-	start_task("Webcam")
+	start_task("Webcams")
 	#start_task("Spotify")
 	for child in action_group.list_actions():
 		if child.get_label() == "Spotify":
