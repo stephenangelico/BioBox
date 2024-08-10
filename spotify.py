@@ -41,12 +41,16 @@ async def get_auth_code(request):
 			print(params["error"]) # If we got a response and didn't get a code, we should have an error
 	return web.Response(body="")
 
-async def get_access_token(auth_code):
-	print("Auth code:", auth_code)
+async def get_access_token(request_code, mode="new"):
 	if "authorization" not in spotify_config:
 		gen_auth_header()
-	params = {"grant_type": "authorization_code", "code": auth_code, "redirect_uri": redirect_uri}
+	params_new = {"grant_type": "authorization_code", "code": request_code, "redirect_uri": redirect_uri}
+	params_refresh = {"grant_type": "refresh_token", "refresh_token": request_code}
 	headers = {"Content-Type": "application/x-www-form-urlencoded", "Authorization": spotify_config["authorization"]}
+	if mode == "refresh":
+		params = params_refresh
+	else:
+		params = params_new	
 	async with aiohttp.ClientSession() as session:
 		async with session.post('https://accounts.spotify.com/api/token', params=params, headers=headers) as resp:
 			resp.raise_for_status()
@@ -70,9 +74,6 @@ def gen_auth_header():
 	spotify_config["authorization"] = "Basic " + base64.b64encode((spotify_config["client_id"] + ":" + spotify_config["client_secret"]).encode()).decode()
 	save_config()
 
-def refresh_access_token():
-	pass
-
 async def hello_world():
 	# TODO: run a wrapper to check if the access token is valid
 	path = "/me/player" # Get Playback State
@@ -92,7 +93,7 @@ async def spotify(start_time):
 			await hello_world() # This is where we will proceed from
 		else:
 			if "refresh_token" in spotify_config:
-				refresh_access_token()
+				await get_access_token(spotify_config["refresh_token"], mode="refresh")
 			else: 
 				# Shouldn't happen, access token and refresh token are given in the same response
 				# If it does though, just redo the whole auth phase
