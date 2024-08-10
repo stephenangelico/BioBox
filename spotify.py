@@ -17,7 +17,7 @@ except FileNotFoundError:
 
 redirect_uri = "http://localhost:8889/spotify_login"
 state = None
-scope = "app-remote-control user-read-playback-state"
+scope = "user-modify-playback-state user-read-playback-state"
 base_uri = "https://api.spotify.com/v1"
 
 class Spotify(Channel):
@@ -87,7 +87,10 @@ async def user_auth():
 	pass
 
 async def spotify(start_time):
-	# TODO: check scopes and re-auth if mismatched
+	# TODO: check the scope-checking code
+	if "scope" not in spotify_config or scope != " ".join(sorted(spotify_config["scope"].split(sep=" "))):
+		# If no scopes or wrong scopes authorized
+		user_auth()
 	if "access_token" in spotify_config:
 		if time.time() < spotify_config["expires_at"]:
 			await hello_world() # This is where we will proceed from
