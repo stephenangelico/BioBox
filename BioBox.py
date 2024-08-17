@@ -277,7 +277,7 @@ async def main():
 		def Slider():
 			return Analog.start_slider(start_time)
 	def toggle_menu_item(widget):
-		task_name = widget.get_name()
+		task_name = widget.get_label()
 		if widget.get_active():
 			start_task(task_name)
 		else:
