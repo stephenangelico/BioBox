@@ -16,9 +16,14 @@ except FileNotFoundError:
 	pass # TODO: disable until configured (chained TODO: make config dialog)
 
 redirect_uri = "http://localhost:8889/spotify_login"
-state = None
+state = None # Set in user_auth() and checked in get_auth_code()
 scope = "user-modify-playback-state user-read-playback-state"
 base_uri = "https://api.spotify.com/v1"
+
+vol_suspend_poll = False
+last_values_sent = {}
+next_vol = None
+next_vol_time = time.monotonic()
 
 class Spotify(Channel):
 	group_name = "Spotify"
@@ -27,15 +32,17 @@ class Spotify(Channel):
 		pass
 	
 	def write_external(self, value):
-		pass
+		global next_vol
+		if not self.mute.get_active(): # TODO: this check belongs in vol_update()
+			next_vol = value
+		# See vol_update()
 		# if no current buffer timer, start one (1 sec)
 		# set flag to suspend poll of volume
 		# hold/update current value as temp value
 		# if timer has run out, send value
 		# keep value sent with timestamp for future check
 		# unset flag to resume polling
-		# If volume is now zero, mute (button only)
-		# If volume was zero, unmute (button only)
+		# If volume was zero, unmute
 	
 	def muted(self, widget):
 		# Spotify does not seem to have a mute function, instead the mute button sets
@@ -48,6 +55,16 @@ class Spotify(Channel):
 		#	Set volume to zero
 		# If muted:
 		#	Restore stored volume - may soon be overwritten by next poll
+	
+	def refract_value(self, value, source):
+		"""Send value to multiple places, keeping track of sent value to avoid bounce or slider fighting."""
+		if abs(value - self.oldvalue) >= 1: # Prevent feedback loop when moving slider
+			if source == "backend" and value == 0:
+				self.mute.set_active(True) # Question: This sends volume=0 to Spotify. When the player unmutes, what does it restore to? Probably the same as otherwise.
+			else:
+				super().refract_value(value, source)
+			if source == "backend" and value > 0 and self.mute.get_active():
+				self.mute.set_active(False)
 
 async def get_auth_code(request):
 	params = request.query
@@ -111,6 +128,9 @@ async def poll_playback():
 	# if volume is same as current, all is fine
 	# if volume is same as previous request in last 3(?) seconds, ignore
 	# else, refract_value("backend")
+
+async def vol_update():
+	pass
 
 async def user_auth():
 	pass
