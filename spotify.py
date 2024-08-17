@@ -114,10 +114,13 @@ async def user_auth():
 	pass
 
 async def spotify(start_time):
-	# TODO: check the scope-checking code
-	if "scope" not in spotify_config or scope != " ".join(sorted(spotify_config["scope"].split(sep=" "))):
+	authorized_scopes = " ".join(sorted(spotify_config["scope"].split(sep=" ")))
+	if "scope" not in spotify_config or scope != authorized_scopes:
 		# If no scopes or wrong scopes authorized
-		user_auth()
+		print("Authorized scopes and required scopes differ:")
+		print("Required:", scope)
+		print("Authorized:", authorized_scopes)
+		await user_auth()
 	if "access_token" in spotify_config:
 		if time.time() < spotify_config["expires_at"]:
 			await hello_world() # This is where we will proceed from
