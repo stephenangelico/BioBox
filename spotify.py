@@ -98,9 +98,11 @@ async def hello_world():
 	async with aiohttp.ClientSession() as session: # TODO: use the same session
 		async with session.get(base_uri + path, headers=headers) as resp: # TODO: break this out into a single request function
 			print(resp.status)
-			# TODO: handle 204 response
-			playback_state = await resp.json()
-			print("Volume:", playback_state["device"]["volume_percent"])
+			if resp.status == 200:
+				playback_state = await resp.json()
+				print("Volume:", playback_state["device"]["volume_percent"])
+			if resp.status == 204:
+				print("Player inactive")
 
 async def poll_playback():
 	pass
