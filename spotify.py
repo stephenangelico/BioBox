@@ -36,13 +36,6 @@ class Spotify(Channel):
 		if not self.mute.get_active(): # TODO: this check belongs in vol_update()
 			next_vol = value
 		# See vol_update()
-		# if no current buffer timer, start one (1 sec)
-		# set flag to suspend poll of volume
-		# hold/update current value as temp value
-		# if timer has run out, send value
-		# keep value sent with timestamp for future check
-		# unset flag to resume polling
-		# If volume was zero, unmute
 	
 	def muted(self, widget):
 		# Spotify does not seem to have a mute function, instead the mute button sets
@@ -132,6 +125,19 @@ async def poll_playback():
 
 async def vol_update():
 	pass
+	global vol_suspend_poll # May become local flag if this function merges with poll_playback
+	global next_vol
+	global next_vol_time
+	while True:
+		await asyncio.sleep(2) # Subject to experimentation
+		if next_vol is not None:
+			vol_suspend_poll = True
+		# send value
+		# keep value sent with timestamp for future check
+		# unset flag to resume polling
+		# If volume was zero, unmute
+
+
 
 async def user_auth():
 	pass
