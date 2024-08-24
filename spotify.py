@@ -49,16 +49,17 @@ class Spotify(Channel):
 		# volume to zero for muting and sets volume to the "last" volume when unmuting.
 		# However, this is somewhat inconsistent in the web interface as it sometimes
 		# restores an old volume instead.
-		pass
-		# If not muted:
-		#	Store current volume
-		#	Set volume to zero
-		# If muted:
-		#	Restore stored volume - may soon be overwritten by next poll
-	
+		global next_vol
+		mute_state = super().muted(widget) # Handles label change and IIDPIO
+		if mute_state:
+			next_vol = 0
+		else:
+			next_vol = self.slider.get_value()
+
 	def refract_value(self, value, source):
 		"""Send value to multiple places, keeping track of sent value to avoid bounce or slider fighting."""
 		if abs(value - self.oldvalue) >= 1: # Prevent feedback loop when moving slider
+			# TODO: Put this all in poll_volume() - this may render subclassing refract_value unnecessary entirely
 			if source == "backend" and value == 0:
 				self.mute.set_active(True) # Question: This sends volume=0 to Spotify. When the player unmutes, what does it restore to? Probably the same as otherwise.
 			else:
