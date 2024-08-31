@@ -21,7 +21,7 @@ scope = "user-modify-playback-state user-read-playback-state"
 base_uri = "https://api.spotify.com/v1"
 session = None
 
-vol_suspend_poll = False
+vol_retry_claimed = False
 last_values_sent = {}
 next_vol = None
 next_vol_time = time.monotonic()
@@ -121,30 +121,35 @@ async def poll_playback():
 	# if volume is same as current, all is fine
 	# if volume is same as previous request in last 3(?) seconds, ignore
 	# else, refract_value("backend")
+	# Note: check vol_update() in commit 29b1ea for main loop
 
 async def vol_update():
-	pass
-	global vol_suspend_poll # May become local flag if this function merges with poll_playback
+	global vol_retry_claimed
 	global next_vol
 	global next_vol_time
-	get_path = "/me/player" # Get Playback State
-	put_path = "/me/player/volume" # Set Playback Volume
+	path = "/me/player/volume" # Set Playback Volume
 	headers = {"Authorization": "Bearer " + spotify_config["access_token"]}
-	while True:
-		await asyncio.sleep(2) # Subject to experimentation
-		if next_vol is not None:
-			vol_suspend_poll = True
-			params = {"volume_percent": next_vol}
-			async with session.put(base_uri + put_path, params=params, headers=headers) as resp:
-				if resp.status == 204:
-					pass
-				else:
-					error = await resp.json()
-					print(resp.status + ":", error["message"])
-					# TODO: Handle each error specifically
-			last_values_sent[next_vol] = time.monotonic()
-			vol_suspend_poll = False # TODO: Is this even doing anything? So far there's no chance for a poll in the middle of a write.
-		# TODO: If volume was zero, unmute
+	if next_vol is not None and next_vol_time < time.monotonic():
+		params = {"volume_percent": next_vol}
+		async with session.put(base_uri + path, params=params, headers=headers) as resp:
+			if resp.status == 204:
+				last_values_sent[next_vol] = time.monotonic()
+				next_vol = None
+			else:
+				error = await resp.json()
+				print(resp.status + ":", error["message"])
+				# TODO: Handle each error specifically
+				if resp.status == 429:
+					backoff_time = resp.headers["Retry-After"]
+					print("Will retry in", backoff_time, "seconds")
+					next_vol_time = time.monotonic() + backoff_time
+					if not vol_retry_claimed:
+						# Ensure only one instance of vol_update runs after a 429
+						vol_retry_claimed = True
+						asyncio.sleep(backoff_time + 1)
+						vol_retry_claimed = False
+						spawn(vol_update)
+	# TODO: If volume was zero, unmute
 
 async def user_auth():
 	pass
