@@ -20,6 +20,7 @@ state = None # Set in user_auth() and checked in get_auth_code()
 scope = "user-modify-playback-state user-read-playback-state"
 base_uri = "https://api.spotify.com/v1"
 session = None
+auth_runner = None
 
 vol_retry_claimed = False
 last_values_sent = {}
@@ -36,7 +37,7 @@ class Spotify(Channel):
 		global next_vol
 		if not self.mute.get_active(): # TODO: this check belongs in vol_update()
 			next_vol = value
-		# See vol_update()
+			spawn(vol_update())
 	
 	def muted(self, widget):
 		# Spotify does not seem to have a mute function, instead the mute button sets
@@ -68,7 +69,12 @@ async def get_auth_code(request):
 			spawn(get_access_token(params["code"]))
 		else:
 			print(params["error"]) # If we got a response and didn't get a code, we should have an error
-	return web.Response(body="")
+	try:
+		return web.Response(body="")
+	finally:
+		global auth_runner
+		await auth_runner.cleanup()
+		auth_runner = None
 
 async def get_access_token(request_code, mode="new"):
 	if "authorization" not in spotify_config:
@@ -146,43 +152,40 @@ async def vol_update():
 					if not vol_retry_claimed:
 						# Ensure only one instance of vol_update runs after a 429
 						vol_retry_claimed = True
-						asyncio.sleep(backoff_time + 1)
+						await asyncio.sleep(backoff_time + 1)
 						vol_retry_claimed = False
-						spawn(vol_update)
+						spawn(vol_update())
 	# TODO: If volume was zero, unmute
 
 async def user_auth():
-	pass
+	auth_server = web.Application()
+	auth_server.add_routes([web.get('/spotify_login', get_auth_code)])
+	global auth_runner
+	auth_runner = web.AppRunner(auth_server)
+	await auth_runner.setup()
+	global state
+	state = secrets.token_urlsafe()
+	auth_uri = "https://accounts.spotify.com/authorize?" + urllib.parse.urlencode({"response_type": "code", "client_id": spotify_config["client_id"], "redirect_uri": redirect_uri, "state": state, "scope": scope})
+	webbrowser.open(auth_uri) # TODO: Only do this on interaction - mechanism TBC
+	try:
+		site = web.TCPSite(auth_runner, 'localhost', 8889)
+		await site.start()
+		await asyncio.sleep(300) # Five minutes to click through OAuth in a browser should be plenty
+	except web.GracefulExit:
+		pass
 
 async def spotify(start_time):
 	global session
-	session = aiohttp.ClientSession()
-	authorized_scopes = " ".join(sorted(spotify_config["scope"].split(sep=" ")))
-	if "scope" not in spotify_config or scope != authorized_scopes:
-		# If no scopes or wrong scopes authorized
-		print("Authorized scopes and required scopes differ:")
-		print("Required:", scope)
-		print("Authorized:", authorized_scopes)
-		await user_auth()
-	if "access_token" in spotify_config:
-		if time.time() < spotify_config["expires_at"]:
-			await hello_world() # This is where we will proceed from
-		else:
-			if "refresh_token" in spotify_config:
-				await get_access_token(spotify_config["refresh_token"], mode="refresh")
-			else: 
-				# Shouldn't happen, access token and refresh token are given in the same response
-				# If it does though, just redo the whole auth phase
-				user_auth()
-	else: # This belongs in user_auth once the server only fills one request, and there is some other "hold open" here
-		auth_server = web.Application()
-		auth_server.add_routes([web.get('/spotify_login', get_auth_code)])
-		global state
-		state = secrets.token_urlsafe()
-		auth_uri = "https://accounts.spotify.com/authorize?" + urllib.parse.urlencode({"response_type": "code", "client_id": spotify_config["client_id"], "redirect_uri": redirect_uri, "state": state, "scope": scope})
-		webbrowser.open(auth_uri) # TODO: Only do this on interaction - mechanism TBC
-		try:
-			await web._run_app(auth_server, port=8889) # Normal web.run_app creates a new event loop, _run_app does not
-		except web.GracefulExit:
-			pass
-	await session.close() # TODO: put this in try...finally
+	try:
+		session = aiohttp.ClientSession()
+		authorized_scopes = " ".join(sorted(spotify_config["scope"].split(sep=" ")))
+		if ("scope" not in spotify_config # Noscope!
+			or scope != authorized_scopes # Scope mismatch
+			or "access_token" not in spotify_config # First auth
+			or "refresh_token" not in spotify_config): # Shouldn't happen but if it does just reauth
+			await user_auth()
+		if time.time() > spotify_config["expires_at"]:
+			await get_access_token(spotify_config["refresh_token"], mode="refresh")
+		await hello_world() # This is where we will proceed from
+	finally:
+		await session.close()
