@@ -95,10 +95,7 @@ async def get_access_token(request_code, mode="new"):
 		# Generate renewal time (5 seconds before actual expiry)
 		spotify_config["expires_at"] = time.time() + spotify_config["expires_in"] - 5
 		save_config()
-		print("Access token:", spotify_config["access_token"])
-		print("Expiry:", spotify_config["expires_at"])
-		print("Getting playback state...")
-		await hello_world()
+		print("New access token stored.")
 
 def save_config():
 	with open('spotify.json', 'w') as f:
@@ -144,7 +141,7 @@ async def vol_update():
 				next_vol = None
 			else:
 				error = await resp.json()
-				print(resp.status + ":", error["message"])
+				print(str(resp.status) + ":", error["message"])
 				# TODO: Handle each error specifically
 				if resp.status == 429:
 					backoff_time = resp.headers["Retry-After"]
@@ -185,8 +182,10 @@ async def spotify(start_time):
 			or scope != authorized_scopes # Scope mismatch
 			or "access_token" not in spotify_config # First auth
 			or "refresh_token" not in spotify_config): # Shouldn't happen but if it does just reauth
+			print("Re-auth required")
 			await user_auth()
 		if time.time() > spotify_config["expires_at"]:
+			print("Refreshing access token...")
 			await get_access_token(spotify_config["refresh_token"], mode="refresh")
 		await hello_world() # This is where we will proceed from
 	finally:
