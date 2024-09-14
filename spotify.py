@@ -32,7 +32,7 @@ class Spotify(Channel):
 	group_name = "Spotify"
 	
 	def __init__(self):
-		pass
+		super().__init__(name="Spotify")
 	
 	def write_external(self, value):
 		global next_vol
