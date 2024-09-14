@@ -23,6 +23,7 @@ base_uri = "https://api.spotify.com/v1"
 session = None
 auth_runner = None
 
+spotify_channel = None
 vol_retry_claimed = False
 last_values_sent = {}
 next_vol = None
@@ -106,26 +107,30 @@ def gen_auth_header():
 	spotify_config["authorization"] = "Basic " + base64.b64encode((spotify_config["client_id"] + ":" + spotify_config["client_secret"]).encode()).decode()
 	save_config()
 
-async def hello_world():
-	# TODO: run a wrapper to check if the access token is valid
+async def poll_playback():
 	path = "/me/player" # Get Playback State
 	headers = {"Authorization": "Bearer " + spotify_config["access_token"]}
-	async with session.get(base_uri + path, headers=headers) as resp: # TODO: break this out into a single request function
-		print(resp.status)
-		if resp.status == 200:
-			playback_state = await resp.json()
-			print("Volume:", playback_state["device"]["volume_percent"])
-		if resp.status == 204:
-			print("Player inactive")
-
-async def poll_playback():
-	pass
-	# check flag to see if polling is suspended
-	# get volume from playback state
-	# if volume is same as current, all is fine
-	# if volume is same as previous request in last 3(?) seconds, ignore
-	# else, refract_value("backend")
-	# Note: check vol_update() in commit 29b1ea for main loop
+	global spotify_channel
+	inactive = False
+	while True:
+		await asyncio.sleep(2) # Subject to experimentation
+		async with session.get(base_uri + path, headers=headers) as resp:
+			if resp.status == 200:
+				inactive = False
+				playback_state = await resp.json()
+				value = playback_state["device"]["volume_percent"]
+				if spotify_channel:
+					if value != spotify_channel.slider.get_value():
+						if time.time() > last_values_sent.get(value, 0) + 3:
+							# Value was sent over 3 sec ago or never, probably not feedback (subject to experimentation)
+							spotify_channel.refract_value(value, "backend")
+				else:
+					spotify_channel = Spotify()
+					spotify_channel.refract_value(value, "backend")
+			if resp.status == 204:
+				if not inactive:
+					print("Player inactive")
+					inactive = True
 
 async def vol_update():
 	global vol_retry_claimed
@@ -187,6 +192,10 @@ async def spotify(start_time):
 		if time.time() > spotify_config["expires_at"]:
 			print("Refreshing access token...")
 			await get_access_token(spotify_config["refresh_token"], mode="refresh")
-		await hello_world() # This is where we will proceed from
+		await poll_playback() # This is where we will proceed from
 	finally:
+		global spotify_channel
+		if spotify_channel:
+			spotify_channel.remove()
+		spotify_channel = None
 		await session.close()
