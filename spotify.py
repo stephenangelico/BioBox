@@ -1,4 +1,5 @@
 import asyncio
+import socket
 import json
 import secrets
 import time
@@ -177,7 +178,8 @@ async def user_auth():
 async def spotify(start_time):
 	global session
 	try:
-		session = aiohttp.ClientSession()
+		temp_conn = aiohttp.TCPConnector(family=socket.AF_INET) # Force IPv4 until IPv6 routing is fixed
+		session = aiohttp.ClientSession(connector=temp_conn)
 		authorized_scopes = " ".join(sorted(spotify_config["scope"].split(sep=" ")))
 		if ("scope" not in spotify_config # Noscope!
 			or scope != authorized_scopes # Scope mismatch
