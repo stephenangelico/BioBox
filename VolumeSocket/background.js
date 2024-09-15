@@ -9,7 +9,7 @@ let socket = null;
 let keepalive_timer = 0;
 function connect()
 {
-	socket = new WebSocket("wss://F-35LightningII.rosuav.com:8888/ws");
+	socket = new WebSocket("wss://F-35LightningII.garden.rosuav.com:8888/ws");
 	socket.onopen = async () => {
 		retry_delay = 0;
 		console.log("VolSock connection established.");
