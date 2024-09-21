@@ -145,10 +145,10 @@ async def vol_update():
 				last_values_sent[next_vol] = time.monotonic()
 				next_vol = None
 			else:
-				error = await resp.json()
-				print(str(resp.status) + ":", error["message"])
-				# TODO: Handle each error specifically
-				if resp.status == 429:
+				error = (await resp.json())["error"]
+				if resp.status == 403:
+					print("Error: Sorry, Spotify control in BioBox requires Spotify Premium.")
+				elif resp.status == 429:
 					backoff_time = resp.headers["Retry-After"]
 					print("Will retry in", backoff_time, "seconds")
 					next_vol_time = time.monotonic() + backoff_time
@@ -158,6 +158,8 @@ async def vol_update():
 						await asyncio.sleep(backoff_time + 1)
 						vol_retry_claimed = False
 						spawn(vol_update())
+				else:
+					print(str(resp.status) + ":", error["message"])
 	# TODO: If volume was zero, unmute
 
 async def user_auth():
