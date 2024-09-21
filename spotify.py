@@ -1,3 +1,14 @@
+# Spotify App Control - requires Spotify Premium subscription
+#
+# This module is abandoned as I have no intention of paying to test an API for a
+# service I don't use, however before realizing the Premium requirement, I
+# achieved POC functionality of authentication and endpoint use. If this is of
+# value to you, feel free to submit improvements via PR on GitHub, or reach out
+# to me by email!
+# This module has been disabled as the current method of enabling modules is to
+# import them at the right time in BioBox.py. This is not intended to be a
+# long-term module loading system, but at time of writing, any other system is
+# no more than a pipe dream.
 import asyncio
 import socket
 import json

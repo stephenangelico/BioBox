@@ -234,11 +234,11 @@ class Channel(Gtk.Frame):
 		#print("Removing:", self.channel_name)
 		self.group.remove(self)
 
+# This is where modules to be loaded are enabled
 import vlc
 import webcam
 import obs
 import browser
-import spotify
 import Analog
 
 async def main():
