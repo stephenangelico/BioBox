@@ -8,12 +8,12 @@
 		"service_worker": "background.js"
 	},
 	"externally_connectable": {
-		"matches": ["https://*.youtube.com/*", "https://*.twitch.tv/*", "file:///*"]
+		"matches": ["file:///*", "https://*.youtube.com/*", "https://*.twitch.tv/*", "https://*.disneyplus.com/*"]
 	},
 	"content_scripts": [{
 		"world": "MAIN",
 		"exclude_globs": ["https://dashboard.twitch.tv/*", "https://dev.twitch.tv/*", "*.pdf"],
-		"matches": ["file:///*", "https://music.youtube.com/*", "https://youtube.com/*", "https://www.youtube.com/*", "https://*.twitch.tv/*"],
+		"matches": ["file:///*", "https://music.youtube.com/*", "https://youtube.com/*", "https://www.youtube.com/*", "https://*.twitch.tv/*", "https://*.disneyplus.com/*"],
 		"js": ["volsock.js"]
 	}]
 }

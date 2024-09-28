@@ -65,7 +65,19 @@ function setup(vid) {
 			setMuted: (bool) => twitchplayer.setMuted(bool),
 		};
 	}
-	// TODO: Add Disney+?
+	else if (location.host === "disneyplus.com"){
+		disneyplayer = document.querySelector('disney-web-player');
+		player = {
+			getVolume: () => disneyplayer.mediaPlayer.volume.level,
+			setVolume: (value) => disneyplayer.mediaPlayer.volume.level = value,
+			// TODO: This worked in console but doesn't seem to work in extension
+			getMuted: () => vid.muted,
+			setMuted: (bool) => vid.muted = bool,
+			// TODO: fix mute function - D+ provides mute() and unmute() discrete functions, which set volume to 0 or restore, and set the muted icon.
+			// First, need to not send volume of 0 to BioBox, and hold internal volume to restore to on unmute.
+			// Second, need a way to query if already muted - can this remain as vid.muted?
+		};
+	}
 	// if (location.host === "")
 	else player = {
 			getVolume: () => vid.volume * 100,

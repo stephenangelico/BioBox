@@ -16,6 +16,7 @@ sites = {
 	"www.youtube.com": "YouTube",
 	"www.twitch.tv": "Twitch",
 	"clips.twitch.tv": "Twitch Clips",
+	"www.disneyplus.com": "Disney+",
 	"": "Browser: File",
 }
 
