@@ -30,14 +30,14 @@ class Browser(Channel):
 		self.tabid = tabid
 
 	def write_external(self, value):
-		if not self.mute.get_active() or self.name != "Disney+":
+		if not self.mute.get_active() or self.channel_name != "Disney+":
 			spawn(set_volume(self.sockid, self.tabid, (value)))
 		# On Disney+, mute also sets volume to zero. Setting volume unmutes as well.
 	
 	def muted(self, widget):
 		mute_state = super().muted(widget) # Handles label change and IIDPIO
 		spawn(set_muted(self.sockid, self.tabid, mute_state))
-		if not mute_state and self.name == "Disney+":
+		if not mute_state and self.channel_name == "Disney+":
 			self.write_external(self.oldvalue)
 			# As we suspend sending volume while muted on Disney+,
 			# we now need to send the current volume in case it has changed.
@@ -162,7 +162,7 @@ def closed_tab(sockid, tabid):
 def tab_volume_changed(sockid, tabid, volume, mute_state):
 	print("On", tabid, ": Volume:", volume, "Muted:", bool(mute_state))
 	channel = sockets[sockid].tabs[tabid]
-	if channel.name != "Disney+" or not mute_state:
+	if channel.channel_name != "Disney+" or not mute_state:
 		channel.refract_value(float(volume), "backend")
 	# Disney+ has a mute function which mutes the video *and* sets video volume to 0.
 	# This is weird because everything else so far leaves the video volume alone on mute.
