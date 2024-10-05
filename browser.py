@@ -16,7 +16,7 @@ sites = {
 	"www.youtube.com": "YouTube",
 	"www.twitch.tv": "Twitch",
 	"clips.twitch.tv": "Twitch Clips",
-	"www.disneyplus.com": "Disney+",
+	"www.disneyplus.com": "Disney+", # IF THIS CHANGES, also update Browser.write_external, Browser.muted, and tab_volume_changed.
 	"": "Browser: File",
 }
 
@@ -30,11 +30,19 @@ class Browser(Channel):
 		self.tabid = tabid
 
 	def write_external(self, value):
-		spawn(set_volume(self.sockid, self.tabid, (value)))
+		if not self.mute.get_active() or self.name != "Disney+":
+			spawn(set_volume(self.sockid, self.tabid, (value)))
+		# On Disney+, mute also sets volume to zero. Setting volume unmutes as well.
 	
 	def muted(self, widget):
 		mute_state = super().muted(widget) # Handles label change and IIDPIO
 		spawn(set_muted(self.sockid, self.tabid, mute_state))
+		if not mute_state and self.name == "Disney+":
+			self.write_external(self.oldvalue)
+			# As we suspend sending volume while muted on Disney+,
+			# we now need to send the current volume in case it has changed.
+			# We don't do this on all tabs because there can be a delay
+			# between unmuting and the volume updating.
 
 class WSConn():
 	def __init__(self, sockid, sock):
@@ -154,7 +162,11 @@ def closed_tab(sockid, tabid):
 def tab_volume_changed(sockid, tabid, volume, mute_state):
 	print("On", tabid, ": Volume:", volume, "Muted:", bool(mute_state))
 	channel = sockets[sockid].tabs[tabid]
-	channel.refract_value(float(volume), "backend")
+	if channel.name != "Disney+" or not mute_state:
+		channel.refract_value(float(volume), "backend")
+	# Disney+ has a mute function which mutes the video *and* sets video volume to 0.
+	# This is weird because everything else so far leaves the video volume alone on mute.
+	# To prevent the slider from moving on mute, ignore the volume value if muted.
 	channel.mute.set_active(int(mute_state))
 
 # Non-asyncio entry-point

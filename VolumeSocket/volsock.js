@@ -70,11 +70,12 @@ function setup(vid) {
 		player = {
 			getVolume: () => disneyplayer.mediaPlayer.volume.level,
 			setVolume: (value) => disneyplayer.mediaPlayer.volume.level = value,
-			getMuted: () => vid.muted,
-			setMuted: (bool) => vid.muted = bool,
-			// TODO: fix mute function - D+ provides mute() and unmute() discrete functions, which set volume to 0 or restore, and set the muted icon.
-			// First, need to not send volume of 0 to BioBox, and hold internal volume to restore to on unmute.
-			// Second, need a way to query if already muted - can this remain as vid.muted?
+			getMuted: () => vid.muted, 
+			setMuted: (bool) => {
+				if (bool) disneyplayer.mediaPlayer.volume.mute();
+				else disneyplayer.mediaPlayer.volume.unmute();
+				// This also sends volume: 0 when muting, but this is handled in browser.py
+			},
 		};
 	}
 	// if (location.host === "")
