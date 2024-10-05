@@ -51,7 +51,7 @@ function setup(vid) {
 			},
 		}
 	}
-	else if (location.host === "www.twitch.tv") {
+	else if (location.host.endsWith("www.twitch.tv")) {
 		let twitchplayer;
 		// Begin magic blob, thanks Rosuav and Nightdev
 		for (let a = Object.entries(document.querySelector('div[data-a-target="player-overlay-click-handler"],.video-player')
@@ -65,12 +65,11 @@ function setup(vid) {
 			setMuted: (bool) => twitchplayer.setMuted(bool),
 		};
 	}
-	else if (location.host === "disneyplus.com"){
+	else if (location.host.endsWith("disneyplus.com")) {
 		disneyplayer = document.querySelector('disney-web-player');
 		player = {
 			getVolume: () => disneyplayer.mediaPlayer.volume.level,
 			setVolume: (value) => disneyplayer.mediaPlayer.volume.level = value,
-			// TODO: This worked in console but doesn't seem to work in extension
 			getMuted: () => vid.muted,
 			setMuted: (bool) => vid.muted = bool,
 			// TODO: fix mute function - D+ provides mute() and unmute() discrete functions, which set volume to 0 or restore, and set the muted icon.
