@@ -75,17 +75,28 @@ Webcam control setup:
 
 Browser extension setup:
 
-Chrome:
+Chrome, Brave, Opera:
 1. Modify `VolumeSocket/volsock.js` (line 11) as necessary for the machine running BioBox
-2. Open ⠇ -> Extensions -> Manage extensions or go to [chrome://extensions/](chrome://extensions/)
-3. Enable Developer mode in the top right
-4. Click Load unpacked in the top left
+2. Chrome: Open ⠇ -> Extensions -> Manage extensions
+2. Brave: Open ≡ -> Extensions
+2. Opera: Open Opera menu -> Extensions -> Extensions
+2. Any Chromium-based browser: Type in about:extensions
+3. Enable Developer mode in the top right (Opera: top left)
+4. Click Load unpacked in the top left (Opera: top)
 5. Navigate to the BioBox folder and select the VolumeSocket folder
 
 Other Chromium-based browsers will work but installation instructions may vary.
-Brave and Opera have been tested and function normally, but YMMV with others.
+[Testers welcome](https://github.com/stephenangelico/BioBox/issues), please
+advise of any instructions that differ from the above.
 
-TODO: Support Firefox - imports but does not run
+Firefox support is currently infeasible as the extension uses a feature which is
+not yet implemented in Firefox. As of nine months ago, this is being considered,
+but no implementation schedule so far. See [this MDN page](https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/manifest.json/externally_connectable)
+for current compatibility. If when you read this, Firefox now supports the
+feature, feel free to [open an issue!](https://github.com/stephenangelico/BioBox/issues)
+
+Safari may work but cannot be tested without an Apple device - feel free to [open
+an issue](https://github.com/stephenangelico/BioBox/issues) if you have one and are willing to test!
 
 If BioBox is running on a different machine to the browser, a TLS certificate is required.
 
