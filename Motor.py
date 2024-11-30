@@ -3,7 +3,9 @@
 import time
 import RPi.GPIO as GPIO
 
-# TODO: Swap PIN_A and PIN_PWM because GPIO18 is a hardware PWM pin - allow higher frequency and better control?
+# TODO: Use hardware PWM instead of software, and increase frequency for more accurate duty cycles.
+# Swap PIN_A and PIN_PWM because GPIO18 is a hardware PWM pin. Also requires use of pwmio, as RPi.GPIO
+# only does software PWM.
 PIN_A = 18
 PIN_B = 27
 PIN_STBY = 23
