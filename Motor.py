@@ -6,6 +6,9 @@ import RPi.GPIO as GPIO
 # TODO: Use hardware PWM instead of software, and increase frequency for more accurate duty cycles.
 # Swap PIN_A and PIN_PWM because GPIO18 is a hardware PWM pin. Also requires use of pwmio, as RPi.GPIO
 # only does software PWM.
+# pwmio docs: https://docs.circuitpython.org/en/latest/shared-bindings/pwmio/
+# Another possibility is https://pypi.org/project/rpi-hardware-pwm/
+# This one is trivially simple and just writes to files in /sys
 PIN_A = 18
 PIN_B = 27
 PIN_STBY = 23
