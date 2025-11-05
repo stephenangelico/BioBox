@@ -55,7 +55,7 @@ async def webcam(start_time):
 			ssh.terminate()
 	try:
 		# Begin cancellable section
-		ssh = await asyncio.create_subprocess_exec("ssh", "-oBatchMode=yes", (config.webcam_user + "@" + config.host), "python3", config.webcam_control_path, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+		ssh = await asyncio.create_subprocess_exec("ssh", "-oBatchMode=yes", (config.webcam_user + "@" + config.host), "python3.11", config.webcam_control_path, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
 		print("[" + str(time.monotonic() - start_time) + "] Opening SSH connection...")
 		while True:
 			try:
