@@ -3,6 +3,6 @@ adafruit-circuitpython-mcp3xxx
 RPi.GPIO
 websockets>=10
 gbulb>=0.6.5
-v4l2py
+linuxpy
 clize
 aiohttp
