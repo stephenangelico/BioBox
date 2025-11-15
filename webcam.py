@@ -18,11 +18,11 @@ class Webcam(Channel):
 		self.ssh = ssh
 		if mode == "Focus":
 			self.vol_cmd = "focus_absolute"
-			self.mute_cmd = "focus_auto"
+			self.mute_cmd = "focus_automatic_continuous"
 			self.mute_states = (0, 1)
 		elif mode == "Exposure":
-			self.vol_cmd = "exposure_absolute"
-			self.mute_cmd = "exposure_auto"
+			self.vol_cmd = "exposure_time_absolute"
+			self.mute_cmd = "auto_exposure"
 			self.mute_states = (1, 3) # Applicable for most webcams
 
 
@@ -55,7 +55,7 @@ async def webcam(start_time):
 			ssh.terminate()
 	try:
 		# Begin cancellable section
-		ssh = await asyncio.create_subprocess_exec("ssh", "-oBatchMode=yes", (config.webcam_user + "@" + config.host), "python3.11", config.webcam_control_path, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+		ssh = await asyncio.create_subprocess_exec("ssh", "-oBatchMode=yes", (config.webcam_user + "@" + config.host), "python3", config.webcam_control_path, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
 		# TODO: Make Python3 executable a config option - will be very handy for working in venvs
 		print("[" + str(time.monotonic() - start_time) + "] Opening SSH connection...")
 		while True:
@@ -101,11 +101,11 @@ async def webcam(start_time):
 						channel.slider.set_page_increment(step)
 					elif cmd == "focus_absolute":
 						webcams[device + "focus"].refract_value(int(value), "backend")
-					elif cmd == "focus_auto":
+					elif cmd == "focus_automatic_continuous":
 						webcams[device + "focus"].mute.set_active(int(value))
-					elif cmd == "exposure_absolute":
+					elif cmd == "exposure_time_absolute":
 						webcams[device + "exposure"].refract_value(int(value), "backend")
-					elif cmd == "exposure_auto":
+					elif cmd == "auto_exposure":
 						if value == "1":
 							muted = False # 1 is Manual
 						else:
